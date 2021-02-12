@@ -1,0 +1,5 @@
+﻿solar_cost,tracking_cost,battery_cost,battery_cycles,battery_eff,battery_decay,solar_lifetime,solar_decay,electricy_cost
+,,,,,,,,
+1.2,1.62,29,1000,0.95,0.00025,25,0.006,0.24
+euros/W,euros/m²,euros/Ah,cycles,%,%/cycle,years,%/year,euros/kWh
+??,??,,https://batteryuniversity.com/learn/article/how_to_prolong_lithium_based_batteries ,,https://www.nrel.gov/docs/fy14osti/62813.pdf,Jinko fact sheet,Jinko fact sheet,

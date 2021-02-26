@@ -30,23 +30,9 @@ colordict = {
         'Battery energy': '#85a0d6',
         'Battery SOC': '#f25c5c'
     }
+
 # define linewidth
 linewidth = 0.3
-
-# # read timeseries
-# filepath = "outputdata/timeseries_1000.0kWh_3chargers.pkl"
-# timeseries = pd.read_pickle(filepath)
-# timeseries = timeseries/1e3         # kWh
-
-# # read yearly
-# filepath = "outputdata/yearly_1000.0kWh_3chargers.pkl"
-# yearly = pd.read_pickle(filepath)
-# yearly = yearly/1e6         # kWh
-
-# read financials
-# filepath = "outputdata/financials_1000.0kWh_3chargers.pkl"
-# financials = pd.read_pickle(filepath)
-
 
 # read performance indicators
 filepath = "outputdata/performanceindicators.pkl"
@@ -130,25 +116,12 @@ app.layout = html.Div([
             ),
             dcc.Graph(id="design-plot"),
             ]),
-            html.Div([
-            html.H3('Tabulated data of selected design') #,
-            # dash_table.DataTable(
-            #     id ='finance-table',
-            #     columns=[{"name": i, "id": i} 
-            #              for i in financials.columns],
-            #     data = financials.to_dict(orient='records'),
-            #     style_cell=dict(textAlign='left'),
-            #     )
-            ])    
 ])
 
 # styling options
 layoutstyling = dict(
     paper_bgcolor  = 'white' ,
     )
-
-
-
 
 ## corresponding battery size
 @app.callback(
@@ -355,5 +328,5 @@ def designplot(pisel1, pisel2, variable, battery, charger):
     return fig
 
 
-# if __name__ == "__main__":
-#    app.run_server(debug=True)
+if __name__ == "__main__":
+   app.run_server(debug=True)

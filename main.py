@@ -2,9 +2,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import os.path
+import feedinfunctions
+import API
 plt.close('all')
 
-
+# coordinates of central Netherlands (~Utrecht)
+lat, lon = 52, 5
 
 # DOF options
 batterysize = 2e6   #1e6 = MWh 
@@ -33,18 +36,10 @@ logme = False
 
 
 # Set up user constants -------------------------------------------------------
-start = 10                   # Start week of the year (weeks) in PLOTS
-days = 7                   # Length of period to plot (days) in PLOTS
 start_future = '1/1/2021'   # Starting date of the future simulation
-financial_duration = 25         # length of financial duration
 
 
 #%% sytem input variables
-
-# site (needed for PV GIS --> POA)
-lat = 52.062642
-lon = 5.045068
-tz = 'UTC'
 
 class PV:
     pass
@@ -65,9 +60,12 @@ PV.isc = 30                    # [A]
 
 class wind:
     pass
-wind.installed = 600e3          # Total power of the windturbines in terms of power !DOF!
-wind.cost = 2.8                   # total cost in euros per watt installed    
-wind.om = 12e-3                  # e-3   €/kWp/year    OM cost
+wind.installed = 600e3          # total wind power installed [W]
+wind.cost = 2.8                 # total cost in euros per watt installed [€/W]
+wind.om = 12e-3                 # OM cost per year per power [€/kWp/year]  
+wind.hubheight = 120            # h_hub hub height [m]
+wind.roughness = 0.25           # z0 roughness length [m]
+
 
 class consumption:
     pass
@@ -108,27 +106,35 @@ EV.consumption = 20e1   # e1 = kWh/100km
    
 #%% time series
 
-# consumption
+#   1 --- TMY
+"""
+fetch TMY data using PVGIS API chain
+Converts .json respons to dataframe. Appends tmy-info as attributes to 'tmy'.
+e.g. tmy.lat gives the lattitude used for this tmy set. 
+"""
+tmy = API.get(lat, lon)
+
+#   2 --- wind
+""" 
+Calculate wind power series using a custom windpowerlib model chain based on 
+TMY data. Appends generation time serie as attribute 'power' to 'wind' class.
+""" 
+wind = feedinfunctions.windpower(wind, tmy)     # U
+
+#   3 --- PV
+"""
+Calculate PV power series using a custom pvlib model chain based on
+TMY data. Appends generation time serie as attribute 'power' to 'PV' class.
+""" 
+PV = feedinfunctions.PVpower(PV, tmy)
+
+#   4 --- Consumption
+"""
+Imports a certain profile (industrial as in current setings) from NEDU data.
+"""
 from functions import Consumptionf
-wind_dataset_location = "data/consumption.csv"
-consumption = Consumptionf(start_future, consumption, wind_dataset_location)
-
-# PV
-from functions import PVf
-pvgis_dataset_location = "data/centralNL.csv"
-# Set up the location for pvlib based on information
-from pvlib import location
-site = location.Location(lat, lon, tz=tz)
-PV = PVf(site, start_future, PV, pvgis_dataset_location)
-
-# wind 
-from functions import Windf
-wind_dataset_location = "data/windsnip.csv"
-wind = Windf(start_future, wind, wind_dataset_location)
-
-
-
-
+dataset_location = "data/consumption.csv"
+consumption = Consumptionf(start_future, consumption, dataset_location)
 
 
 #%%
@@ -441,24 +447,24 @@ while not computed_all:
     # ---------------
         # yearly series to save
         
-        from functions import Weeks
+        from functions import _Weeks
             
         yearlydict = {
             # Powers
-            'PV power': PV.power.groupby(Weeks()).sum(),
-            'Wind power': wind.power.groupby(Weeks()).sum(),
-            'Battery discharging':  battery.power.groupby(Weeks()).sum(),
-            'Grid import': grid.power.groupby(Weeks()).sum(),
-            'Underload': balance.underloaded.groupby(Weeks()).sum(),
+            'PV power': PV.power.groupby(_Weeks()).sum(),
+            'Wind power': wind.power.groupby(_Weeks()).sum(),
+            'Battery discharging':  battery.power.groupby(_Weeks()).sum(),
+            'Grid import': grid.power.groupby(_Weeks()).sum(),
+            'Underload': balance.underloaded.groupby(_Weeks()).sum(),
             # Loads
-            'Consumption load': consumption.load.groupby(Weeks()).sum(),
-            'Charging load': charger.load.groupby(Weeks()).sum(),
-            'Battery charging': battery.load.groupby(Weeks()).sum(),
-            'Grid export': grid.load.groupby(Weeks()).sum(),
-            'Curtailment': balance.curtailed.groupby(Weeks()).sum(),
+            'Consumption load': consumption.load.groupby(_Weeks()).sum(),
+            'Charging load': charger.load.groupby(_Weeks()).sum(),
+            'Battery charging': battery.load.groupby(_Weeks()).sum(),
+            'Grid export': grid.load.groupby(_Weeks()).sum(),
+            'Curtailment': balance.curtailed.groupby(_Weeks()).sum(),
             # Sinks
-            'Battery energy': battery.sink.groupby(Weeks()).sum(),
-            'Battery SOC': battery.sink.SOC.groupby(Weeks()).sum()
+            'Battery energy': battery.sink.groupby(_Weeks()).sum(),
+            'Battery SOC': battery.sink.SOC.groupby(_Weeks()).sum()
         }
         
         # make DF

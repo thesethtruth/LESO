@@ -79,7 +79,7 @@ def windpower(wind, tmy, starting_year = None ):
     mc = ModelChain(turbine, **modelchain_data).run_model(wind_df)
     
     # write power output time series to wind object
-    wind.power = mc.power_output
+    wind.power = mc.power_output / mc.power_output.max() * wind.installed
     
     # Yearly and weekly
     wind.yearly = wind.power.sum()

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os.path
 import feedinfunctions
-import API
+import api
 plt.close('all')
 
 # coordinates of central Netherlands (~Utrecht)
@@ -112,7 +112,7 @@ fetch TMY data using PVGIS API chain
 Converts .json respons to dataframe. Appends tmy-info as attributes to 'tmy'.
 e.g. tmy.lat gives the lattitude used for this tmy set. 
 """
-tmy = API.get(lat, lon)
+tmy = api.get(lat, lon)
 
 #   2 --- wind
 """ 

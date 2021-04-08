@@ -2,32 +2,99 @@ import pandas as pd
 import numpy as np
 
 
-def Consumptionf(start_future, consumption, wind_dataset_location):
-    temp_consumption = pd.read_csv(wind_dataset_location,
-                         nrows=35040,skiprows=5,usecols=[3])
+def read_consumption_profile(consumer_instance, 
+                             dataset_location = "data/consumption.csv"):
+    
+    consumer = consumer_instance
+    
+    # read data
+    temp_consumption = pd.read_csv(dataset_location,
+                         nrows=35040,skiprows=5,
+                         usecols=[3] # change this col to change profile
+                         )
     temp_consumption.columns = ["Consumption"]
+    
     # Sum the data from every 15 mins to 1 hour
     temp_consumption = temp_consumption["Consumption"].groupby(temp_consumption.index // 4).sum()
+    
     # Set the dates 
-    temp_consumption.index = pd.date_range(start_future, periods=8760, freq="1h")
+    temp_consumption.index = consumer.state.index
+    
     # Scale the consumption to appropriate size
-    consumption.load= -temp_consumption*consumption.scaler
-    consumption.yearly = consumption.load.sum()
-    consumption.weekly = consumption.load.groupby(_Weeks()).sum()
-    return consumption
+    power = -temp_consumption*consumer.scaler
+    
+    return power
 
 
+def calculate_charging_demand(fastcharger_instance, 
+                              filepath = 'data/EV_charge.pkl'):
+    
+    charger = fastcharger_instance
+    
+    # read traffic data
+    charger.EV_traffic = pd.read_pickle(filepath)
+    charger.EV_traffic.index = charger.state.index
+    
+    # cap to max capacity
+    charger.EV_to_chargers = charger.EV_traffic.where(
+        (charger.EV_traffic < charger.installed*charger.carsperhour), 
+        charger.installed*charger.carsperhour)
+    
+    power = -charger.EV_to_chargers * charger.EV_battery / charger.efficiency
 
-def Balancef(wind, PV, consumption, charger):
-    class balance:
+    return power
+
+def FinanicalFunction(PV, wind, battery, charger, consumption, grid):
+    
+    class Finance:
         pass
-    balance.power = PV.power + wind.power - consumption.load - charger.load
-    balance.weekly = PV.weekly + wind.weekly - consumption.weekly - charger.weekly
-    # Calculate yearly balance
-    balance.yearly = wind.yearly + PV.yearly - consumption.yearly - charger.yearly
-    return balance
+    
+    finance = Finance()
+    
+    # ----
+    # capex breakdown
+    wind.capex = wind.installed * wind.cost 
+    PV.capex = PV.installed * PV.cost 
+    battery.capex = battery.installed * battery.cost 
+    charger.capex = charger.installed * charger.cost 
+    
+    # capex sum
+    finance.capex = wind.capex \
+            + PV.capex \
+            + battery.capex \
+            + charger.capex
+    
+    # ----        
+    # opex breakdown
+    wind.opex = wind.om * wind.installed
+    PV.opex = PV.om * PV.installed
+    battery.opex = battery.om * battery.installed
+    
+    # opex sum
+    finance.opex =  wind.opex \
+            + PV.opex \
+            + battery.opex 
+    
+    
+    # ----
+    # income by part
+    charger.income = -charger.yearly * charger.price * charger.efficiency
+    consumption.income = -consumption.yearly * consumption.price
+    grid.income = - grid.load.yearly * grid.price - grid.power.yearly * grid.cost
+    
+    # income balance
+    finance.income = charger.income \
+            + consumption.income \
+            + grid.income
+            
+    finance.net_income = finance.income - finance.opex
+    finance.IRR = finance.net_income / finance.capex  
+    finance.PBY = finance.capex / finance.net_income
+    
+    
+    return finance
 
-def BatteryControlf(start_future, balance, battery):
+def BatteryControlf(balance, battery, start_future = '1/1/2021'):
     # This function is messy and should be updated!                                 UPDATE ME!
     # currently it behaves from the perspective of the battery and is later 
     # converted to its inverse for correct power/load behaviour.
@@ -76,74 +143,17 @@ def BatteryControlf(start_future, balance, battery):
     battery.power = - batterypower.where(batterypower <=0, 0)
     battery.weekly = (battery.power + battery.load).groupby(_Weeks()).sum()
     
-    # determine sink (storage) values
-    battery.sink = pd.Series(soc)
-    battery.sink.index = pd.date_range(start_future, periods=8760, freq="1h")
-    battery.sink.weekly = battery.sink.groupby(_Weeks()).mean()
+    # determine storage values
+    battery.storage = pd.Series(soc)
+    battery.storage.index = pd.date_range(start_future, periods=8760, freq="1h")
+    battery.storage.weekly = battery.storage.groupby(_Weeks()).mean()
     
     # and add the SOC as attribute
-    battery.sink.SOC = battery.sink / battery.installed
-    battery.sink.SOC.weekly = battery.sink.SOC.groupby(_Weeks()).mean() 
+    battery.storage.SOC = battery.storage / battery.installed
+    battery.storage.SOC.weekly = battery.storage.SOC.groupby(_Weeks()).mean() 
     
     return battery
 
-def Chargerf(charger, EV, filepath):
-    EV.traffic = pd.read_pickle(filepath)
-    EV.charge = EV.traffic.where((EV.traffic < charger.installed*charger.carsperhour), charger.installed*charger.carsperhour)
-    EV.charge.yearly = EV.charge.sum()
-    EV.traffic.yearly = EV.traffic.sum()
-    charger.load = -EV.charge * EV.battery / charger.efficiency
-    charger.weekly = charger.load.groupby(_Weeks()).sum()
-    charger.yearly = charger.load.sum()
-    return charger, EV
-
-def FinanicalFunction(PV, wind, battery, charger, consumption, grid):
-    
-    class finance:
-        pass
-    
-    # ----
-    # capex breakdown
-    wind.capex = wind.installed * wind.cost 
-    PV.capex = PV.installed * PV.cost 
-    battery.capex = battery.installed * battery.cost 
-    charger.capex = charger.installed * charger.cost 
-    
-    # capex sum
-    finance.capex = wind.capex \
-            + PV.capex \
-            + battery.capex \
-            + charger.capex
-    
-    # ----        
-    # opex breakdown
-    wind.opex = wind.om * wind.installed
-    PV.opex = PV.om * PV.installed
-    battery.opex = battery.om * battery.installed
-    
-    # opex sum
-    finance.opex =  wind.opex \
-            + PV.opex \
-            + battery.opex 
-    
-    
-    # ----
-    # income by part
-    charger.income = -charger.yearly * charger.price * charger.efficiency
-    consumption.income = -consumption.yearly * consumption.price
-    grid.income = - grid.load.yearly * grid.price - grid.power.yearly * grid.cost
-    
-    # income balance
-    finance.income = charger.income \
-            + consumption.income \
-            + grid.income
-            
-    finance.net_income = finance.income - finance.opex
-    finance.IRR = finance.net_income / finance.capex  
-    finance.PBY = finance.capex / finance.net_income
-    
-    
-    return finance
 
 def _Weeks():
     indices = np.arange(0,8760)                   # actually 52.17

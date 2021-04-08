@@ -3,7 +3,7 @@ from pvlib import irradiance
 from pvlib import location
 import numpy as np
 
-def PVpower(PV, tmy, starting_year = None ):
+def PVpower(PV_instance, tmy):
     """
     Input:      tmy['POA'] -- plane of array
                 PV.efficiency
@@ -12,24 +12,23 @@ def PVpower(PV, tmy, starting_year = None ):
     
     This function should be updated to a more sophisticated power model!
     """ 
+    PV = PV_instance
+    
     # make sure the needed data is provided
     if not 'POA' in tmy.columns:
         # calculate the poa using isometric conversion
-        _calculate_poa(tmy, PV.tilt, PV.azimuth)
+        _calculate_poa(tmy, PV)
 
     # Generate the power
-    PV.power = tmy["POA"]   * PV.efficiency * PV.area
+    power = PV.poa   * PV.efficiency * PV.area
     
     # reset the indices to a future year based on starting year
-    _reset_times(PV.power, starting_year)
-    
-    # calculate all timeserie totals 
-    PV.yearly = PV.power.sum()
-    PV.weekly = PV.power.groupby(_weeks()).sum()
-    return PV
+    power.index = PV.state.index
+
+    return power
 
 
-def windpower(wind, tmy, starting_year = None ):
+def windpower(wind_instance, tmy):
     """
     Returns:
         wind.power == wind power time series according using windpowerlib chain
@@ -42,8 +41,10 @@ def windpower(wind, tmy, starting_year = None ):
     from windpowerlib.modelchain import ModelChain
     from windpowerlib.wind_turbine import WindTurbine    
     
+    wind = wind_instance
+    
     #### prepare wind data 
-    wind_df = _prepare_wind_data(tmy, wind, starting_year)
+    wind_df = _prepare_wind_data(tmy, wind, wind.start_date)
     
     #### setup turbine
     turbinespec = {
@@ -79,15 +80,11 @@ def windpower(wind, tmy, starting_year = None ):
     mc = ModelChain(turbine, **modelchain_data).run_model(wind_df)
     
     # write power output time series to wind object
-    wind.power = mc.power_output
-    
-    # Yearly and weekly
-    wind.yearly = wind.power.sum()
-    wind.weekly = wind.power.groupby(_weeks()).sum()    
-    
-    return wind
+    power = mc.power_output / mc.power_output.max() * wind.installed
+   
+    return power
 
-def _calculate_poa(tmy, tilt, azimuth):
+def _calculate_poa(tmy, PV):
     """
     Input:      tmy irradiance data
     Output:     tmy['POA'] -- plane of array
@@ -103,15 +100,15 @@ def _calculate_poa(tmy, tilt, azimuth):
     solar_position = tmy.site.get_solarposition(times=tmy.index)
     # Use get_total_irradiance to transpose, based on solar position
     POA_irradiance = irradiance.get_total_irradiance(
-        surface_tilt=tilt,
-        surface_azimuth=azimuth,
+        surface_tilt= PV.tilt,
+        surface_azimuth= PV.azimuth,
         dni=tmy["Gb(n)"],
         ghi=tmy["G(h)"],
         dhi=tmy["Gd(h)"],
         solar_zenith=solar_position['apparent_zenith'],
         solar_azimuth=solar_position['azimuth'])
     # Return DataFrame
-    tmy['POA'] = POA_irradiance['poa_global']
+    PV.poa = POA_irradiance['poa_global']
     return
 
 def _prepare_wind_data(tmy, wind, starting_year):
@@ -151,7 +148,7 @@ def _prepare_wind_data(tmy, wind, starting_year):
                                                  )
     
     wind_df.columns.names = ['variable_name', 'height']
-    _reset_times(wind_df, starting_year)
+    wind_df.index = wind.state.index
     
     return wind_df
 

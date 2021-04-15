@@ -41,8 +41,8 @@ dump = dict(
             'group': 'load',
         }],
         # settings
-        curtail = True,
-        underload = False,
+        negative = True,  # Curtail
+        positive = False, # Underload
         # optimizer
         lower = lower_bound,          # lower bound
         upper = upper_bound,          # upper bound
@@ -64,6 +64,7 @@ pv = dict(
         module_power = 325,           # STC
         module_area = 1.6,            # [m2]
         cost = 0.6,                   # total costs in euros per watt installed
+        lifetime = 25,
         om = 5e-3,                    # e-3   €/kWp/year    OM cost
         # unused
         t_coeff = -.37,               # [%/K]
@@ -88,6 +89,7 @@ wind = dict(
         om = 12e-3,                 # OM cost per year per power [€/kWp/year]  
         hubheight = 120,            # h_hub hub height [m]
         roughness = 0.25,           # z0 roughness length [m]
+        lifetime = 25, 
         # optimizer
         lower = 0,
         upper = upper_bound,
@@ -123,6 +125,9 @@ grid = dict(
             'color': '#d18426',
             'group': 'load',
         }],
+        # settings
+        negative = True,    # Import
+        positive = True,    # Export
         # specs
         installed = 200e3,       # grid connection
         price = 25e-6,           # e-6 = euros per MWh          INCOME of export
@@ -157,6 +162,7 @@ lithium = dict(
         cycles = 1000,           # Maximum hardcycles for life time
         discharge_hurt = 0.7,    # Maximum discharge power before the hurt
         om = 8e-3,               # e-3   €/kWp/year    OM cost
+        lifetime = 10,
         # optimizer
         lower = 0,
         upper = upper_bound,
@@ -176,6 +182,7 @@ fastcharger = dict(
         efficiency = 0.85,       # DC fast charging reference
         price = 35e-5,           # e-5 = cents per kWh
         cost = 65e3,             # Euros per carger DC fast charging unit
+        lifetime = 15,
         # related to EV 
         EV_battery = 24e3,         # e3 = kWh
         EV_consumption = 20e1,     # e1 = kWh/100km

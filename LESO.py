@@ -6,6 +6,10 @@
 import pandas as pd
 import numpy as np
 
+# for optimizing
+import pyomo.environ as pyo
+from pyomo.environ import value
+
 # module with default values
 import defaultvalues as defs
 
@@ -74,7 +78,7 @@ class System():
 
         sorted_comps = components[inds]
 
-        self.components = sorted_comps
+        self.components = list(sorted_comps)
 
 
     def fetch_input_data(self, lat = None, long = None):
@@ -129,8 +133,144 @@ class System():
         self.fetch_input_data()
         self.calculate_time_series()
         self.calculate_merit_balance()
+    
+    def pyomo_init_model(self, time = None):
+        """
+        Initializes the Pyomo model, adds modes for power/energy control and adds the
+        DOF variables as needed. 
+        """
         
+        self.constraint_ID = 'constraints'
+        if time is None:
+            # times
+            year = 8760 #h
+            t_span = year
+            t_min = 0
+            time = list( range ( t_min, t_min + t_span) )
+
+        # Define model and add time
+        self.model = pyo.ConcreteModel()
+        self.model.constraint_ID = 'constraints'
+        self.model.time = time
+        self.time = time
         
+        from pyoutil import init_model
+        init_model(self, self.model, self.time)
+    
+    def pyomo_constuct_constraints(self):
+        """
+        Will call the 'construct_constraints' method of each component which has 
+        this modehod. All is added to the constraint list given by 'self.model.constraint_ID'
+
+            Adds all constraints per component.
+        """
+
+        for component in self.components:
+
+            if hasattr(component, 'construct_constraints'):
+                
+                # for each component with constraints
+                component.construct_constraints(self)
+    
+    def pyomo_power_balance(self):
+        
+        constraints = getattr(self.model, self.model.constraint_ID)
+        
+        from pyoutil import power
+
+        for t in self.time:
+            constraints.add( 0 == sum(power(self.model,component,t) for component in self.components ))
+
+    
+    def pyomo_add_objective(self, objective = None):
+
+        from pyoutil import capital_cost
+        self.model.capitalcost = pyo.Objective(
+                            expr = sum(capital_cost(self.model, component) for component in self.components), 
+                            sense = pyo.minimize)
+    
+    def pyomo_solve(self, store = True, solver = 'gurobi', noncovex = False):
+
+        opt = pyo.SolverFactory(solver)
+        if noncovex:
+            opt.options['NonConvex'] = 2
+        
+        self.model.results = opt.solve(self.model)
+
+        model = self.model
+        time = self.time
+        # Writing results to system components
+        for component in self.components:
+            
+            # extract power curves send to component
+            df = component.state
+            
+            if hasattr(component, 'power_control'):
+                for key, modelvar in component.keylist:
+                    df[key] = [modelvar[t].value for t in time]
+            
+            else:
+
+                values = component.state.power[time]
+                column = 'power'
+
+                if component.dof:
+                    key = component.__str__()
+                    modelvar = getattr(model, key+'_size').value
+                    df[column] = values * modelvar
+                
+                else:
+
+                    df[column] = values
+            
+            # extract sizing and attach to component
+            if component.dof:
+                key = component.__str__()
+                _varkey = '_size'
+                component.installed = getattr(model, key+_varkey).value
+                print(f'{key} size                 = ',
+                    round(component.installed/1e3,1), 'kW(h)')
+                
+                
+        print()
+        print('Total system cost (objective)= ', round(value(model.capitalcost)/1e3,1), 'k€')
+        self.cost = value(model.capitalcost)
+
+
+        self.to_pickle()
+
+    def pyomo_go(self, solve = True, **kwargs):
+        
+        # load TMY
+        self.fetch_input_data()
+
+        # Issue the command for every component to calculate its feed-in on TMY data
+        self.calculate_time_series()
+
+        time = kwargs.get('time', None)
+        self.pyomo_init_model(time = time)
+
+        self.pyomo_constuct_constraints()
+
+        self.pyomo_power_balance()
+
+        self.pyomo_add_objective()
+        
+        if solve:
+            self.pyomo_solve()
+    
+    def pyomo_print(self):
+        
+        # set time to 1 for readable prints of constraints
+        time = [0]
+
+        self.pyomo_go(solve=False, time = time)
+
+        self.model.pprint()
+
+        
+
+
     def info(self):
         print()
         print('----{}----'.format(self.name))
@@ -250,6 +390,7 @@ class PhotoVoltaic(SourceSink):
         
         PhotoVoltaic.instances +=1
         self.number = PhotoVoltaic.instances
+        self.name = name
             
     @property
     def area(self):
@@ -286,10 +427,15 @@ class Dump(SourceSink):
         self.name = self.__str__()
         
     def __str__(self):
-        return "dump"
+        return "FinalBalance"
     
     def power_control(self, balance_in):
-        pass
+        raise NotImplementedError(  "Make sure the final balance" +
+                                    "gets stored in this component")
+    def construct_constraints(self, system):
+        
+        from pyoutil import final_balance_power_control_constraints
+        final_balance_power_control_constraints(system.model, self)
 
 
     
@@ -356,6 +502,13 @@ class Lithium(Storage):
         
         [self.state.power, 
          self.state.energy] = battery_power_control(self, balance_in)
+
+    def construct_constraints(self, system):
+
+        from pyoutil import battery_control_constraints
+
+        battery_control_constraints(system.model, self) 
+
     
     
 class FastCharger(SourceSink):
@@ -439,9 +592,8 @@ class Grid(SourceSink):
         from balancing import grid_power_control
         
         self.state.power = grid_power_control(self, balance_in)
-    
-    
 
-    
+    def construct_constraints(self, system):
 
-    
+        from pyoutil import direct_power_control_constraints
+        direct_power_control_constraints(system.model, self)

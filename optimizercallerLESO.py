@@ -2,12 +2,15 @@ import pandas as pd
 import pyomo.environ as pyo
 from pyomo.environ import value
 import numpy as np
+import time
 
 from LESO import System
 import LESO
 # Constants
 
 max_MW = 10e6 
+
+t = time.process_time()
 
 # Initiate components to consider
 pv = LESO.PhotoVoltaic('Full-south PV', dof = True, upper = max_MW )
@@ -27,3 +30,6 @@ system.add_components([battery, dump, pv, pv2, pv3, wind, charger, grid])
 # system.pyomo_print()
 system.pyomo_go()
 
+elapsed_time = time.process_time() - t
+
+print(f"This took {elapsed_time} seconds")

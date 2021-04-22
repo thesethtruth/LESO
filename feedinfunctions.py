@@ -81,7 +81,6 @@ def windpower(wind_instance, tmy):
     
     # write power output time series to wind object
     power = mc.power_output / mc.power_output.max() * wind.installed
-   
     return power
 
 def _calculate_poa(tmy, PV):

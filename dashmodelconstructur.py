@@ -1,25 +1,26 @@
 import dash
+import numpy as np
 import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 import pandas as pd
 import dash_table
 from plotly.subplots import make_subplots
 from LESO import System
 import dash_bootstrap_components as dbc
+from copy import deepcopy as copy
 
 # open model!
-components = []
+import LESO
+system = LESO.System(52, 5, model_name='GUI')
 
-# options for dropdown menu
+
+# options for slider
 weeks = {}
 for i in range(1,53) :
     weeks['Week {:.0f}'.format(i)] = i
 startingweek = list(weeks.values())[0]
-
-# define color scales
-
 
 # define linewidth
 linewidth = 0.3
@@ -27,106 +28,154 @@ linewidth = 0.3
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, 
                 external_stylesheets=external_stylesheets,
-                title= 'Quick browser'
+                title= 'LESO'
                 )
 
 app.layout = html.Div([
-            html.H3("Browse components"),
-            html.Dropdown([]
+            html.H3("Add component to energy system"),
+                html.Div([
+                    dcc.Dropdown(
+                        id= 'add-component-dropdown',
+                        options = [
+                            {'label': key, 'value': key} for key in LESO.ComponentClasses                
+                            ],
+                        value = list(LESO.ComponentClasses.keys())[0],
+                        className = 'four columns',
+                    ),
+                    dcc.Input(
+                        id = 'add-component-input',
+                        type = 'text',
+                        maxLength = 20,
+                        className = 'four columns',
+                        required = True,
+                        placeholder = 'Input a name',
+                    ),
+                    dbc.Button(['Add component'],
+                        id='add-component-button',
+                        style = {'background-color': 'darkgray'},
+                        className = 'four columns', 
+                        n_clicks=0,
+                    ),
+                ], className = 'row'),
+                html.Br(),
+            html.H4(id='system-name'),
+            dbc.Table(id='system-overview-table'),
+            html.H3("Set  up components"),
+            dcc.Dropdown(
+                id = 'config-dropdown',
+                options = [
+                    {'label': component.__str__()+f" ({component.name})", 'value': index}
+                    for index, component in enumerate(system.components)
+                    ]
             ),
+            html.Div(id ='config-table'),
             html.H3("Optimization quick browsing analysis"),
-            dcc.Graph(id="hourly"),
-            html.P(['Browse through the year per weeknumber below:'
-                ], style= {"padding-left": "5%"}),
-            dcc.Slider(
-                id='startingweek',
-                min = min(weeks.values()),
-                max = max(weeks.values()),
-                value= startingweek,
-                persistence=False
-            ),
             dbc.Button(
-                "Reload model results", 
+                "Reset model", 
                 outline=True, 
                 color="dark",
-                id = 'reload-model'),
+                id = 'reset-model',
+                style= {'background-color': 'orangered', 'color': 'white'}),
             html.Div(id='hidden-div', style={'display':'none'}),
 ], className= "container")
 
 
-# styling options
-layoutstyling = dict(
-    paper_bgcolor  = 'white' ,
-    )
 
-def scatter_power(fig, start, end, column, component, group, label, color):
-    fig.add_trace(go.Scatter(
-        x= component.state.index[start:end],
-        y= component.state[column].iloc[start:end]/1e3,
-        stackgroup = group,
-        mode = 'lines',
-        name = label,
-        line = dict(width = 0.3, color = color),
-        ))
+### ADD COMPONENTS
 @app.callback(
-    Output("hidden-div", "value"),
-    Input("reload-model", "n_clicks"),
+    Output("system-name", "children"),
+    Output("system-overview-table", "children"),
+    Output("add-component-input", "value"),
+    Input("add-component-button", "n_clicks"),
+    Input("reset-model", "n_clicks"),
+    State("add-component-dropdown", "value"),
+    State("add-component-input", "value"),
 )
-def reloader(n):
-    if n:
-        system = System.from_pickle('LESO model')
-        global components
-        components = system.components
 
-## weekly plot on hourly resolution
-@app.callback(
-    Output("hourly", "figure"), 
-    Input("startingweek", "value"),
-)
-def hourly(startingweek):
-    start = (startingweek-1)*168
-    end = startingweek*168
-    fig = go.Figure()
+def reloader(add, reset, key, name):
     
-    for component in components:
-        _df = component.state
+    if name is not None and add:
+        if len(name)>2:
+            system.add_components([
+                LESO.ComponentClasses[key](name)
+                ])
+    
+    df = pd.DataFrame(
+            data = {
+                'Component ID': [component.__str__() for component in system.components],
+                'Component name': [component.name for component in system.components],
+                },
+            )
+    table = dbc.Table.from_dataframe(df, borderless=True, hover=True)
 
-        plot_pos = hasattr(_df, 'power [+]')
-        plot_neg = hasattr(_df, 'power [-]')
-        plot_power = hasattr(_df, 'power') and not (plot_neg or plot_pos)
-        if (_df['power']**2).sum() > 1:
+    system.info(print_it=True)
+    return system.name, table, ""
 
-            if plot_pos:
-                styling = component.styling[0]
-                column = 'power [+]'
-                label = styling['label'] + f' ({component.name})'
-                group = styling['group']
-                color = styling['color']
-                scatter_power(fig, start, end, column, component, group, label, color)
+### POPULATE CONFIGURATION DROPDOWN
+@app.callback(
+    Output('config-dropdown', 'options'),
+    Input("add-component-button", "n_clicks"),
+    Input("reset-model", "n_clicks"),
+)
+def update_dropdown(add, reset):
+    options = [
+        {'label': component.__str__()+f" ({component.name})", 'value': index}
+        for index, component in enumerate(system.components)
+        ]
+    return options
 
-            if plot_neg:
-                styling = component.styling[1]
-                column = 'power [-]'
-                label = styling['label'] + f' ({component.name})'
-                group = styling['group']
-                color = styling['color']
-                scatter_power(fig, start, end, column, component, group, label, color)
-            
-            if plot_power:
-                styling = component.styling
-                column = 'power'
-                label = styling['label'] + f' ({component.name})'
-                group = styling['group']
-                color = styling['color']
-                scatter_power(fig, start, end, column, component, group, label, color)
-
-    fig.update_layout(
-        title ="Total energy balance in <b>week {startingweek}</b> on hourly resolution".format(startingweek = startingweek),
-        xaxis_title="Day of the year",
-        yaxis_title="Hourly power [KWh/h]",
-        plot_bgcolor  = 'white',
+### CONFIGURATION TABLE
+@app.callback(
+    Output('config-table', 'children'),
+    Input("config-dropdown", "value"),
+    Input("add-component-button", "n_clicks"),
+    Input("reset-model", "n_clicks"),
+)
+def update_dropdown(selected_index, add, reset):
+    
+    if selected_index is not None:
+        defaults = copy(system.components[selected_index].default_values)
+        defaults.pop('styling', None)
+        defaults.pop('merit_tag', None)
+        df = pd.DataFrame({
+            "Component property": [key for key in defaults.keys()],
+            "Property value" :  [value for value in defaults.values()],
+        }
         )
-    return fig
+
+        table = html.Div([
+                dash_table.DataTable(
+                    columns=[
+                        {"name": df.columns[0], "id": df.columns[0], "editable": False},
+                        {"name": df.columns[1], "id": df.columns[1], "editable": True},
+                    ],
+                    data= df.to_dict('records')
+                )], style = {'visibility': 'visible'}
+                
+            )
+        return table
+    else:
+        
+        table = html.Div([
+                ], style = {'visibility': 'hidden'}
+        )
+
+        return table
+        
+
+
+### RESET
+@app.callback(
+    Output("hidden-div", "children"),
+    Input("reset-model", "n_clicks"),
+)
+
+def reset(n):
+    global system
+    system = LESO.System(52, 5, model_name='Model GUI reset')
+    
+
 
 if __name__ == "__main__":
    app.run_server(debug=True)
+

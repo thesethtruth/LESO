@@ -271,12 +271,17 @@ class System():
         
 
 
-    def info(self):
-        print()
-        print('----{}----'.format(self.name))
-        print('Components in model:')
+    def info(self, print_it = False):
+        info = []
+        info.append('----{}----'.format(self.name))
+        info.append('Components in model:')
         for component in self.components:
-            print(component.__str__() +": " + component.name)
+            info.append(component.__str__() +": " + component.name)
+
+        if print:
+            print(info)
+        else:
+            return info
             
     def to_pickle(self, folder = 'models'):
         
@@ -597,3 +602,13 @@ class Grid(SourceSink):
 
         from pyoutil import direct_power_control_constraints
         direct_power_control_constraints(system.model, self)
+
+ComponentClasses = {
+    "PV system" : PhotoVoltaic, 
+    "Wind turbine": Wind, 
+    "Lithium-ion ESS": Lithium, 
+    "DC fastcharger": FastCharger,
+    "Electric consumer": Consumer, 
+    "Grid connection": Grid,
+     "Curtailment/underload": Dump,
+}

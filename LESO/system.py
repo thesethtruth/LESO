@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 import warnings
+import pickle
 
 # for optimizing
 import pyomo.environ as pyo
@@ -284,9 +285,7 @@ class System():
         else:
             return info
             
-    def to_pickle(self, folder = 'LESO/models'):
-        
-        import pickle
+    def to_pickle(self, folder = 'cache'):
         
         location_string = folder+'/'+self.name+'.pkl'
         picklefile = open(location_string, 'wb')
@@ -297,12 +296,10 @@ class System():
         print('Saved and pickled model instance to {}'.format(location_string))
         
     @staticmethod
-    def from_pickle(model_name, folder = 'models'):
+    def read_pickle(filepath):
         
         import pickle
-        
-        location_string = folder+'/'+model_name+'.pkl'
-        salty_model_instance = open(location_string, 'rb')
+        salty_model_instance = open(filepath, 'rb')
         loaded_model_instance = pickle.load(salty_model_instance)
         salty_model_instance.close()
         

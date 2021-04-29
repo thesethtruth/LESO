@@ -24,19 +24,19 @@ system.add_components(component_list)
 
 curves = dict()
 for component in system.components:
-    _key = component.__str__() +f" ({component.name})"
+    _key = component.__str__()
 
     compdict = {
         _key: 
-        {state: component.state[state] for state in component.state}
+        {'state': component.state}
     }
     styling = dict(styling = component.styling)
     compdict[_key].update(styling)
-    
+
     curves.update(compdict)
 
 
 
 
 
-system.run_merit_order()
+# system.run_merit_order()

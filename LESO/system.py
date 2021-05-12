@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import warnings
 import pickle
+import json
+from datetime import datetime
 
 # for optimizing
 import pyomo.environ as pyo
@@ -320,3 +322,48 @@ class System():
         print('Opened and unpickled {}'.format(loaded_model_instance.name)) 
         
         return loaded_model_instance
+    
+    def to_json(self, filepath=None):
+        
+        # small helper function
+        def _date_to_string(component):
+            return np.datetime_as_string(component.state.index.values).tolist()
+
+        save_info = dict()
+        for component in self.components:
+            _key = component.__str__()
+            state = component.state
+
+            compdict = {
+                _key: 
+                {
+                'state': {column: state[column].values.tolist() for column in state.columns if column != 'power'},
+                'styling': component.styling,
+                'settings': { key: getattr(component, key) for key in component.default_values if key != 'styling'}
+                }
+            }
+            styling = dict(styling = component.styling)
+            compdict[_key].update(styling)
+
+            save_info.update(compdict)
+
+        sysdict = {
+            'system': 
+            {
+            'dates': _date_to_string(self.components[0]),
+            'name': self.name,
+            'date': datetime.now().isoformat()
+            }
+        }
+
+        save_info.update(sysdict)
+
+        if filepath is None:
+            name = save_info['system']['name'].replace("\/:*?<>|",'')
+            date =  save_info['system']['date'][:17].replace(':','')
+            filepath = f"cache/{name}__{date}.json"
+        
+        with open(filepath, "w") as outfile: 
+            json.dump(save_info, outfile)
+
+        

@@ -1,3 +1,4 @@
+from os import name
 from LESO import System
 from LESO import PhotoVoltaic, Wind, Lithium, FastCharger, Consumer, Grid, FinalBalance
 
@@ -20,22 +21,5 @@ grid =          Grid('210 KVA', installed = 150e3)
 component_list = [pv1, wind1, bat1, charger1, petrolstation, grid]
 
 system.add_components(component_list)
-
-# save_info = dict()
-# for component in system.components:
-#     _key = component.__str__()
-
-#     compdict = {
-#         _key: 
-#         {
-#         'state': component.state,
-#         'styling': component.styling,
-#         'settings': { key: getattr(pv1, key) for key in pv1.default_values if key != 'styling'}
-#         }
-#     }
-#     styling = dict(styling = component.styling)
-#     compdict[_key].update(styling)
-
-#     save_info.update(compdict)
-
 system.run_merit_order()
+system.to_json()

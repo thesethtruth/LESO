@@ -3,6 +3,7 @@
 
 
 # required packages
+from typing import final
 import pandas as pd
 import numpy as np
 
@@ -25,8 +26,6 @@ class Component():
     3. Transformers     ~ energy form transformers (p2h, p2H2) [unused]
     4. Collectors       ~ sums input and equals output [unused]
     """
-    
-    dof = False
         
     def __init__(self):
         self.unit = 1
@@ -59,6 +58,12 @@ class Component():
     @property
     def control_states(self):
         return {key: 0 for key in self.states}
+    
+    def split_states(self):
+        power = self.state.power
+
+        self.state['power [+]'] = power.where(power > 0, 0.0)
+        self.state['power [-]'] = power.where(power < 0, 0.0)
             
 #%%                
 
@@ -67,8 +72,8 @@ class SourceSink(Component):
         
 class Storage(Component):
     
-    @staticmethod
-    def power_control():
+    
+    def power_control(self):
         raise NotImplementedError 
     pass
 
@@ -114,10 +119,10 @@ class PhotoVoltaic(SourceSink):
 
         self.state.power = feedinfunctions.PVpower(self, tmy)
 
-class Dump(SourceSink):
+class FinalBalance(SourceSink):
     
     # read default values 
-    default_values = defs.dump
+    default_values = defs.finalbalance
     states = ['power']
     control_states = {'power':1}
                
@@ -135,8 +140,11 @@ class Dump(SourceSink):
         return "FinalBalance"
     
     def power_control(self, balance_in):
-        raise NotImplementedError(  "Make sure the final balance" +
-                                    "gets stored in this component")
+        
+        from LESO.scenario.balancing import final_power_control
+        self.state.power = final_power_control(balance_in)
+
+
     def construct_constraints(self, system):
         
         util.final_balance_power_control_constraints(system.model, self)
@@ -300,5 +308,5 @@ ComponentClasses = {
     "DC fastcharger": FastCharger,
     "Electric consumer": Consumer, 
     "Grid connection": Grid,
-     "Curtailment/underload": Dump,
+     "Curtailment/underload": FinalBalance,
 }

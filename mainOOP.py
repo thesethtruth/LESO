@@ -1,11 +1,10 @@
 from LESO import System
-from LESO import PhotoVoltaic, Wind, Lithium, FastCharger, Consumer, Grid
+from LESO import PhotoVoltaic, Wind, Lithium, FastCharger, Consumer, Grid, FinalBalance
 
 
 
 system = System(52, 5, model_name = "VRE-ESS-EV-hub")
 # =============================================================================
-
 pv1 =           PhotoVoltaic('PV Full south', dof = True)
 pv2 =           PhotoVoltaic('PV West', azimuth = 90, dof = True)
 pv3 =           PhotoVoltaic('PV East', azimuth = -90, dof = True)
@@ -22,21 +21,21 @@ component_list = [pv1, wind1, bat1, charger1, petrolstation, grid]
 
 system.add_components(component_list)
 
-curves = dict()
-for component in system.components:
-    _key = component.__str__()
+# save_info = dict()
+# for component in system.components:
+#     _key = component.__str__()
 
-    compdict = {
-        _key: 
-        {'state': component.state}
-    }
-    styling = dict(styling = component.styling)
-    compdict[_key].update(styling)
+#     compdict = {
+#         _key: 
+#         {
+#         'state': component.state,
+#         'styling': component.styling,
+#         'settings': { key: getattr(pv1, key) for key in pv1.default_values if key != 'styling'}
+#         }
+#     }
+#     styling = dict(styling = component.styling)
+#     compdict[_key].update(styling)
 
-    curves.update(compdict)
+#     save_info.update(compdict)
 
-
-
-
-
-# system.run_merit_order()
+system.run_merit_order()

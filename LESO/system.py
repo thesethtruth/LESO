@@ -14,6 +14,7 @@ from LESO.pvgis import get
 import LESO.optimizer.util as util
 from LESO.optimizer.util import power
 from LESO.optimizer.util import capital_cost
+from LESO.components import FinalBalance
 
 class System():
     """
@@ -133,11 +134,23 @@ class System():
     # model chain for all procedures for running merit-order
     def run_merit_order(self):
         
+        
+        if not any([isinstance(component, FinalBalance) for component in self.components]):
+            warnings.warn(
+                "No instance of component class LESO.components.FinalBalance found. Added "+\
+                "automatically with allowance for underload."
+            )
+            self.add_components([FinalBalance(positive=True)])
+        
         print()
         print('Merit order calculation started...')
         self.fetch_input_data()
         self.calculate_time_series()
         self.calculate_merit_balance()
+
+        print('proceeding to hacky method of splitting power to pos/neg')
+        for component in self.components:
+            component.split_states()
     
     def pyomo_init_model(self, time = None):
         """

@@ -55,11 +55,6 @@ def merit_order(components, merit_order_dict, start_date):
                     balance[cmlvl] += component.state[state]
            
         cmlvl += 1
-            
-            
-        
-        
-
     
     
     
@@ -154,4 +149,11 @@ def grid_power_control(grid_instance, balance_in):
     power = power_in + power_out
     
     
+    return power
+
+def final_power_control(balance_in):
+
+    # remaining (last) balance equals power of final balance
+    power = -balance_in
+
     return power

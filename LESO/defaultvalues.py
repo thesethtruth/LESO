@@ -26,9 +26,9 @@ styling = {
 'group': 'normalized'
     }
 
-dump = dict(
+finalbalance = dict(
         # Merit order 
-        merit_tag = 'Dump',
+        merit_tag = 'finalbalance',
         styling = [
         {
             'label': 'Underload', 
@@ -41,6 +41,7 @@ dump = dict(
             'group': 'load',
         }],
         # settings
+        dof = False,
         negative = True,  # Curtail
         positive = False, # Underload
         # optimizer
@@ -57,6 +58,7 @@ pv = dict(
         'group': 'power',
         },
         # transform
+        dof = False,
         installed = 1200e3,           # Total power of the PV system in terms of DC       !DOF!
         azimuth = 180,                # Module orientation, N = 0                         !DOF!
         tilt = 15,                    # Optimum angle for max production                  !DOF!
@@ -84,6 +86,7 @@ wind = dict(
         'group': 'power',
         },
         # transform
+        dof = False,
         installed = 600e3,          # total wind power installed [W]
         cost = 2.8,                 # total cost in euros per watt installed [€/W]
         om = 12e-3,                 # OM cost per year per power [€/kWp/year]  
@@ -104,6 +107,7 @@ consumer = dict(
         },
         merit_tag = 'MM',
         # transform
+        dof = False,
         scaler = 40000e3,        # e3 = kWh
         price = 15e-5,           # e-5 = cents per kWh
         # styling
@@ -126,6 +130,7 @@ grid = dict(
             'group': 'load',
         }],
         # settings
+        dof = False,
         negative = True,    # Import
         positive = True,    # Export
         # specs
@@ -164,6 +169,7 @@ lithium = dict(
         om = 8e-3,               # e-3   €/kWp/year    OM cost
         lifetime = 10,
         # optimizer
+        dof = False,
         lower = 0,
         upper = upper_bound,
     )
@@ -187,6 +193,7 @@ fastcharger = dict(
         EV_battery = 24e3,         # e3 = kWh
         EV_consumption = 20e1,     # e1 = kWh/100km
         # optimizer
+        dof = False,
         lower = 0,
         upper = 6,
     )
@@ -226,7 +233,7 @@ merit_order = {
     "MM" : 1,
     "ESS" : 2,
     "Grid" : 3,
-    "Dump": 4,    
+    "finalbalance": 4,    
     }
 
 

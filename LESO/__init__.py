@@ -5,4 +5,5 @@ from .optimizer import util
 from .scenario import balancing
 from .pvgis import get
 from . import feedinfunctions
+from . import finance
 

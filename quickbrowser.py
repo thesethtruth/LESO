@@ -1,30 +1,31 @@
+import glob
+import json
 import os
-os.environ['OPENBLAS_NUM_THREADS'] = '32'
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 import pandas as pd
-import dash_table
 from plotly.subplots import make_subplots
 from LESO import System
 import dash_bootstrap_components as dbc
 
-# open model!
-components = []
+# function for reading current possible model runs
+def reload_component_options():
+
+    wd = os.getcwd()
+    components_raw = glob.glob(wd+'/cache/*.json')
+    extractor = lambda x: x.split('\\')[-1].replace("__", ' ').replace("T", ' ').replace(".json", '')
+    components = {extractor(x):x for x in components_raw}
+    
+    return components
 
 # options for dropdown menu
 weeks = {}
 for i in range(1,53) :
     weeks['Week {:.0f}'.format(i)] = i
 startingweek = list(weeks.values())[0]
-
-# define color scales
-
-
-# define linewidth
-linewidth = 0.3
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, 
@@ -33,7 +34,15 @@ app = dash.Dash(__name__,
                 )
 
 app.layout = html.Div([
-            html.H3("Optimization quick browsing analysis"),
+            html.H3("Results quick browsing analysis"),
+            html.P("Select a simulation run"),
+            dcc.Dropdown(
+                id= 'selected-model',
+                options = [{'label': key, 'value': value}
+                            for key, value in reload_component_options().items()],
+                value = None,
+                persistence = True
+            ),
             dcc.Graph(id="hourly"),
             html.P(['Browse through the year per weeknumber below:'
                 ], style= {"padding-left": "5%"}),
@@ -49,7 +58,7 @@ app.layout = html.Div([
                 outline=True, 
                 color="dark",
                 id = 'reload-model'),
-            html.Div(id='hidden-div', style={'display':'none'}),
+            dcc.Store(id='components-store'),
 ], className= "container")
 
 
@@ -58,66 +67,76 @@ layoutstyling = dict(
     paper_bgcolor  = 'white' ,
     )
 
-def scatter_power(fig, start, end, column, component, group, label, color):
+# plotting function
+def scatter_power(fig, start, end, serie, group, label, color):
     fig.add_trace(go.Scatter(
-        x= component.state.index[start:end],
-        y= component.state[column].iloc[start:end]/1e3,
+        x= serie.index[start:end],
+        y= serie.iloc[start:end]/1e3,
         stackgroup = group,
         mode = 'lines',
         name = label,
         line = dict(width = 0.3, color = color),
         ))
+
 @app.callback(
-    Output("hidden-div", "children"),
+    Output("components-store", "data"),
     Input("reload-model", "n_clicks"),
 )
 def reloader(n):
     if n:
-        system = System.read_pickle('cache/latest_result.pkl')
-        global components
-        components = system.components
+        components = reload_component_options()
+    
+        return components
 
 ## weekly plot on hourly resolution
 @app.callback(
     Output("hourly", "figure"), 
     Input("startingweek", "value"),
+    Input("selected-model", "value"),
 )
-def hourly(startingweek):
+def hourly(startingweek, selected_model):
     start = (startingweek-1)*168
     end = startingweek*168
     fig = go.Figure()
-    
-    for component in components:
-        _df = component.state
-
-        plot_pos = hasattr(_df, 'power [+]')
-        plot_neg = hasattr(_df, 'power [-]')
-        plot_power = hasattr(_df, 'power') and not (plot_neg or plot_pos)
-        if (_df['power']**2).sum() > 1:
-
-            if plot_pos:
-                styling = component.styling[0]
-                column = 'power [+]'
-                label = styling['label'] + f' ({component.name})'
-                group = styling['group']
-                color = styling['color']
-                scatter_power(fig, start, end, column, component, group, label, color)
-
-            if plot_neg:
-                styling = component.styling[1]
-                column = 'power [-]'
-                label = styling['label'] + f' ({component.name})'
-                group = styling['group']
-                color = styling['color']
-                scatter_power(fig, start, end, column, component, group, label, color)
+    if selected_model is None:
+        ...
+    else:
+        with open(selected_model) as json_file:
+            data = json.load(json_file)
+            sdict = data['system']
+        
+        for ckey in data.keys():
             
-            if plot_power:
-                styling = component.styling
-                column = 'power'
-                label = styling['label'] + f' ({component.name})'
-                group = styling['group']
-                color = styling['color']
-                scatter_power(fig, start, end, column, component, group, label, color)
+            if ckey == 'system':
+                break
+            cdict = data[ckey]
+
+            _df = pd.DataFrame(cdict['state'], index = sdict['dates'])
+            _df.index = _df.index = pd.to_datetime(_df.index)
+            
+            pos_serie = getattr(_df, 'power [+]', None)
+            neg_serie = getattr(_df, 'power [-]', None)
+
+
+            if pos_serie is not None:
+                if not pos_serie.sum() < 1e-5:
+                    styling = cdict['styling']
+                    styling = styling[0] if isinstance(styling, list) else styling 
+                    column = 'power [+]'
+                    label = styling['label'] + f' ({ckey})'
+                    group = styling['group']
+                    color = styling['color']
+                    scatter_power(fig, start, end, pos_serie, group, label, color)
+
+            if neg_serie is not None:
+                if not neg_serie.sum() > -1e-5:
+                    styling = cdict['styling']
+                    styling = styling[1] if isinstance(styling, list) else styling
+                    column = 'power [-]'
+                    label = styling['label'] + f' ({ckey})'
+                    group = styling['group']
+                    color = styling['color']
+                    scatter_power(fig, start, end, neg_serie, group, label, color)
 
     fig.update_layout(
         title ="Total energy balance in <b>week {startingweek}</b> on hourly resolution".format(startingweek = startingweek),
@@ -127,5 +146,5 @@ def hourly(startingweek):
         )
     return fig
 
-# if __name__ == "__main__":
-#    app.run_server(debug=True)
+if __name__ == "__main__":
+   app.run_server(debug=True)

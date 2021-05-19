@@ -18,14 +18,11 @@ states = [
 # first day of the year
 start_date = '01/01/2022'
 
-# ==================================Components=============================== #
-styling = {
-# Sinks
-'label': 'Battery SOC',
-'color': '#f25c5c',
-'group': 'normalized'
-    }
+# Financial variables that govern the whole system
+interest = 0.04
+exp_inflation_rate = 0.015
 
+# ==================================Components=============================== #
 finalbalance = dict(
         # Merit order 
         merit_tag = 'finalbalance',
@@ -47,6 +44,14 @@ finalbalance = dict(
         # optimizer
         lower = lower_bound,          # lower bound
         upper = upper_bound,          # upper bound
+        # financials
+        lifetime = None,
+        capex = 0,
+        opex = 0,
+        variable_cost = 0,
+        variable_income = 0,
+        interest = interest,
+        exp_inflation_rate = exp_inflation_rate,
     )
 
 pv = dict(
@@ -65,9 +70,6 @@ pv = dict(
         efficiency = .145,            # Total system efficiency to reach realistic values
         module_power = 325,           # STC
         module_area = 1.6,            # [m2]
-        cost = 0.6,                   # total costs in euros per watt installed
-        lifetime = 25,
-        om = 5e-3,                    # e-3   €/kWp/year    OM cost
         # unused
         t_coeff = -.37,               # [%/K]
         voc = 52,                     # [V]
@@ -75,6 +77,14 @@ pv = dict(
         # optimizer
         lower = 0,          # lower bound
         upper = upper_bound,          # upper bound
+        # financials
+        lifetime = 25,
+        capex = 0.6,
+        opex = 5e-3,
+        variable_cost = 0,
+        variable_income = 0,
+        interest = 0.02,
+        exp_inflation_rate = exp_inflation_rate,
     )
 
 wind = dict(
@@ -88,14 +98,19 @@ wind = dict(
         # transform
         dof = False,
         installed = 600e3,          # total wind power installed [W]
-        cost = 2.8,                 # total cost in euros per watt installed [€/W]
-        om = 12e-3,                 # OM cost per year per power [€/kWp/year]  
         hubheight = 120,            # h_hub hub height [m]
         roughness = 0.25,           # z0 roughness length [m]
-        lifetime = 25, 
         # optimizer
         lower = 0,
         upper = upper_bound,
+        # financials
+        lifetime = 20,
+        capex = 2.8,
+        opex = 12e-3,
+        variable_cost = 0,
+        variable_income = 0,
+        interest = 0.04,
+        exp_inflation_rate = exp_inflation_rate,
     )
 
 consumer = dict(
@@ -107,11 +122,19 @@ consumer = dict(
         },
         merit_tag = 'MM',
         # transform
-        dof = False,
         scaler = 40000e3,        # e3 = kWh
-        price = 15e-5,           # e-5 = cents per kWh
-        # styling
-        
+        # optimizer
+        dof = False,
+        upper = upper_bound,
+        lower = lower_bound,
+        # financials
+        lifetime = None,
+        capex = 0,
+        opex = 0,
+        variable_cost = 0,
+        variable_income = 15e-5,
+        interest = interest,
+        exp_inflation_rate = exp_inflation_rate,   
     )
 
 
@@ -133,10 +156,18 @@ grid = dict(
         dof = False,
         negative = True,    # Import
         positive = True,    # Export
+        upper = upper_bound,
+        lower = lower_bound,
         # specs
         installed = 200e3,       # grid connection
-        price = 25e-6,           # e-6 = euros per MWh          INCOME of export
-        cost = 12.5e-5,          # e-5 = cents per kWh          COST of import
+        # financials
+        lifetime = None,
+        capex = 0,
+        opex = 0,
+        variable_cost = 12.5e-5,
+        variable_income = 25e-6,
+        interest = interest,
+        exp_inflation_rate = exp_inflation_rate,
     )
 
 
@@ -162,16 +193,23 @@ lithium = dict(
         # specs
         installed = 1000e3,      # 1000 kWh installed capacity
         EP_ratio = 1.25,         # ratio of energy to power
-        cost = 280e-3,           # total cost in euros per watthours installed
         startingSOC = .7,        # Starting SOC
         cycles = 1000,           # Maximum hardcycles for life time
         discharge_hurt = 0.7,    # Maximum discharge power before the hurt
-        om = 8e-3,               # e-3   €/kWp/year    OM cost
-        lifetime = 10,
         # optimizer
         dof = False,
         lower = 0,
+        positive = True,
+        negative = True,
         upper = upper_bound,
+        # financials
+        lifetime = 10,
+        capex = 280e-3,
+        opex = 8e-3,
+        variable_cost = 2.8e-9,
+        variable_income = 2.8e-9,
+        interest = interest,
+        exp_inflation_rate = exp_inflation_rate,
     )
 
 fastcharger = dict(
@@ -186,9 +224,6 @@ fastcharger = dict(
         maxpower = 150e3,        # maximum charger power (change CARSPERHOUR)
         carsperhour = 4,         # Change MANUALLY based on ^^^ !!!
         efficiency = 0.85,       # DC fast charging reference
-        price = 35e-5,           # e-5 = cents per kWh
-        cost = 65e3,             # Euros per carger DC fast charging unit
-        lifetime = 15,
         # related to EV 
         EV_battery = 24e3,         # e3 = kWh
         EV_consumption = 20e1,     # e1 = kWh/100km
@@ -196,6 +231,14 @@ fastcharger = dict(
         dof = False,
         lower = 0,
         upper = 6,
+        # financials
+        lifetime = 15,
+        capex = 65e3,
+        opex = 0,
+        variable_cost = 0,
+        variable_income = 35e-5,
+        interest = interest,
+        exp_inflation_rate = exp_inflation_rate,
     )
 
 
@@ -235,12 +278,6 @@ merit_order = {
     "Grid" : 3,
     "finalbalance": 4,    
     }
-
-
-
-
-
-
 
 
 

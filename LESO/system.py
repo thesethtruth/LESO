@@ -15,8 +15,9 @@ import LESO.defaultvalues as defs
 from LESO.pvgis import get
 import LESO.optimizer.util as util
 from LESO.optimizer.util import power
-from LESO.optimizer.util import capital_cost
+from LESO.optimizer.util import set_objective
 from LESO.components import FinalBalance
+from LESO.test import attribute_test
 
 class System():
     """
@@ -66,6 +67,7 @@ class System():
     def add_components(self, component_itterable):
         
         for component in component_itterable:
+            attribute_test(component)
             self.components.append(component)
         
         # sort based on merit
@@ -134,7 +136,9 @@ class System():
     
     
     # model chain for all procedures for running merit-order
-    def run_merit_order(self):
+    def merit_order(self, store=True, filepath=None):
+
+        self.last_call = 'merit_order'
         
         
         if not any([isinstance(component, FinalBalance) for component in self.components]):
@@ -150,9 +154,9 @@ class System():
         self.calculate_time_series()
         self.calculate_merit_balance()
 
-        print('proceeding to hacky method of splitting power to pos/neg')
-        for component in self.components:
-            component.split_states()
+        if store:
+            self.to_json(filepath=filepath)
+
     
     def pyomo_init_model(self, time = None):
         """
@@ -160,7 +164,7 @@ class System():
         DOF variables as needed. 
         """
         
-        self.constraint_ID = 'constraints'
+        
         if time is None:
             # times
             year = 8760 #h
@@ -201,11 +205,9 @@ class System():
     
     def pyomo_add_objective(self, objective = None):
 
-        self.model.capitalcost = pyo.Objective(
-                            expr = sum(capital_cost(self.model, component) for component in self.components), 
-                            sense = pyo.minimize)
+        return set_objective(self, objective)
     
-    def pyomo_solve(self, store = True, solver = 'gurobi', noncovex = False):
+    def pyomo_solve(self, solver = 'gurobi', noncovex = False):
 
         opt = pyo.SolverFactory(solver)
         if noncovex:
@@ -249,38 +251,49 @@ class System():
                 
                 
         print()
-        print('Total system cost (objective)= ', round(value(model.capitalcost)/1e3,1), 'k€')
-        self.cost = value(model.capitalcost)
+        print('Total system cost (objective)= ', round(value(model.objective)/1e3,1), 'k€')
+        self.cost = value(model.objective)
 
+    def optimize(
+            self, 
+            objective='tco',
+            time=None,
+            store=False,
+            filepath=None,
+            solve=True,
+            solver='gurobi',
+            nonconvex=False
+            ):
+        """
 
-        self.to_pickle()
-
-    def pyomo_go(self, solve = True, **kwargs):
-        
+        """
+        self.last_call = 'optimize'
         # load TMY
         self.fetch_input_data()
 
         # Issue the command for every component to calculate its feed-in on TMY data
         self.calculate_time_series()
 
-        time = kwargs.get('time', None)
         self.pyomo_init_model(time = time)
 
         self.pyomo_constuct_constraints()
 
         self.pyomo_power_balance()
 
-        self.pyomo_add_objective()
+        self.pyomo_add_objective(objective=objective)
         
         if solve:
-            self.pyomo_solve()
+            self.pyomo_solve(solver=solver,noncovex=nonconvex)
+        
+        if store:
+            self.to_json(filepath=filepath)
     
     def pyomo_print(self):
         
         # set time to 1 for readable prints of constraints
         time = [0]
 
-        self.pyomo_go(solve=False, time = time)
+        self.optimize(solve=False, time = time)
 
         self.model.pprint()
 
@@ -324,6 +337,11 @@ class System():
         return loaded_model_instance
     
     def to_json(self, filepath=None):
+
+        
+        print('proceeding to hacky method of splitting power to pos/neg')
+        for component in self.components:
+            component.split_states()
         
         # small helper function
         def _date_to_string(component):
@@ -339,7 +357,8 @@ class System():
                 {
                 'state': {column: state[column].values.tolist() for column in state.columns if column != 'power'},
                 'styling': component.styling,
-                'settings': { key: getattr(component, key) for key in component.default_values if key != 'styling'}
+                'settings': { key: getattr(component, key) for key in component.default_values if key != 'styling'},
+                'name': component.name,
                 }
             }
             styling = dict(styling = component.styling)
@@ -352,7 +371,8 @@ class System():
             {
             'dates': _date_to_string(self.components[0]),
             'name': self.name,
-            'date': datetime.now().isoformat()
+            'date': datetime.now().isoformat(),
+            'last_call': self.last_call
             }
         }
 
@@ -361,7 +381,8 @@ class System():
         if filepath is None:
             name = save_info['system']['name'].replace("\/:*?<>|",'')
             date =  save_info['system']['date'][:17].replace(':','')
-            filepath = f"cache/{name}__{date}.json"
+            last_call = self.last_call
+            filepath = f"cache/{name}__{date}__{last_call}.json"
         
         with open(filepath, "w") as outfile: 
             json.dump(save_info, outfile)

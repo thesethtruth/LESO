@@ -1,3 +1,4 @@
+from LESO.finance import functionmapper
 import pyomo.environ as pyo
 import numpy as np
 import LESO
@@ -5,10 +6,9 @@ import LESO
 def init_model(system, model, time):
 
     # Initialize constraint list
-    constraint_ID = model.constraint_ID
-    if not hasattr(model, constraint_ID):
-            setattr(model, constraint_ID, pyo.ConstraintList())
-
+    if not hasattr(model, model.constraint_ID):
+            setattr(model, model.constraint_ID, pyo.ConstraintList())
+    
     for component in system.components:
         
         key = component.__str__()
@@ -17,7 +17,10 @@ def init_model(system, model, time):
         if component.dof:
             _var = pyo.Var(bounds=(0, component.upper))
             _varkey = '_size'
+            # set the pyoVar to the model
             setattr(model, key+_varkey, _var)
+            # create a pointer to the var from the respc. component
+            setattr(component, 'pyoVar', getattr(model, key+_varkey)) 
 
         # power-control
         if hasattr(component, 'power_control'):
@@ -225,10 +228,10 @@ def capital_cost(model, component):
     if component.dof:
 
         size = getattr(model, key+'_size')
-        cost = component.cost/lifetime * size
+        cost = component.capex/lifetime * size
 
     elif hasattr(component, 'installed') and hasattr(component, 'cost'):
-        cost = component.cost/lifetime * component.installed
+        cost = component.capex/lifetime * component.installed
     
     else:
 
@@ -238,16 +241,32 @@ def capital_cost(model, component):
         exportp = getattr(model, key+'_Pneg')
         importp = getattr(model, key+'_Ppos')
 
-        cost = sum(exportp[t] * component.price +\
-                    importp[t] * component.cost for t in time)
+        cost = sum(exportp[t] * component.variable_income +\
+                    importp[t] * component.variable_cost for t in time)
 
     if isinstance(component, LESO.Lithium):
 
         P = getattr(model, key+'_P')
-        cost += sum((P[t])**2*component.cost/1e8 for t in time)
+        cost += sum((P[t])**2*component.variable_cost for t in time)
 
     return cost
 
+def set_objective(eM, objective):
+    # energyModel = eM
+    # objective is the sort of objective capital cost, tco, lcoe
+    # functionmapper is a dict-switch
+    
+    objective = objective.lower()
+    objective = functionmapper(objective)
+
+    eM.model.objective = pyo.Objective(
+                            expr=sum(
+                                objective(component, eM.model) 
+                                for component in eM.components
+                                ),
+                            sense=pyo.minimize
+    )
+    pass
 
 
 

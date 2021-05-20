@@ -18,6 +18,7 @@ from LESO.optimizer.util import power
 from LESO.optimizer.util import set_objective
 from LESO.components import FinalBalance
 from LESO.test import attribute_test
+from LESO.finance import set_finance_variables
 
 class System():
     """
@@ -50,17 +51,21 @@ class System():
             name (__str__) in binary format
     """
     
-    def __init__(self, latitude, longitude, model_name = 'LESO model'):
+    def __init__(self, latitude, longitude, model_name='LESO model'):
         
         self.latitude = latitude
         self.longitude = longitude
         self.name = model_name
         self.merit_order_dict = defs.merit_order
         self.start_date = defs.start_date
-        
         self.components = list()
         
-        
+        # financials
+        self.lifetime = defs.system_lifetime
+        self.interest = defs.interest
+        self.exp_inflation_rate = defs.exp_inflation_rate
+        set_finance_variables(self)
+
     def __str__(self):
         return self.name
     

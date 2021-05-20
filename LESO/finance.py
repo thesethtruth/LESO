@@ -44,30 +44,38 @@ def crf(interest, lifetime):
 
     return ci
 
-def annuity(interest, lifetime):
-    """
-    Annuity
-    """
-    pass
-
 def roi():
     """
     Return On Investment
     """
     pass
 
-def tco(component, pM):
+def tco(component, eM):
     """
     Total Cost of Ownership
     """
-
-    unit_capex = component.crf * component.capex
-    unit_opex = component.opex
-    pyoVar = component.pyoVar
-    variable_cost = component.get_variable_cost(pM)
+    pM = eM.model
+    system = eM
     
-    objective = (unit_capex + unit_opex)*pyoVar + variable_cost
-
+    if component.capex != 0:
+        unit_capex =    component.capex + (
+                        system.lifetime - component.lifetime ) / (
+                        component.lifetime ) * component.replacement
+                        # linear replacement assumption
+    else:
+        unit_capex = 0
+    
+    lifetime_opex = component.opex * system.lifetime
+    pyoVar = component.pyoVar
+    lifetime_variable_cost = component.get_variable_cost(pM) * system.lifetime
+    
+    objective = system.crf*(
+                (unit_capex + lifetime_opex)*pyoVar +
+                lifetime_variable_cost
+                )
+                # use crf to discount all cashflows over the system lifetime
+                # and come to annualized cash flows
+    
     return objective
 
 def lcoe():
@@ -86,3 +94,14 @@ def functionmapper(objective):
 
     return sdict[objective]
 
+def set_finance_variables(obj):
+
+    f = obj.exp_inflation_rate
+    i = obj.interest
+    l = obj.lifetime
+
+    if l is not None and l != 0:
+        obj.rdr = rdr(i, f)
+        r = obj.rdr
+        obj.crf = crf(r, l)
+        obj.annuity = 1/obj.crf

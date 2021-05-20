@@ -4,10 +4,6 @@
 
 # required packages
 from warnings import WarningMessage
-
-from pyomo.core.base.component import _name_index_generator
-from LESO.finance import annuity, crf, rdr
-from typing import final
 import pandas as pd
 import numpy as np
 
@@ -20,6 +16,7 @@ import LESO.defaultvalues as defs
 import LESO.feedinfunctions as feedinfunctions
 import LESO.functions as functions
 import LESO.optimizer.util as util
+from LESO.finance import set_finance_variables
 
 
 class Component:
@@ -64,21 +61,6 @@ class Component:
 
         pass
 
-    def set_finance_variables(self):
-
-        minimal_finance = []
-
-        f = defs.exp_inflation_rate
-        i = defs.interest
-        
-        if hasattr(self, 'lifetime'):
-            l = self.lifetime
-            self.rdr = rdr(i, f)
-            r = self.rdr
-            self.crf = crf(r, l)
-            self.annuity = annuity(r, l)
-        pass
-
     @property
     def control_states(self):
         return {key: 0 for key in self.states}
@@ -91,6 +73,12 @@ class Component:
     
     def get_variable_cost(self, pM):
         return NotImplemented
+    
+    @property
+    def replacement(self):
+        return 0.5 * self.capex
+
+
 
 
 #%%
@@ -141,7 +129,7 @@ class PhotoVoltaic(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
         # Initiate the financial variables
-        self.set_finance_variables()
+        set_finance_variables(self)
 
 
         PhotoVoltaic.instances += 1
@@ -181,7 +169,7 @@ class FinalBalance(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
         # Initiate the financial variables
-        self.set_finance_variables()
+        set_finance_variables(self)
 
         self.name = self.__str__()
 
@@ -213,7 +201,7 @@ class Wind(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
         # Initiate the financial variables
-        self.set_finance_variables()
+        set_finance_variables(self)
 
         Wind.instances += 1
         self.number = Wind.instances
@@ -242,7 +230,7 @@ class Lithium(Storage):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
         # Initiate the financial variables
-        self.set_finance_variables()
+        set_finance_variables(self)
 
         Lithium.instances += 1
         self.number = Lithium.instances
@@ -295,7 +283,7 @@ class FastCharger(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
         # Initiate the financial variables
-        self.set_finance_variables()
+        set_finance_variables(self)
 
         FastCharger.instances += 1
         self.number = Lithium.instances
@@ -323,7 +311,7 @@ class Consumer(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
         # Initiate the financial variables
-        self.set_finance_variables()
+        set_finance_variables(self)
 
         Consumer.instances += 1
         self.number = Lithium.instances
@@ -352,7 +340,7 @@ class Grid(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
         # Initiate the financial variables
-        self.set_finance_variables()
+        set_finance_variables(self)
 
         Grid.instances += 1
         self.number = Grid.instances

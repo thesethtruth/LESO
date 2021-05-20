@@ -5,7 +5,7 @@ Default value vault
 # Often-used variables
 lower_bound = -1e7
 upper_bound = 1e7
-
+system_lifetime = 25
 
 # Used to create an empty state data-frame in every component
 states = [
@@ -206,7 +206,7 @@ lithium = dict(
         lifetime = 10,
         capex = 280e-3,
         opex = 8e-3,
-        variable_cost = 2.8e-9,
+        variable_cost = 2.8e-12,
         variable_income = 2.8e-9,
         interest = interest,
         exp_inflation_rate = exp_inflation_rate,

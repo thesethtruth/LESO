@@ -1,36 +1,18 @@
-import glob
+# quickbrowser.py
+import appfunctions as af
+
 import json
-import os
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
-import pandas as pd
-from plotly.subplots import make_subplots
-from LESO import System
 import dash_bootstrap_components as dbc
-
-# function for reading current possible model runs
-def reload_component_options():
-
-    wd = os.getcwd()
-    components_raw = glob.glob(wd+'/cache/*.json')
-    extractor = lambda x: x.split('\\')[-1].replace("__", ' ').replace("T", ' ').replace(".json", '')
-    components = {extractor(x):x for x in components_raw}
-    
-    return components
-
-# options for dropdown menu
-weeks = {}
-for i in range(1,53) :
-    weeks['Week {:.0f}'.format(i)] = i
-startingweek = list(weeks.values())[0]
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, 
                 external_stylesheets=external_stylesheets,
-                title= 'Quick browser'
+                title= 'LESO results browser'
                 )
 
 app.layout = html.Div([
@@ -39,112 +21,115 @@ app.layout = html.Div([
             dcc.Dropdown(
                 id= 'selected-model',
                 options = [{'label': key, 'value': value}
-                            for key, value in reload_component_options().items()],
-                value = None,
-                persistence = True
+                            for key, value in af.load_component_options().items()],
+                value = list(af.load_component_options().values())[0],
+                persistence = False
             ),
+            html.P("Select a component to assess"),
+            dcc.Dropdown(
+                id = 'selected-component',
+                value = None, 
+                persistence = False,
+            ),
+            dbc.Table(id='component-table'),
             dcc.Graph(id="hourly"),
             html.P(['Browse through the year per weeknumber below:'
                 ], style= {"padding-left": "5%"}),
             dcc.Slider(
                 id='startingweek',
-                min = min(weeks.values()),
-                max = max(weeks.values()),
-                value= startingweek,
+                min = min(af.weeks.values()),
+                max = max(af.weeks.values()),
+                value= af.startingweek,
                 persistence=False
             ),
-            dbc.Button(
-                "Reload model results", 
-                outline=True, 
-                color="dark",
-                id = 'reload-model'),
-            dcc.Store(id='components-store'),
+            html.H3(
+                id="figure-2-title",
+                style={
+                    'textAlign': 'center',
+                }),
+            dcc.Graph(id="figure-2"),
+            html.P("Select a figure to display"),
+            dcc.Dropdown(
+                id= 'selected-figure-2',
+                options = [{'label': value['display-text'], 'value': key}
+                            for key, value in af.figure_2_options.items()],
+                value = list(af.figure_2_options.keys())[0],
+                persistence = False
+            ),
+            dcc.Store(
+                id='data-store',
+                data = dict(),
+            ),
 ], className= "container")
 
-
-# styling options
-layoutstyling = dict(
-    paper_bgcolor  = 'white' ,
-    )
-
-# plotting function
-def scatter_power(fig, start, end, serie, group, label, color):
-    fig.add_trace(go.Scatter(
-        x= serie.index[start:end],
-        y= serie.iloc[start:end]/1e3,
-        stackgroup = group,
-        mode = 'lines',
-        name = label,
-        line = dict(width = 0.3, color = color),
-        ))
-
+## reads associated JSON file and stores to react app 
+## (this allows for sharing between callbacks)
 @app.callback(
-    Output("components-store", "data"),
-    Input("reload-model", "n_clicks"),
-)
-def reloader(n):
-    if n:
-        components = reload_component_options()
-    
-        return components
-
-## weekly plot on hourly resolution
-@app.callback(
-    Output("hourly", "figure"), 
-    Input("startingweek", "value"),
+    Output("data-store", "data"),
     Input("selected-model", "value"),
 )
-def hourly(startingweek, selected_model):
-    start = (startingweek-1)*168
-    end = startingweek*168
-    fig = go.Figure()
+def data_store(selected_model):
+
     if selected_model is None:
         ...
     else:
         with open(selected_model) as json_file:
             data = json.load(json_file)
-            sdict = data['system']
-        
-        for ckey in data.keys():
-            
-            if ckey == 'system':
-                break
-            cdict = data[ckey]
+        return data
 
-            _df = pd.DataFrame(cdict['state'], index = sdict['dates'])
-            _df.index = _df.index = pd.to_datetime(_df.index)
-            
-            pos_serie = getattr(_df, 'power [+]', None)
-            neg_serie = getattr(_df, 'power [-]', None)
+## hourly profile plot
+@app.callback(
+    Output("hourly", "figure"), 
+    Input("startingweek", "value"),
+    Input("data-store", "data"),
+)
+def profile_plot(startingweek, data):
+    
+    fig = af.make_profile_plot(startingweek, data)
 
-
-            if pos_serie is not None:
-                if not pos_serie.sum() < 1e-5:
-                    styling = cdict['styling']
-                    styling = styling[0] if isinstance(styling, list) else styling 
-                    column = 'power [+]'
-                    label = styling['label'] + f' ({ckey})'
-                    group = styling['group']
-                    color = styling['color']
-                    scatter_power(fig, start, end, pos_serie, group, label, color)
-
-            if neg_serie is not None:
-                if not neg_serie.sum() > -1e-5:
-                    styling = cdict['styling']
-                    styling = styling[1] if isinstance(styling, list) else styling
-                    column = 'power [-]'
-                    label = styling['label'] + f' ({ckey})'
-                    group = styling['group']
-                    color = styling['color']
-                    scatter_power(fig, start, end, neg_serie, group, label, color)
-
-    fig.update_layout(
-        title ="Total energy balance in <b>week {startingweek}</b> on hourly resolution".format(startingweek = startingweek),
-        xaxis_title="Day of the year",
-        yaxis_title="Hourly power [KWh/h]",
-        plot_bgcolor  = 'white',
-        )
     return fig
+
+## second figure callback
+@app.callback(
+    Output("figure-2", "figure"), 
+    Output("figure-2-title", "children"),
+    Input("data-store", "data"),
+    Input("selected-figure-2", "value"),
+)
+def figure2(data, selected_fig):
+    if selected_fig is not None:
+        
+        fig_factory = af.figure_2_options[selected_fig]['function']
+        fig = fig_factory(data)
+        title = af.figure_2_options[selected_fig]['display-text']
+        
+        return fig, title
+
+## component browser dropdown populator
+@app.callback(
+    Output("selected-component", "options"),
+    Input("data-store", "data")
+)
+def component_dropdown(data):
+
+    name = lambda key: data[key]['name'] + f' ({key})'
+    options = [{'label': name(key), 'value': key}
+                for key in data.keys()]
+    options.insert(0,{'label': 'None', 'value': 'null'})
+
+    return options
+
+## component table callback
+@app.callback(
+    Output("component-table","children"),
+    Input("selected-component","value"),
+    Input("data-store", "data"),
+)
+def component_table(ckey, data):
+    
+    table = af.make_component_table(ckey, data)
+    
+    return table
 
 if __name__ == "__main__":
    app.run_server(debug=True)

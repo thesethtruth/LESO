@@ -186,38 +186,62 @@ def direct_power_control_constraints(model, component):
 def power(model, component, t):
     
     key = component.__str__()
+    size = component.pyoVar # returns 1 or pyo.Var()
     
-    if component.dof:
-        size = getattr(model, key+'_size')
-    
-
-    # power is controlable (battery, grid)
+    # dispatchable power --> always pyo.IndexVar()
     if hasattr(component, 'power_control'):
         
         power = getattr(model, key+'_P')
         
         ppower = power[t]
-            
-    # must-meet loads (charger, consumer)
-    elif component.merit_tag == 'MM':
-        ppower = component.state.power[t] 
-    
-    # is VRE (wind, pv)
-    elif component.merit_tag == 'VRE':
-        
-        # VRE component is a dof
-        if component.dof:
-            ppower = size*\
-                      component.state.power[t] 
-        
-        # VRE component is not a dof, use installed capacity
-        else:
-              ppower = component.installed*\
-                      component.state.power[t] 
-        
+
+    # all other components are either scaled by 1 or pyo.Var()
+    else:
+        ppower = size*\
+                    component.state.power[t]
+
     return ppower
 
+def set_objective(eM, objective):
+    # energyModel = eM
+    # objective is the sort of objective capital cost, tco, lcoe
+    # functionmapper is a dict-switch
+    
+    objective = objective.lower()
+    objective = functionmapper(objective)
 
+    eM.model.objective = pyo.Objective(
+                            expr=sum(
+                                objective(component, eM) 
+                                for component in eM.components
+                                ),
+                            sense=pyo.minimize
+    )
+    pass
+
+
+
+def _key_setter(model, _varkey, key, component):
+
+    mapper = {
+        '_P': 'power',
+        '_Ppos': 'power [+]',
+        '_Pneg': 'power [-]',
+        '_E': 'energy',
+    }
+
+    _keyname = mapper.get(_varkey, None)
+    
+    if _keyname is None:
+        raise NotImplementedError(f'Key "{_varkey}"does not exist in mapper.') 
+
+    _modelvar = getattr(model, key+_varkey)
+    
+    _keypair = (_keyname, _modelvar)
+
+    component.keylist.append(_keypair)
+
+###-----------------------------------|| unused ||-------------------------------------###
 def capital_cost(model, component):
 
     key = component.__str__()
@@ -250,42 +274,3 @@ def capital_cost(model, component):
         cost += sum((P[t])**2*component.variable_cost for t in time)
 
     return cost
-
-def set_objective(eM, objective):
-    # energyModel = eM
-    # objective is the sort of objective capital cost, tco, lcoe
-    # functionmapper is a dict-switch
-    
-    objective = objective.lower()
-    objective = functionmapper(objective)
-
-    eM.model.objective = pyo.Objective(
-                            expr=sum(
-                                objective(component, eM.model) 
-                                for component in eM.components
-                                ),
-                            sense=pyo.minimize
-    )
-    pass
-
-
-
-def _key_setter(model, _varkey, key, component):
-
-    mapper = {
-        '_P': 'power',
-        '_Ppos': 'power [+]',
-        '_Pneg': 'power [-]',
-        '_E': 'energy',
-    }
-
-    _keyname = mapper.get(_varkey, None)
-    
-    if _keyname is None:
-        raise NotImplementedError(f'Key "{_varkey}"does not exist in mapper.') 
-
-    _modelvar = getattr(model, key+_varkey)
-    
-    _keypair = (_keyname, _modelvar)
-
-    component.keylist.append(_keypair)

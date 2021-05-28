@@ -1,6 +1,6 @@
 from os import name
 from LESO import System
-from LESO import PhotoVoltaic, Wind, Lithium, FastCharger, Consumer, Grid, FinalBalance
+from LESO import PhotoVoltaic, PhotoVoltaicAdvanced, Wind, Lithium, FastCharger, Consumer, Grid, FinalBalance
 import pyomo.environ as pyo
 
 
@@ -34,3 +34,4 @@ system.optimize(
             nonconvex=False,        # solver option (warning will show if needed)
             solve=True,             # solve or just create model
 )
+

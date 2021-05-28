@@ -153,6 +153,35 @@ class PhotoVoltaic(SourceSink):
 
         self.state.power = feedinfunctions.PVpower(self, tmy)
 
+class PhotoVoltaicAdvanced(SourceSink):
+
+    instances = 0
+
+    # read default values
+    default_values = defs.pva
+    states = ["power"]
+
+    def __init__(self, name, **kwargs):
+
+        # Set default values as instance attribute
+        self.default()
+        # Let custom component setter handle the custom values
+        self.custom(**kwargs)
+        # Initiate the financial variables
+        set_finance_variables(self)
+
+
+        PhotoVoltaicAdvanced.instances += 1
+        self.number = PhotoVoltaicAdvanced.instances
+        self.name = name
+
+    def __str__(self):
+        return "pva{number}".format(number=self.number)
+
+    def calculate_time_serie(self, tmy):
+        
+        self.state.power = feedinfunctions.PVlibwrapper(self, tmy)
+
 
 class FinalBalance(SourceSink):
 

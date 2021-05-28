@@ -1,7 +1,92 @@
 import pandas as pd
 from pvlib import irradiance
 from pvlib import location
+import pvlib
 import numpy as np
+from pvlib.pvsystem import PVSystem
+from pvlib.tracking import SingleAxisTracker
+from pvlib.location import Location
+from pvlib.modelchain import ModelChain
+from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
+
+def PVlibwrapper(
+            PV_instance, 
+            tmy,
+            return_model_object=False
+):
+    PV = PV_instance
+    
+    tmy.site = Location(tmy.lat, tmy.lon)
+    
+    cec_inverters = pvlib.pvsystem.retrieve_sam('cecinverter')
+    cec_modules = pvlib.pvsystem.retrieve_sam('CECMod')
+
+    # default: Jinko Solar Co Ltd JKM350M 72 V
+    module = cec_modules[PV.module] 
+
+    # default: Huawei Technologies Co Ltd SUN2000 100KTL USH0 800V
+    cec_inverter = cec_inverters[PV.inverter]
+    
+    temperature_model_parameters = TEMPERATURE_MODEL_PARAMETERS['sapm']['open_rack_glass_glass']
+    
+    if PV.tracking:
+        system = SingleAxisTracker(
+                        axis_tilt=0, 
+                        axis_azimuth=PV.azimuth,
+                        module_parameters=module,
+                        inverter_parameters=cec_inverter,
+                        temperature_model_parameters=temperature_model_parameters,
+                        strings_per_inverter=PV.strings_per_inverter,
+                        modules_per_string=PV.modules_per_string,
+        )
+        losses_model = 'no_loss'
+    else:
+        system = PVSystem(
+                    surface_tilt=PV.tilt, 
+                    surface_azimuth=PV.azimuth,
+                    module_parameters=module,
+                    inverter_parameters=cec_inverter,
+                    temperature_model_parameters=temperature_model_parameters,
+                    strings_per_inverter=PV.strings_per_inverter,
+                    modules_per_string=PV.modules_per_string,
+        )
+        losses_model = 'pvwatts'
+
+    total_module_power = PV.strings_per_inverter * PV.modules_per_string * module['STC']
+    
+    mc = ModelChain(
+        system, 
+        tmy.site,
+        aoi_model='ashrae',
+        spectral_model='no_loss',
+        losses_model=losses_model,
+        transposition_model='perez'
+    )
+    mc.run_model(PVweather(tmy))
+
+    normalized_power = mc.ac / total_module_power
+    scaled_power = normalized_power * PV.installed
+    # reset index
+    scaled_power.index = PV.state.index
+
+    if return_model_object:
+        return mc, scaled_power
+    else:
+        return scaled_power
+
+def PVweather(tmy):
+    
+    weather = tmy.copy(deep=True)
+    weather.drop(
+        labels=weather.columns[[1,5,7,8,9,10]], 
+        axis=1,
+        inplace=True
+    )
+    
+    weather.columns=['temp_air', 'ghi', 'dni', 'dhi', 'wind_speed']
+
+    return weather
+
 
 def PVpower(PV_instance, tmy):
     """

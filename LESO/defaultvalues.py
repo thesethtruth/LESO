@@ -3,6 +3,10 @@ Default value vault
     contains the default values to run the main code
 """
 # Often-used variables
+from pvlib import tracking
+from LESO.feedinfunctions import bifacial
+
+
 lower_bound = -1e7
 upper_bound = 1e7
 system_lifetime = 25
@@ -113,6 +117,39 @@ pva = dict(
         # financials
         lifetime = 25,
         capex = 0.6,
+        opex = 5e-3,
+        variable_cost = 0,
+        variable_income = 0,
+        interest = 0.02,
+        exp_inflation_rate = exp_inflation_rate,
+    )
+
+pvb = dict(
+        # Merit order 
+        merit_tag = 'VRE',
+        styling = {
+        'label': 'Bifacial PV power', 
+        'color': '#ebd25b',
+        'group': 'power',
+        },
+        # transform
+        dof = False,
+        installed = 5000e3,           # Total power of the PV system in terms of DC       !DOF!
+        azimuth = 180,                # Module orientation, N = 0                         !DOF!
+        tilt = 15,                    # Optimum angle for max production
+        tracking = False,                  
+        # browse CEC files using pvlib to change the system
+        module = 'Jinko_Solar_Co___Ltd_JKM350M_72_V',
+        inverter = 'Huawei_Technologies_Co___Ltd___SUN2000_100KTL_USH0__800V_',
+        strings_per_inverter = 12,
+        modules_per_string = 28,
+        bifacial_factor = 0.8,
+        # optimizer
+        lower = 0,                    # lower bound
+        upper = upper_bound,          # upper bound
+        # financials
+        lifetime = 25,
+        capex = 0.75,
         opex = 5e-3,
         variable_cost = 0,
         variable_income = 0,

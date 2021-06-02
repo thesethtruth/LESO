@@ -8,6 +8,7 @@ from pvlib.tracking import SingleAxisTracker
 from pvlib.location import Location
 from pvlib.modelchain import ModelChain
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
+import LESO
 
 def PVlibwrapper(
             PV_instance, 
@@ -62,7 +63,21 @@ def PVlibwrapper(
         losses_model=losses_model,
         transposition_model='perez'
     )
-    mc.run_model(PVweather(tmy))
+
+    if hasattr(PV, 'bifacial_irradiance'):
+        mc.run_model_from_effective_irradiance(PV.bifacial_irradiance)
+        print()
+        print()
+        print(f'{PV.name} triggered run_from')
+        print()
+        print()
+    else:
+        mc.run_model(PVlibweather(tmy))
+        print()
+        print()
+        print(f'{PV.name} triggered run_model')
+        print()
+        print()
 
     normalized_power = mc.ac / total_module_power
     scaled_power = normalized_power * PV.installed
@@ -74,7 +89,58 @@ def PVlibwrapper(
     else:
         return scaled_power
 
-def PVweather(tmy):
+def bifacial(PV_instance,
+            tmy,
+            return_model=False):
+    
+    PV = PV_instance
+
+    # get weather in correct format
+    weather = PVlibweather(tmy)
+    # define site location for getting solar positions    
+    tmy.site = location.Location(tmy.lat, tmy.lon, tmy.tz)
+    # Get solar azimuth and zenith to pass to the transposition function
+    sun = tmy.site.get_solarposition(times=tmy.index)
+    # utility dataframe to supply arguments in correct dimensions
+    setup = pd.DataFrame(index=tmy.index)
+    setup['azimuth'] = 90
+    setup['tilt'] = 90
+    setup['axis'] = 0
+
+    poa_front, poa_back, front, back = pvlib.bifacial.pvfactors_timeseries( solar_azimuth=sun.azimuth,
+                                                    solar_zenith=sun.zenith,
+                                                    surface_azimuth=setup.azimuth,
+                                                    surface_tilt=setup.tilt,
+                                                    axis_azimuth=setup.axis,
+                                                    timestamps=tmy.index,
+                                                    dni=weather.dni,
+                                                    dhi=weather.dhi,
+                                                    gcr=0.55,
+                                                    pvrow_height=2,
+                                                    pvrow_width=4,
+                                                    albedo=0.23,
+                                                    n_pvrows=3,
+                                                    index_observed_pvrow=1,
+                                                    rho_front_pvrow=0.03,
+                                                    rho_back_pvrow=0.05,
+                                                    horizon_band_angle=15.0)
+
+    front.index, back.index = PV.state.index, PV.state.index
+    
+    front.fillna(0, inplace=True)
+    back.fillna(0, inplace=True)
+    effective = front + back*PV.bifacial_factor
+    poa = poa_front
+    bifacial_irradiance = pd.DataFrame(index=PV.state.index)
+    bifacial_irradiance['effective_irradiance'] = pd.Series(effective, index = PV.state.index)
+    bifacial_irradiance['poa_global'] = pd.Series(poa, index = PV.state.index)
+    bifacial_irradiance['wind_speed'] = pd.Series(tmy['WS10m'].values, index = PV.state.index)
+    bifacial_irradiance['temp_air'] = pd.Series(tmy['T2m'].values, index = PV.state.index)
+
+
+    return bifacial_irradiance
+
+def PVlibweather(tmy):
     
     weather = tmy.copy(deep=True)
     weather.drop(
@@ -171,7 +237,7 @@ def windpower(wind_instance, tmy):
 def _calculate_poa(tmy, PV):
     """
     Input:      tmy irradiance data
-    Output:     tmy['POA'] -- plane of array
+    Output:     PV.poa -- plane of array
     
     Remember, PV GIS (C) defines the folowing:
     G(h): Global irradiance on the horizontal plane (W/m2)                        === GHI 

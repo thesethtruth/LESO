@@ -234,6 +234,29 @@ consumer = dict(
         exp_inflation_rate = exp_inflation_rate,   
     )
 
+etmdemand = dict(
+        # Merit order 
+        styling = {
+        'label': 'Consumption load', 
+        'color': '#f5645f',
+        'group': 'load',
+        },
+        merit_tag = 'MM',
+        # optimizer
+        dof = False,
+        upper = upper_bound,
+        lower = lower_bound,
+        # financials
+        lifetime = None,
+        capex = 0,
+        opex = 0,
+        variable_cost = 0,
+        variable_income = 0,
+        interest = interest,
+        exp_inflation_rate = exp_inflation_rate,   
+    )
+
+
 
 grid = dict(
         # Merit order 
@@ -377,5 +400,49 @@ merit_order = {
     }
 
 
+generation_whitelist = [
+    'buildings_solar_pv_solar_radiation.output (MW)',
+    'energy_chp_combined_cycle_network_gas.output (MW)',
+    'energy_chp_local_engine_biogas.output (MW)',
+    'energy_chp_local_engine_network_gas.output (MW)',
+    'energy_chp_local_wood_pellets.output (MW)',
+    'energy_chp_supercritical_waste_mix.output (MW)',
+    'energy_flexibility_curtailment_electricity.output (MW)',
+    'energy_flexibility_hv_opac_electricity.output (MW)',
+    'energy_flexibility_mv_batteries_electricity.output (MW)',
+    'energy_flexibility_pumped_storage_electricity.output (MW)',
+    'energy_heat_flexibility_p2h_boiler_electricity.output (MW)',
+    'energy_heat_flexibility_p2h_heatpump_electricity.output (MW)',
+    'energy_hydrogen_flexibility_p2g_electricity.output (MW)',
+    'energy_power_combined_cycle_hydrogen.output (MW)',
+    'energy_power_geothermal.output (MW)',
+    'energy_power_hydro_mountain.output (MW)',
+    'energy_power_hydro_river.output (MW)',
+    'energy_power_nuclear_gen2_uranium_oxide.output (MW)',
+    'energy_power_nuclear_gen3_uranium_oxide.output (MW)',
+    'energy_power_solar_csp_solar_radiation.output (MW)',
+    'energy_power_solar_pv_solar_radiation.output (MW)',
+    'energy_power_supercritical_waste_mix.output (MW)',
+    'energy_power_turbine_hydrogen.output (MW)',
+    'energy_power_wind_turbine_coastal.output (MW)',
+    'energy_power_wind_turbine_inland.output (MW)',
+    'energy_power_wind_turbine_offshore.output (MW)',
+    'households_flexibility_p2p_electricity.output (MW)',
+    'households_solar_pv_solar_radiation.output (MW)',
+    'industry_chemicals_other_flexibility_p2h_hydrogen_electricity.output (MW)',
+    'industry_chemicals_refineries_flexibility_p2h_hydrogen_electricity.output (MW)',
+    'industry_other_food_flexibility_p2h_hydrogen_electricity.output (MW)',
+    'industry_other_paper_flexibility_p2h_hydrogen_electricity.output (MW)',
+    'transport_car_flexibility_p2p_electricity.output (MW)',
+]
+
+interconnectors = [
+    'energy_interconnector_1_imported_electricity.output (MW)',
+    'energy_interconnector_2_imported_electricity.output (MW)',
+    'energy_interconnector_3_imported_electricity.output (MW)',
+    'energy_interconnector_4_imported_electricity.output (MW)',
+    'energy_interconnector_5_imported_electricity.output (MW)',
+    'energy_interconnector_6_imported_electricity.output (MW)',
+]
 
 

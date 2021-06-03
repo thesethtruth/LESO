@@ -305,6 +305,39 @@ def _prepare_wind_data(tmy, wind_instance):
     
     return wind_df
 
+def read_etm_csv(etmDemand_instance, filename = "etmnoordveluwe2018.csv", allow_import=False, generation_whitelist=None):
+    # read file and find inputs / outputs
+    location = r"C:\\Users\\Sethv\\#Universiteit Twente\\GIT\\thesis-model\\LESO\\dataservice\\cache\\"
+    filepath = location + filename
+
+    df = pd.read_csv(filepath)
+
+    inputs, outputs = [], []
+    for col in df.columns:
+        if ".input" in col:
+            inputs.append(col)
+        if ".output" in col:
+            outputs.append(col)
+
+    # for input analysis ('sustainable') options only
+    if generation_whitelist is None:
+        generation_whitelist = LESO.defaultvalues.generation_whitelist
+    interconnectors = LESO.defaultvalues.interconnectors
+    
+    # generate the required data for LESO
+    if allow_import:
+        production = df[[*generation_whitelist, *interconnectors]].copy(deep=True)
+    else:
+        production = df[generation_whitelist].copy(deep=True)
+
+    demand = df[inputs].copy(deep=True)
+
+    # in convention; demand is negative and in w (MW 1e6)
+    deficit = ( production.sum(axis=1) - demand.sum(axis=1) ) * 1e6
+    deficit.index = etmDemand_instance.state.index
+
+    return deficit
+
 
 def _weeks():
     """

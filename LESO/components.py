@@ -424,6 +424,30 @@ class Consumer(SourceSink):
 
         self.state.power = functions.read_consumption_profile(self)
 
+class ETMdemand(SourceSink):
+
+    instances = 0
+    default_values = defs.etmdemand
+    states = ["power"]
+
+    def __init__(self, name, **kwargs):
+
+        # Set default values as instance attribute
+        self.default()
+
+        # Let custom component setter handle the custom values
+        self.custom(**kwargs)
+
+        ETMdemand.instances += 1
+        self.number = ETMdemand.instances
+        self.name = name
+
+    def __str__(self):
+        return "ETMdemand{number}".format(number=self.number)
+
+    def calculate_time_serie(self, *args):
+
+        self.state.power = feedinfunctions.read_etm_csv(self)
 
 class Grid(SourceSink):
 

@@ -5,6 +5,7 @@ import warnings
 import pickle
 import json
 from datetime import datetime
+from pyomo.core.base.block import components
 
 # for optimizing
 import pyomo.environ as pyo
@@ -90,6 +91,11 @@ class System():
 
         self.components = list(sorted_comps)
 
+    def update_component_attr(self, attribute, value, overwrite_zero=False):
+        for component in self.components:
+            if hasattr(component, attribute):
+                if getattr(component, attribute) != 0 or overwrite_zero:
+                        setattr(component, attribute, value)
 
     def fetch_input_data(self, lat = None, long = None):
         
@@ -212,7 +218,7 @@ class System():
 
         return set_objective(self, objective)
     
-    def pyomo_solve(self, solver = 'gurobi', noncovex = False):
+    def pyomo_solve(self, solver = 'gurobi', noncovex = False, unit='k'):
 
         opt = pyo.SolverFactory(solver)
         if noncovex:
@@ -222,6 +228,13 @@ class System():
 
         model = self.model
         time = self.time
+
+        unit_map = {
+            'k': (1e3, 'kW(h)'),
+            'M': (1e6, 'MW(h)'),
+            'G': (1e9, 'GW(h)'),
+        }
+
         # Writing results to system components
         for component in self.components:
             
@@ -252,12 +265,32 @@ class System():
                 _varkey = '_size'
                 component.installed = getattr(model, key+_varkey).value
                 print(f'{key} size                 = ',
-                    round(component.installed/1e3,1), 'kW(h)')
+                    round(component.installed/unit_map[unit][0],1), unit+'W(h)')
                 
                 
         print()
-        print('Total system cost (objective)= ', round(value(model.objective)/1e3,1), 'k€')
+        print('Total system cost (objective)= ', round(value(model.objective)/unit_map[unit][0],1), unit+'€')
         self.cost = value(model.objective)
+        
+
+
+
+        self.optimization_result = {
+            "Component name": [
+                component.name 
+                for component in self.components
+                if hasattr(component, 'installed')],
+            "Installed capacity": [
+                round(component.installed / unit_map[unit][0],1)
+                for component in self.components
+                if hasattr(component, 'installed')
+                ],
+            "Unit": [
+                unit_map[unit][1]
+                for component in self.components
+                if hasattr(component, 'installed')
+            ]
+        }
 
     def optimize(
             self, 
@@ -267,7 +300,8 @@ class System():
             filepath=None,
             solve=True,
             solver='gurobi',
-            nonconvex=False
+            nonconvex=False,
+            unit='k'
             ):
         """
 
@@ -288,7 +322,10 @@ class System():
         self.pyomo_add_objective(objective=objective)
         
         if solve:
-            self.pyomo_solve(solver=solver,noncovex=nonconvex)
+            self.pyomo_solve(
+                solver=solver,
+                noncovex=nonconvex,
+                unit=unit)
         
         if store:
             self.to_json(filepath=filepath)
@@ -377,7 +414,8 @@ class System():
             'dates': _date_to_string(self.components[0]),
             'name': self.name,
             'date': datetime.now().isoformat(),
-            'last_call': self.last_call
+            'last_call': self.last_call,
+            'optimization result': getattr(self.optimization_result, 'Not available')
             }
         }
 

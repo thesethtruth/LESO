@@ -12,7 +12,7 @@ from pyomo.environ import value
 
 # module with default values
 import LESO.defaultvalues as defs
-from LESO.pvgis import get
+from LESO.dataservice import get_pvgis
 import LESO.optimizer.util as util
 from LESO.optimizer.util import power
 from LESO.optimizer.util import set_objective
@@ -98,7 +98,7 @@ class System():
         if long is not None:
             self.longitude = long
         
-        self.tmy = get(self.latitude, self.longitude)
+        self.tmy = get_pvgis(self.latitude, self.longitude)
     
     def calculate_time_series(self):
         

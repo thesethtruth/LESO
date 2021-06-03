@@ -17,6 +17,7 @@ import LESO.feedinfunctions as feedinfunctions
 import LESO.functions as functions
 import LESO.optimizer.util as util
 from LESO.finance import set_finance_variables
+from LESO.dataservice import get_pvgis, get_dowa
 
 
 class Component:
@@ -259,7 +260,7 @@ class Wind(SourceSink):
     default_values = defs.wind
     states = ["power"]
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, lat=53, lon=6, height=100, **kwargs):
 
         # Set default values as instance attribute
         self.default()
@@ -269,6 +270,9 @@ class Wind(SourceSink):
         # Initiate the financial variables
         set_finance_variables(self)
 
+        # fetch own tmy set
+        self.dowa = get_dowa(lat, lon, height=height)
+
         Wind.instances += 1
         self.number = Wind.instances
         self.name = name
@@ -277,9 +281,39 @@ class Wind(SourceSink):
         return "wind{number}".format(number=self.number)
 
     def calculate_time_serie(self, tmy):
+        # accepts but ignores system tmy
+        self.state.power = feedinfunctions.windpower(self, self.dowa)
 
-        self.state.power = feedinfunctions.windpower(self, tmy)
+class WindOffshore(SourceSink):
 
+    instances = 0
+    default_values = defs.windoffshore
+    states = ["power"]
+
+    def __init__(self, name, lat=53, lon=6, height=100, **kwargs):
+
+        # Set default values as instance attribute
+        self.default()
+
+        # Let custom component setter handle the custom values
+        self.custom(**kwargs)
+        # Initiate the financial variables
+        set_finance_variables(self)
+
+        # fetch own tmy set
+        self.dowa = get_dowa(lat, lon, height=height)
+        
+
+        WindOffshore.instances += 1
+        self.number = WindOffshore.instances
+        self.name = name
+
+    def __str__(self):
+        return "windoffshore{number}".format(number=self.number)
+
+    def calculate_time_serie(self, tmy):
+        # accepts but ignores system tmy
+        self.state.power = feedinfunctions.windpower(self, self.dowa)
 
 class Lithium(Storage):
 

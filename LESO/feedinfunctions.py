@@ -134,8 +134,8 @@ def bifacial(PV_instance,
     bifacial_irradiance = pd.DataFrame(index=PV.state.index)
     bifacial_irradiance['effective_irradiance'] = pd.Series(effective, index = PV.state.index)
     bifacial_irradiance['poa_global'] = pd.Series(poa, index = PV.state.index)
-    bifacial_irradiance['wind_speed'] = pd.Series(tmy['WS10m'].values, index = PV.state.index)
-    bifacial_irradiance['temp_air'] = pd.Series(tmy['T2m'].values, index = PV.state.index)
+    bifacial_irradiance['wind_speed'] = pd.Series(tmy['WS'].values, index = PV.state.index)
+    bifacial_irradiance['temp_air'] = pd.Series(tmy['T'].values, index = PV.state.index)
 
 
     return bifacial_irradiance
@@ -195,7 +195,7 @@ def windpower(wind_instance, tmy):
     wind = wind_instance
     
     #### prepare wind data 
-    wind_df = _prepare_wind_data(tmy, wind, wind.start_date)
+    wind_df = _prepare_wind_data(tmy, wind)
     
     #### setup turbine
     turbinespec = {
@@ -232,6 +232,9 @@ def windpower(wind_instance, tmy):
     
     # write power output time series to wind object
     power = mc.power_output / mc.power_output.max() * wind.installed
+    if hasattr(wind, 'transport_efficiency'):
+        power *= wind.transport_efficiency
+    power.index = wind.state.index
     return power
 
 def _calculate_poa(tmy, PV):
@@ -261,11 +264,11 @@ def _calculate_poa(tmy, PV):
     PV.poa = POA_irradiance['poa_global']
     return
 
-def _prepare_wind_data(tmy, wind, starting_year):
+def _prepare_wind_data(tmy, wind_instance):
     """
     Output:     wind_df 
                 in format of windpowerlib
-                based on (tmy data 'WS10m, T2m, SP' and array of constant roughness length)
+                based on (tmy data 'WS, T, SP' and array of constant roughness length)
                 
                 date-time indices reset using _reset_times()
                 multi-index header, variable name and height of variable
@@ -273,10 +276,10 @@ def _prepare_wind_data(tmy, wind, starting_year):
     Input:      tmy
                 wind (only .roughness is used now)    
     """
-    
+    wind = wind_instance
     # temp store the data in np arrays
-    wind_speed = tmy['WS10m'].values.reshape(-1,1)
-    temperature = (tmy['T2m']+273.15).values.reshape(-1,1) # temperature to Kelvin (+273.15)
+    wind_speed = tmy['WS'].values.reshape(-1,1)
+    temperature = (tmy['T']+273.15).values.reshape(-1,1) # temperature to Kelvin (+273.15)
     pressure = tmy['SP'].values.reshape(-1,1)
     roughness_length = np.array([wind.roughness] * 8760).reshape(-1,1)
     

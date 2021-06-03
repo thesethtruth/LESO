@@ -71,7 +71,7 @@ pv = dict(
         installed = 5000e3,           # Total power of the PV system in terms of DC       !DOF!
         azimuth = 180,                # Module orientation, N = 0                         !DOF!
         tilt = 15,                    # Optimum angle for max production                  !DOF!
-        efficiency = .145,            # Total system efficiency to reach realistic values
+        efficiency = .185,            # Total system efficiency to reach realistic values
         module_power = 350,           # STC
         module_area = 1.6,            # [m2]
         # unused
@@ -177,6 +177,33 @@ wind = dict(
         lifetime = 20,
         capex = 2.8,
         opex = 12e-3,
+        variable_cost = 0,
+        variable_income = 0,
+        interest = 0.04,
+        exp_inflation_rate = exp_inflation_rate,
+    )
+
+windoffshore = dict(
+        # Merit order 
+        merit_tag = 'VRE',
+        styling = {
+        'label': 'Offshore wind power', 
+        'color': '#8cc0ed',
+        'group': 'power',
+        },
+        # transform
+        dof = False,
+        installed = 600e3,              # total wind power installed [W]
+        hubheight = 120,                # h_hub hub height [m]
+        roughness = 0.0002,             # z0 roughness length [m]
+        transport_efficiency = .92,         # from turbine to location
+        # optimizer
+        lower = 0,
+        upper = upper_bound,
+        # financials
+        lifetime = 20,
+        capex = wind['capex']*1.2,      # 20% higher
+        opex = wind['opex']*1.4,        # 40% higher
         variable_cost = 0,
         variable_income = 0,
         interest = 0.04,

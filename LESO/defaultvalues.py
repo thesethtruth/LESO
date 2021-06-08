@@ -399,6 +399,17 @@ merit_order = {
     "finalbalance": 4,    
     }
 
+scenarios_gelderland = { 
+    '2030Gelderland_hoog': 815715,
+    '2030Gelderland_laag': 815716,
+    '2030RES_Achterhoek': 815753,
+    '2030RES_ArnhemNijmegen': 815754,
+    '2030RES_Cleantech': 815755,
+    '2030RES_Foodvalley ': 815756,
+    '2030RES_NoordVeluwe': 815757,
+    '2030RES_Rivierenland': 815758,
+} 
+
 
 generation_whitelist = [
     'buildings_solar_pv_solar_radiation.output (MW)',

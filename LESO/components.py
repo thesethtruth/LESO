@@ -17,6 +17,7 @@ import LESO.feedinfunctions as feedinfunctions
 import LESO.functions as functions
 import LESO.optimizer.util as util
 from LESO.finance import set_finance_variables
+from LESO.dataservice import get_pvgis, get_dowa, etm_id_extractor_external
 
 
 class Component:
@@ -77,6 +78,13 @@ class Component:
     @property
     def replacement(self):
         return 0.5 * self.capex
+    
+    def sum_by_month(self):
+
+        self.state['month'] = self.state.index.month_name()
+        self.monthly_state = self.state.groupby('month', sort=False).sum()
+
+        return None
 
 
 
@@ -153,6 +161,65 @@ class PhotoVoltaic(SourceSink):
 
         self.state.power = feedinfunctions.PVpower(self, tmy)
 
+class PhotoVoltaicAdvanced(SourceSink):
+
+    instances = 0
+
+    # read default values
+    default_values = defs.pva
+    states = ["power"]
+
+    def __init__(self, name, **kwargs):
+
+        # Set default values as instance attribute
+        self.default()
+        # Let custom component setter handle the custom values
+        self.custom(**kwargs)
+        # Initiate the financial variables
+        set_finance_variables(self)
+
+
+        PhotoVoltaicAdvanced.instances += 1
+        self.number = PhotoVoltaicAdvanced.instances
+        self.name = name
+
+    def __str__(self):
+        return "pva{number}".format(number=self.number)
+
+    def calculate_time_serie(self, tmy):
+
+        self.state.power = feedinfunctions.PVlibwrapper(self, tmy)
+
+class BifacialPhotoVoltaic(SourceSink):
+
+    instances = 0
+
+    # read default values
+    default_values = defs.pvb
+    states = ["power"]
+
+    def __init__(self, name, **kwargs):
+
+        # Set default values as instance attribute
+        self.default()
+        # Let custom component setter handle the custom values
+        self.custom(**kwargs)
+        # Initiate the financial variables
+        set_finance_variables(self)
+
+
+        BifacialPhotoVoltaic.instances += 1
+        self.number = BifacialPhotoVoltaic.instances
+        self.name = name
+
+    def __str__(self):
+        return "pv-bi{number}".format(number=self.number)
+
+    def calculate_time_serie(self, tmy):
+        
+        self.bifacial_irradiance = feedinfunctions.bifacial(self, tmy)
+        self.state.power = feedinfunctions.PVlibwrapper(self, tmy)
+
 
 class FinalBalance(SourceSink):
 
@@ -193,7 +260,7 @@ class Wind(SourceSink):
     default_values = defs.wind
     states = ["power"]
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, lat=53, lon=6, height=100, **kwargs):
 
         # Set default values as instance attribute
         self.default()
@@ -203,6 +270,9 @@ class Wind(SourceSink):
         # Initiate the financial variables
         set_finance_variables(self)
 
+        # fetch own tmy set
+        self.dowa = get_dowa(lat, lon, height=height)
+
         Wind.instances += 1
         self.number = Wind.instances
         self.name = name
@@ -211,9 +281,39 @@ class Wind(SourceSink):
         return "wind{number}".format(number=self.number)
 
     def calculate_time_serie(self, tmy):
+        # accepts but ignores system tmy
+        self.state.power = feedinfunctions.windpower(self, self.dowa)
 
-        self.state.power = feedinfunctions.windpower(self, tmy)
+class WindOffshore(SourceSink):
 
+    instances = 0
+    default_values = defs.windoffshore
+    states = ["power"]
+
+    def __init__(self, name, lat=53, lon=6, height=100, **kwargs):
+
+        # Set default values as instance attribute
+        self.default()
+
+        # Let custom component setter handle the custom values
+        self.custom(**kwargs)
+        # Initiate the financial variables
+        set_finance_variables(self)
+
+        # fetch own tmy set
+        self.dowa = get_dowa(lat, lon, height=height)
+        
+
+        WindOffshore.instances += 1
+        self.number = WindOffshore.instances
+        self.name = name
+
+    def __str__(self):
+        return "windoffshore{number}".format(number=self.number)
+
+    def calculate_time_serie(self, tmy):
+        # accepts but ignores system tmy
+        self.state.power = feedinfunctions.windpower(self, self.dowa)
 
 class Lithium(Storage):
 
@@ -324,6 +424,41 @@ class Consumer(SourceSink):
 
         self.state.power = functions.read_consumption_profile(self)
 
+class ETMdemand(SourceSink):
+
+    instances = 0
+    default_values = defs.etmdemand
+    states = ["power"]
+
+    def __init__(self, name, scenario_id, **kwargs):
+
+        # Set default values as instance attribute
+        self.default()
+
+        # Let custom component setter handle the custom values
+        self.custom(**kwargs)
+
+        ETMdemand.instances += 1
+        self.number = ETMdemand.instances
+        self.name = name
+
+        self.scenario_id = scenario_id
+
+
+    @property
+    def scenario_id(self):
+        return self._scenario_id
+
+    @scenario_id.setter
+    def scenario_id(self, value):
+        self._scenario_id = etm_id_extractor_external(self, value)
+
+    def __str__(self):
+        return "ETMdemand{number}".format(number=self.number)
+
+    def calculate_time_serie(self, *args):
+
+        self.state.power = feedinfunctions.get_etm_curve(self, self.scenario_id)
 
 class Grid(SourceSink):
 

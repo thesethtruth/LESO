@@ -3,6 +3,10 @@ Default value vault
     contains the default values to run the main code
 """
 # Often-used variables
+from pvlib import tracking
+from LESO.feedinfunctions import bifacial
+
+
 lower_bound = -1e7
 upper_bound = 1e7
 system_lifetime = 25
@@ -64,11 +68,11 @@ pv = dict(
         },
         # transform
         dof = False,
-        installed = 1200e3,           # Total power of the PV system in terms of DC       !DOF!
+        installed = 5000e3,           # Total power of the PV system in terms of DC       !DOF!
         azimuth = 180,                # Module orientation, N = 0                         !DOF!
         tilt = 15,                    # Optimum angle for max production                  !DOF!
-        efficiency = .145,            # Total system efficiency to reach realistic values
-        module_power = 325,           # STC
+        efficiency = .185,            # Total system efficiency to reach realistic values
+        module_power = 350,           # STC
         module_area = 1.6,            # [m2]
         # unused
         t_coeff = -.37,               # [%/K]
@@ -80,6 +84,72 @@ pv = dict(
         # financials
         lifetime = 25,
         capex = 0.6,
+        opex = 5e-3,
+        variable_cost = 0,
+        variable_income = 0,
+        interest = 0.02,
+        exp_inflation_rate = exp_inflation_rate,
+    )
+
+pva = dict(
+        # Merit order 
+        merit_tag = 'VRE',
+        styling = {
+        'label': 'PV power', 
+        'color': '#ebd25b',
+        'group': 'power',
+        },
+        # transform
+        dof = False,
+        installed = 5000e3,           # Total power of the PV system in terms of DC       !DOF!
+        azimuth = 180,                # Module orientation, N = 0                         !DOF!
+        tilt = 15,                    # Optimum angle for max production                  !DOF!
+        tracking = False,
+        
+        # browse CEC files using pvlib to change the system
+        module = 'Jinko_Solar_Co___Ltd_JKM350M_72_V',
+        inverter = 'Huawei_Technologies_Co___Ltd___SUN2000_100KTL_USH0__800V_',
+        strings_per_inverter = 12,
+        modules_per_string = 32,
+        # optimizer
+        lower = 0,                    # lower bound
+        upper = upper_bound,          # upper bound
+        # financials
+        lifetime = 25,
+        capex = 0.6,
+        opex = 5e-3,
+        variable_cost = 0,
+        variable_income = 0,
+        interest = 0.02,
+        exp_inflation_rate = exp_inflation_rate,
+    )
+
+pvb = dict(
+        # Merit order 
+        merit_tag = 'VRE',
+        styling = {
+        'label': 'Bifacial PV power', 
+        'color': '#ebd25b',
+        'group': 'power',
+        },
+        # transform
+        dof = False,
+        installed = 5000e3,           # Total power of the PV system in terms of DC       !DOF!
+        azimuth = 180,                # Module orientation, N = 0                         !DOF!
+        tilt = 15,                    # Optimum angle for max production
+        tracking = False,                  
+        # browse CEC files using pvlib to change the system
+        module = 'Jinko_Solar_Co___Ltd_JKM350M_72_V',
+        inverter = 'Huawei_Technologies_Co___Ltd___SUN2000_100KTL_USH0__800V_',
+        strings_per_inverter = 12,
+        modules_per_string = 28,
+        bifacial_factor = 0.8,
+        # optimizer
+        lower = 0,                    # lower bound
+        upper = upper_bound,          # upper bound
+        # financials
+        lifetime = 25,
+        capex = 0.75,
         opex = 5e-3,
         variable_cost = 0,
         variable_income = 0,
@@ -113,6 +183,33 @@ wind = dict(
         exp_inflation_rate = exp_inflation_rate,
     )
 
+windoffshore = dict(
+        # Merit order 
+        merit_tag = 'VRE',
+        styling = {
+        'label': 'Offshore wind power', 
+        'color': '#8cc0ed',
+        'group': 'power',
+        },
+        # transform
+        dof = False,
+        installed = 600e3,              # total wind power installed [W]
+        hubheight = 120,                # h_hub hub height [m]
+        roughness = 0.0002,             # z0 roughness length [m]
+        transport_efficiency = .92,         # from turbine to location
+        # optimizer
+        lower = 0,
+        upper = upper_bound,
+        # financials
+        lifetime = 20,
+        capex = wind['capex']*1.2,      # 20% higher
+        opex = wind['opex']*1.4,        # 40% higher
+        variable_cost = 0,
+        variable_income = 0,
+        interest = 0.04,
+        exp_inflation_rate = exp_inflation_rate,
+    )
+
 consumer = dict(
         # Merit order 
         styling = {
@@ -136,6 +233,29 @@ consumer = dict(
         interest = interest,
         exp_inflation_rate = exp_inflation_rate,   
     )
+
+etmdemand = dict(
+        # Merit order 
+        styling = {
+        'label': 'Consumption load', 
+        'color': '#f5645f',
+        'group': 'load',
+        },
+        merit_tag = 'MM',
+        # optimizer
+        dof = False,
+        upper = upper_bound,
+        lower = lower_bound,
+        # financials
+        lifetime = None,
+        capex = 0,
+        opex = 0,
+        variable_cost = 0,
+        variable_income = 0,
+        interest = interest,
+        exp_inflation_rate = exp_inflation_rate,   
+    )
+
 
 
 grid = dict(
@@ -279,6 +399,61 @@ merit_order = {
     "finalbalance": 4,    
     }
 
+scenarios_gelderland = { 
+    '2030Gelderland_hoog': 815715,
+    '2030Gelderland_laag': 815716,
+    '2030RES_Achterhoek': 815753,
+    '2030RES_ArnhemNijmegen': 815754,
+    '2030RES_Cleantech': 815755,
+    '2030RES_Foodvalley ': 815756,
+    '2030RES_NoordVeluwe': 815757,
+    '2030RES_Rivierenland': 815758,
+} 
 
+
+generation_whitelist = [
+    'buildings_solar_pv_solar_radiation.output (MW)',
+    'energy_chp_combined_cycle_network_gas.output (MW)',
+    'energy_chp_local_engine_biogas.output (MW)',
+    'energy_chp_local_engine_network_gas.output (MW)',
+    'energy_chp_local_wood_pellets.output (MW)',
+    'energy_chp_supercritical_waste_mix.output (MW)',
+    'energy_flexibility_curtailment_electricity.output (MW)',
+    'energy_flexibility_hv_opac_electricity.output (MW)',
+    'energy_flexibility_mv_batteries_electricity.output (MW)',
+    'energy_flexibility_pumped_storage_electricity.output (MW)',
+    'energy_heat_flexibility_p2h_boiler_electricity.output (MW)',
+    'energy_heat_flexibility_p2h_heatpump_electricity.output (MW)',
+    'energy_hydrogen_flexibility_p2g_electricity.output (MW)',
+    'energy_power_combined_cycle_hydrogen.output (MW)',
+    'energy_power_geothermal.output (MW)',
+    'energy_power_hydro_mountain.output (MW)',
+    'energy_power_hydro_river.output (MW)',
+    'energy_power_nuclear_gen2_uranium_oxide.output (MW)',
+    'energy_power_nuclear_gen3_uranium_oxide.output (MW)',
+    'energy_power_solar_csp_solar_radiation.output (MW)',
+    'energy_power_solar_pv_solar_radiation.output (MW)',
+    'energy_power_supercritical_waste_mix.output (MW)',
+    'energy_power_turbine_hydrogen.output (MW)',
+    'energy_power_wind_turbine_coastal.output (MW)',
+    'energy_power_wind_turbine_inland.output (MW)',
+    'energy_power_wind_turbine_offshore.output (MW)',
+    'households_flexibility_p2p_electricity.output (MW)',
+    'households_solar_pv_solar_radiation.output (MW)',
+    'industry_chemicals_other_flexibility_p2h_hydrogen_electricity.output (MW)',
+    'industry_chemicals_refineries_flexibility_p2h_hydrogen_electricity.output (MW)',
+    'industry_other_food_flexibility_p2h_hydrogen_electricity.output (MW)',
+    'industry_other_paper_flexibility_p2h_hydrogen_electricity.output (MW)',
+    'transport_car_flexibility_p2p_electricity.output (MW)',
+]
+
+interconnectors = [
+    'energy_interconnector_1_imported_electricity.output (MW)',
+    'energy_interconnector_2_imported_electricity.output (MW)',
+    'energy_interconnector_3_imported_electricity.output (MW)',
+    'energy_interconnector_4_imported_electricity.output (MW)',
+    'energy_interconnector_5_imported_electricity.output (MW)',
+    'energy_interconnector_6_imported_electricity.output (MW)',
+]
 
 

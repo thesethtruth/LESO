@@ -386,7 +386,7 @@ class FastCharger(SourceSink):
         set_finance_variables(self)
 
         FastCharger.instances += 1
-        self.number = Lithium.instances
+        self.number = FastCharger.instances
         self.name = name
 
     def __str__(self):
@@ -414,7 +414,7 @@ class Consumer(SourceSink):
         set_finance_variables(self)
 
         Consumer.instances += 1
-        self.number = Lithium.instances
+        self.number = Consumer.instances
         self.name = name
 
     def __str__(self):

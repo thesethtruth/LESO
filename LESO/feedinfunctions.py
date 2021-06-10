@@ -1,3 +1,4 @@
+from functools import lru_cache
 import pandas as pd
 from pvlib import irradiance
 from pvlib import location
@@ -307,7 +308,7 @@ def _prepare_wind_data(tmy, wind_instance):
 
     return wind_df
 
-
+@lru_cache(3)
 def get_etm_curve(
     etmDemand_instance, 
     session_id, 

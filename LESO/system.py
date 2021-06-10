@@ -17,6 +17,7 @@ from LESO.dataservice import get_pvgis
 import LESO.optimizer.util as util
 from LESO.optimizer.util import power
 from LESO.optimizer.util import set_objective
+from LESO.optimizer.postprocess import process_results
 from LESO.components import FinalBalance
 from LESO.test import attribute_test
 from LESO.finance import set_finance_variables
@@ -218,79 +219,19 @@ class System():
 
         return set_objective(self, objective)
     
-    def pyomo_solve(self, solver = 'gurobi', noncovex = False, unit='k'):
+    def pyomo_solve(self, solver = 'gurobi', noncovex = False):
 
         opt = pyo.SolverFactory(solver)
         if noncovex:
             opt.options['NonConvex'] = 2
         
-        self.model.results = opt.solve(self.model)
+        self.model.results = opt.solve(
+            self.model,
+            tee=True)
 
-        model = self.model
-        time = self.time
-
-        unit_map = {
-            'k': (1e3, 'kW(h)'),
-            'M': (1e6, 'MW(h)'),
-            'G': (1e9, 'GW(h)'),
-        }
-
-        # Writing results to system components
-        for component in self.components:
-            
-            # extract power curves send to component
-            df = component.state
-            
-            if hasattr(component, 'power_control'):
-                for key, modelvar in component.keylist:
-                    df[key] = [modelvar[t].value for t in time]
-            
-            else:
-
-                values = component.state.power[time]
-                column = 'power'
-
-                if component.dof:
-                    key = component.__str__()
-                    modelvar = getattr(model, key+'_size').value
-                    df[column] = values * modelvar
-                
-                else:
-
-                    df[column] = values
-            
-            # extract sizing and attach to component
-            if component.dof:
-                key = component.__str__()
-                _varkey = '_size'
-                component.installed = getattr(model, key+_varkey).value
-                print(f'{key} size                 = ',
-                    round(component.installed/unit_map[unit][0],1), unit+'W(h)')
-                
-                
-        print()
-        print('Total system cost (objective)= ', round(value(model.objective)/unit_map[unit][0],1), unit+'€')
-        self.cost = value(model.objective)
+    def pyomo_post_process(self, unit='k'):
         
-
-
-
-        self.optimization_result = {
-            "Component name": [
-                component.name 
-                for component in self.components
-                if hasattr(component, 'installed')],
-            "Installed capacity": [
-                round(component.installed / unit_map[unit][0],1)
-                for component in self.components
-                if hasattr(component, 'installed')
-                ],
-            "Unit": [
-                unit_map[unit][1]
-                for component in self.components
-                if hasattr(component, 'installed')
-            ]
-        }
+        process_results(self, unit=unit)
 
     def optimize(
             self, 
@@ -324,16 +265,18 @@ class System():
         if solve:
             self.pyomo_solve(
                 solver=solver,
-                noncovex=nonconvex,
-                unit=unit)
-        
+                noncovex=nonconvex)
+
+            self.pyomo_post_process(unit=unit)
+
         if store:
             self.to_json(filepath=filepath)
     
-    def pyomo_print(self):
+    def pyomo_print(self, time=None):
         
         # set time to 1 for readable prints of constraints
-        time = [0]
+        if time is None:
+            time = [0]
 
         self.optimize(solve=False, time = time)
 
@@ -415,7 +358,7 @@ class System():
             'name': self.name,
             'date': datetime.now().isoformat(),
             'last_call': self.last_call,
-            'optimization result': getattr(self.optimization_result, 'Not available')
+            'optimization result': getattr(self, 'optimization_result', 'Not available')
             }
         }
 

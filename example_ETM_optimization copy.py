@@ -6,25 +6,23 @@ from LESO import PhotoVoltaic, Wind, Lithium, ETMdemand, Grid, FinalBalance, Pho
 
 
 ## Define system and components
-modelname = 'ETM Noord-Veluwe 2GW grid Offshore'
+modelname = 'ETM Noord-Veluwe 1GW 2030'
 lat, lon = 52.4, 5.8
 system = System(lat, lon, model_name=modelname)
 # =============================================================================
 pva1 =              PhotoVoltaicAdvanced('PV Full south', dof = True)
-pva2 =              PhotoVoltaicAdvanced('PV West', azimuth = 90, dof = True)
-pva3 =              PhotoVoltaicAdvanced('PV East', azimuth = -90, dof = True)
+pva2 =              PhotoVoltaicAdvanced('PV West', azimuth = 90, dof = True, capex = .55)
+pva3 =              PhotoVoltaicAdvanced('PV East', azimuth = -90, dof = True, capex = .55)
 pva4 =              PhotoVoltaicAdvanced('trackingPV2-EW', capex = .75,  tracking=True, azimuth=-90, dof = True)
 wind1 =             Wind('Onshore turbine', lat=lat, lon=lon, dof = True)
-wind2 =             WindOffshore('OSWF NW', lat=54, lon=5.58, dof = True)
-wind3 =             WindOffshore('BWZF2', lat=51.7, lon=3, dof = True)
 bat1 =              Lithium('Li-ion EES', dof = True)
-demand =            ETMdemand('NoordVeluwe2018')
-grid =              Grid('Grid connection', installed = 2e9)
+demand =            ETMdemand('NoordVeluwe2018', scenario_id=815757)
+grid =              Grid('Grid connection', installed = 1e9)
 deficit =           FinalBalance()
 # =============================================================================
 
 # add the components to the system
-component_list = [pva1, pva2, pva3, wind1, wind2, wind3, bat1, demand, deficit, grid]
+component_list = [pva1, pva2, pva3, wind1, bat1, demand, deficit, grid]
 system.add_components(component_list)
 
 # update upper limit to 2 GW
@@ -37,10 +35,12 @@ system.update_component_attr('lower', -bound, overwrite_zero=False)
 
 # define the file path and run with optimization with options supplied
 filepath = 'cache/'+modelname+'.json'
+# system.pyomo_print()
+
 system.optimize(
             objective='tco',        # total cost of ownership
             time=None,              # resorts to default; year 8760h
-            store=True,             # write-out to json
+            store=False,             # write-out to json
             filepath=filepath,          # resorts to default: modelname+timestamp
             solver='gurobi',        # default solver
             nonconvex=False,        # solver option (warning will show if needed)

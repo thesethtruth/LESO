@@ -8,7 +8,9 @@ import xarray as xr
 import pyproj
 from bs4 import BeautifulSoup
 import json
+from functools import lru_cache
 
+@lru_cache(10)
 def get_pvgis(lat, lon):
     """
     Returns:
@@ -57,7 +59,6 @@ def get_pvgis(lat, lon):
     tmy.tz = tmy.index.name.split('(')[1].split(')')[0]
     return tmy
 
-
 def _getPVGIS(lat, lon):
     """
     This function uses the non-interactive version of PVGIS to extract a 
@@ -101,7 +102,7 @@ def _getPVGIS(lat, lon):
     tmy.columns = ['T', *tmy.columns[1:6].values, 'WS', 'WD', 'SP', 'lat', 'lon']
 
     return tmy
-  
+
 def _tmy_dateparser(df):
     
     dateparse = lambda x: datetime.strptime(x, '%Y%m%d:%H%M%S')
@@ -136,7 +137,6 @@ def get_dowa(lat, lon, height=100):
     
     
     return dowa
-
 
 def _getDOWA(lat, lon, height=100):
     """

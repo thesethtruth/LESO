@@ -312,10 +312,10 @@ lithium = dict(
         }],
         # specs
         installed = 1000e3,      # 1000 kWh installed capacity
-        EP_ratio = 1.25,         # ratio of energy to power
+        EP_ratio = 1.25,         # ratio of energy to power (influences component cost)
         startingSOC = .7,        # Starting SOC
-        cycles = 1000,           # Maximum hardcycles for life time
-        discharge_hurt = 0.7,    # Maximum discharge power before the hurt
+        discharge_rate = .999,   # hourly discharge
+        cycle_efficieny = 0.89,  # round trip efficiency
         # optimizer
         dof = False,
         lower = 0,
@@ -324,7 +324,8 @@ lithium = dict(
         upper = upper_bound,
         # financials
         lifetime = 10,
-        capex = 280e-3,
+        capex = 308e-3,             # capex at EP = 1
+        capex_EP_ratio = .55,       # part of component cost related to storage only
         opex = 8e-3,
         variable_cost = 2.8e-12,
         variable_income = 2.8e-9,

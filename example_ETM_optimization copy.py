@@ -37,13 +37,13 @@ system.update_component_attr('lower', -bound, overwrite_zero=False)
 filepath = 'cache/'+modelname+'.json'
 # system.pyomo_print()
 
-system.optimize(
-            objective='tco',        # total cost of ownership
-            time=None,              # resorts to default; year 8760h
-            store=False,             # write-out to json
-            filepath=filepath,          # resorts to default: modelname+timestamp
-            solver='gurobi',        # default solver
-            nonconvex=False,        # solver option (warning will show if needed)
-            solve=True,             # solve or just create model
-            unit = 'M'
-)
+# system.optimize(
+#             objective='tco',        # total cost of ownership
+#             time=None,              # resorts to default; year 8760h
+#             store=False,             # write-out to json
+#             filepath=filepath,          # resorts to default: modelname+timestamp
+#             solver='gurobi',        # default solver
+#             nonconvex=False,        # solver option (warning will show if needed)
+#             solve=True,             # solve or just create model
+#             unit = 'M'
+# )

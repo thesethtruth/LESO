@@ -349,6 +349,17 @@ class Lithium(Storage):
     def dischargepower(self, value):
         return print("---> Note: Change the EP ratio to change this variable")
 
+    @property
+    def capex(self):
+        cpx = self._capex 
+        cpxr = self.capex_EP_ratio
+        epr = self.EP_ratio
+        return cpx * (1-cpxr)/epr + cpx*cpxr
+    
+    @capex.setter
+    def capex(self, value):
+        self._capex = value
+        
     def __str__(self):
         return "lithium{number}".format(number=self.number)
 

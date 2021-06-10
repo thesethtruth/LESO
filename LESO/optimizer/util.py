@@ -35,7 +35,9 @@ def battery_control_constraints(model, component):
             pass
         else:
             contraintlist.add(
-                E[t+1] == E[t] - P[t]
+                E[t+1] == E[t]*component.discharge_rate\
+                - Ppos[t]/component.cycle_efficieny**0.5\
+                + Pneg[t]*component.cycle_efficieny**0.5\
                 )
 
     # Time variable constraints

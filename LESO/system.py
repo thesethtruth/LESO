@@ -170,12 +170,11 @@ class System():
             self.to_json(filepath=filepath)
 
     
-    def pyomo_init_model(self, time = None):
+    def pyomo_init_model(self, time=None):
         """
         Initializes the Pyomo model, adds modes for power/energy control and adds the
         DOF variables as needed. 
         """
-        
         
         if time is None:
             # times
@@ -189,8 +188,13 @@ class System():
         self.model.constraint_ID = 'constraints'
         self.model.time = time
         self.time = time
-        
-        util.init_model(self, self.model, self.time)
+
+        # Initialize constraint list
+        if not hasattr(self.model, self.model.constraint_ID):
+                setattr(self.model, self.model.constraint_ID, pyo.ConstraintList())
+
+        for component in self.components:
+            component.initializePyomoVariables(self.model)
     
     def pyomo_constuct_constraints(self):
         """

@@ -16,6 +16,7 @@ import LESO.defaultvalues as defs
 import LESO.feedinfunctions as feedinfunctions
 import LESO.functions as functions
 import LESO.optimizer.util as util
+from LESO.optimizer.preprocess import initializeGenericPyomoVariables
 from LESO.finance import set_finance_variables
 from LESO.dataservice import get_pvgis, get_dowa, etm_id_extractor_external
 
@@ -85,6 +86,10 @@ class Component:
         self.monthly_state = self.state.groupby('month', sort=False).sum()
 
         return None
+    
+    def initializePyomoVariables(self, pM):
+        """" Default fallback method for generic Pyomo Variables """ 
+        initializeGenericPyomoVariables(self, pM)
 
 
 

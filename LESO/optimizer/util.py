@@ -3,77 +3,6 @@ import pyomo.environ as pyo
 import numpy as np
 import LESO
 
-def init_model(system, model, time):
-
-    # Initialize constraint list
-    if not hasattr(model, model.constraint_ID):
-            setattr(model, model.constraint_ID, pyo.ConstraintList())
-    
-    for component in system.components:
-        
-        key = component.__str__()
-
-        # scaling variables
-        if component.dof:
-            _var = pyo.Var(bounds=(0, component.upper))
-            _varkey = '_size'
-            # set the pyoVar to the model
-            setattr(model, key+_varkey, _var)
-            # create a pointer to the var from the respc. component
-            setattr(component, 'pyoVar', getattr(model, key+_varkey)) 
-
-        # power-control
-        if hasattr(component, 'power_control'):
-            
-            if getattr(component, 'positive', True):
-                # positive-only part of power
-                _varkey = '_Ppos'
-                setattr(
-                    model, 
-                    key+_varkey, 
-                    pyo.Var(
-                        time, 
-                        domain = pyo.NonNegativeReals, 
-                        initialize = 0
-                        ))
-                _key_setter(model, _varkey, key, component)
-
-            if getattr(component, 'negative', True):
-                # negative-only part of power
-                _varkey = '_Pneg'
-                setattr(
-                    model, 
-                    key+_varkey, 
-                    pyo.Var(
-                        time, 
-                        domain = pyo.NonPositiveReals, 
-                        initialize = 0
-                        ))
-                _key_setter(model, _varkey, key, component)
-
-            # power total
-            _varkey = '_P'
-            setattr(
-                model, 
-                key+_varkey, 
-                pyo.Var(
-                    time,
-                    ))
-            _key_setter(model, _varkey, key, component)
-
-        from LESO import Storage
-        if isinstance(component, Storage):
-            # Energy
-            _varkey = '_E'
-            setattr(
-                model, 
-                key+_varkey, 
-                pyo.Var(
-                    time,
-                    ))
-            _key_setter(model, _varkey, key, component)
-
-
 def battery_control_constraints(model, component):
 
     key = component.__str__()
@@ -221,25 +150,7 @@ def set_objective(eM, objective):
 
 
 
-def _key_setter(model, _varkey, key, component):
 
-    mapper = {
-        '_P': 'power',
-        '_Ppos': 'power [+]',
-        '_Pneg': 'power [-]',
-        '_E': 'energy',
-    }
-
-    _keyname = mapper.get(_varkey, None)
-    
-    if _keyname is None:
-        raise NotImplementedError(f'Key "{_varkey}"does not exist in mapper.') 
-
-    _modelvar = getattr(model, key+_varkey)
-    
-    _keypair = (_keyname, _modelvar)
-
-    component.keylist.append(_keypair)
 
 ###-----------------------------------|| unused ||-------------------------------------###
 def capital_cost(model, component):

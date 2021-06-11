@@ -353,13 +353,13 @@ def get_etm_curve(
             production = df[generation_whitelist].copy(deep=True)
 
         # in convention; demand is negative and in w (MW 1e6)
-        deficit = (production.sum(axis=1) - demand.sum(axis=1) - default_deficit) * 1e6
+        deficit = (production.sum(axis=1) - demand.sum(axis=1) - default_deficit)
         deficit.index = etmd.state.index
 
     # if all energy generation is a DoF
     if generation_whitelist is False:
 
-        deficit = ( -demand.sum(axis=1) - default_deficit) * 1e6
+        deficit = ( -demand.sum(axis=1) - default_deficit)
         deficit.index = etmd.state.index 
 
     if raw:

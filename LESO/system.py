@@ -228,8 +228,10 @@ class System():
         opt = pyo.SolverFactory(solver)
         if noncovex:
             opt.options['NonConvex'] = 2
-            
+        
+        opt.options['IterationLimit'] = 2000
         opt.options['BarHomogeneous'] = 1
+        
         self.model.results = opt.solve(
             self.model,
             tee=True)

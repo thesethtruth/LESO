@@ -446,16 +446,15 @@ merit_order = {
     }
 
 scenarios_gelderland = { 
-    '2030Gelderland_hoog': 815715,
-    '2030Gelderland_laag': 815716,
-    '2030RES_Achterhoek': 815753,
-    '2030RES_ArnhemNijmegen': 815754,
-    '2030RES_Cleantech': 815755,
-    '2030RES_Foodvalley ': 815756,
-    '2030RES_NoordVeluwe': 815757,
-    '2030RES_Rivierenland': 815758,
+    '2030Gelderland_hoog': {'id': 815715, 'latlon': (52, 6)},
+    '2030Gelderland_laag': {'id': 815716, 'latlon': (52, 6)},
+    '2030RES_Achterhoek': {'id': 815753, 'latlon': (52, 6.4)},
+    '2030RES_ArnhemNijmegen': {'id': 815754, 'latlon': (54.9, 5.9)},
+    '2030RES_Cleantech': {'id': 815755, 'latlon': (52.2, 6.1)},
+    '2030RES_Foodvalley ': {'id': 815756, 'latlon': (52.1, 5.7)},
+    '2030RES_NoordVeluwe': {'id': 815757, 'latlon': (52.4, 5.8)},
+    '2030RES_Rivierenland': {'id': 815758, 'latlon': (51.9, 5.3)},
 } 
-
 
 generation_whitelist = [
     'buildings_solar_pv_solar_radiation.output (MW)',

@@ -9,6 +9,7 @@ def process_results(eM, unit='k'):
     time = eM.time
 
     unit_map = {
+        'None': (1, 'default'),
         'k': (1e3, 'kW(h)'),
         'M': (1e6, 'MW(h)'),
         'G': (1e9, 'GW(h)'),

@@ -242,6 +242,8 @@ etmdemand = dict(
         'group': 'load',
         },
         merit_tag = 'MM',
+        # specs
+        generation_whitelist = False,
         # optimizer
         dof = False,
         upper = upper_bound,
@@ -284,7 +286,7 @@ grid = dict(
         lifetime = None,
         capex = 0,
         opex = 0,
-        variable_cost = 12.5e-5,
+        variable_cost = 125e-6,
         variable_income = 25e-6,
         interest = interest,
         exp_inflation_rate = exp_inflation_rate,
@@ -312,10 +314,10 @@ lithium = dict(
         }],
         # specs
         installed = 1000e3,      # 1000 kWh installed capacity
-        EP_ratio = 1.25,         # ratio of energy to power
+        EP_ratio = 1.25,         # ratio of energy to power (influences component cost)
         startingSOC = .7,        # Starting SOC
-        cycles = 1000,           # Maximum hardcycles for life time
-        discharge_hurt = 0.7,    # Maximum discharge power before the hurt
+        discharge_rate = 0.9995,   # hourly discharge
+        cycle_efficieny = .89,  # round trip efficiency
         # optimizer
         dof = False,
         lower = 0,
@@ -324,10 +326,53 @@ lithium = dict(
         upper = upper_bound,
         # financials
         lifetime = 10,
-        capex = 280e-3,
+        capex = 280e-3,             # capex at EP = 1
+        capex_EP_ratio = .55,       # part of component cost related to storage only
         opex = 8e-3,
         variable_cost = 2.8e-12,
-        variable_income = 2.8e-9,
+        variable_income = 2.8e-12,
+        interest = interest,
+        exp_inflation_rate = exp_inflation_rate,
+    )
+
+hydrogen = dict(
+        # Merit order 
+        merit_tag = 'H2',
+        styling = [
+        {
+            'label': 'H2 fuelcell power', 
+            'color': '#46b3af',
+            'group': 'power',
+        },
+        {
+            'label': 'H2 electrolyser load',
+            'color': '#ba5db1',
+            'group': 'load',
+        },
+        {
+            'label': 'H2 storage energy', 
+            'color': '#85a0d6',
+            'group': 'energy',
+        }],
+        # specs
+        installed = 1000e3,      # 1000 kWh installed capacity
+        EP_ratio = 50,         # ratio of energy to power (influences component cost)
+        startingSOC = .1,        # Starting SOC
+        discharge_rate = 1,   # hourly discharge
+        cycle_efficieny = 0.45,  # round trip efficiency
+        # optimizer
+        dof = False,
+        lower = 0,
+        positive = True,
+        negative = True,
+        upper = upper_bound,
+        # financials
+        lifetime = 15,
+        capex = 2607e-3,             # capex at EP = 1
+        capex_EP_ratio = .0055,       # part of component cost related to storage only at EP = 1
+        opex = 8e-3,
+        variable_cost = 2.8e-12,
+        variable_income = 2.8e-12,
         interest = interest,
         exp_inflation_rate = exp_inflation_rate,
     )
@@ -395,6 +440,7 @@ merit_order = {
     "DRE" : 0,
     "MM" : 1,
     "ESS" : 2,
+    "H2": 2,
     "Grid" : 3,
     "finalbalance": 4,    
     }
@@ -446,14 +492,3 @@ generation_whitelist = [
     'industry_other_paper_flexibility_p2h_hydrogen_electricity.output (MW)',
     'transport_car_flexibility_p2p_electricity.output (MW)',
 ]
-
-interconnectors = [
-    'energy_interconnector_1_imported_electricity.output (MW)',
-    'energy_interconnector_2_imported_electricity.output (MW)',
-    'energy_interconnector_3_imported_electricity.output (MW)',
-    'energy_interconnector_4_imported_electricity.output (MW)',
-    'energy_interconnector_5_imported_electricity.output (MW)',
-    'energy_interconnector_6_imported_electricity.output (MW)',
-]
-
-

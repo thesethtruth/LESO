@@ -349,6 +349,17 @@ class Lithium(Storage):
     def dischargepower(self, value):
         return print("---> Note: Change the EP ratio to change this variable")
 
+    @property
+    def capex(self):
+        cpx = self._capex 
+        cpxr = self.capex_EP_ratio
+        epr = self.EP_ratio
+        return cpx * (1-cpxr)/epr + cpx*cpxr
+    
+    @capex.setter
+    def capex(self, value):
+        self._capex = value
+        
     def __str__(self):
         return "lithium{number}".format(number=self.number)
 
@@ -373,6 +384,69 @@ class Lithium(Storage):
         # returns some quadratic formula that simulates battery wear
         return sum((P[t])**2*self.variable_cost for t in time)
 
+class Hydrogen(Storage):
+
+    instances = 0
+    default_values = defs.hydrogen
+    states = ["power", "energy"]
+    control_states = {"power": 1, "energy": 1}
+
+    def __init__(self, name, **kwargs):
+
+        # Set default values as instance attribute
+        self.default()
+
+        # Let custom component setter handle the custom values
+        self.custom(**kwargs)
+        # Initiate the financial variables
+        set_finance_variables(self)
+
+        Hydrogen.instances += 1
+        self.number = Hydrogen.instances
+        self.name = name
+
+    @property
+    def dischargepower(self):
+        return self.installed / self.EP_ratio
+
+    @dischargepower.setter
+    def dischargepower(self, value):
+        return print("---> Note: Change the EP ratio to change this variable")
+
+    @property
+    def capex(self):
+        cpx = self._capex 
+        cpxr = self.capex_EP_ratio
+        epr = self.EP_ratio
+        return cpx * (1-cpxr)/epr + cpx*cpxr
+    
+    @capex.setter
+    def capex(self, value):
+        self._capex = value
+        
+    def __str__(self):
+        return "hydrogen{number}".format(number=self.number)
+
+    def power_control(self, balance_in):
+
+        from LESO.scenario.balancing import battery_power_control
+
+        [self.state.power, self.state.energy] = battery_power_control(self, balance_in)
+
+    def construct_constraints(self, system):
+
+        util.battery_control_constraints(system.model, self)
+    
+    def get_variable_cost(self, pM):
+        time = pM.time
+        key = self.__str__()
+        zeros = np.zeros(len(time))
+        
+        # get pyoVar if key exists, otherwise zeros matrix
+        P = getattr(pM, key+'_P', zeros)
+        
+        # returns some quadratic formula that simulates battery wear
+        return sum((P[t])**2*self.variable_cost for t in time)
 
 class FastCharger(SourceSink):
 

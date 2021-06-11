@@ -54,7 +54,7 @@ def make_profile_plot(startingweek, data):
     fig.update_layout(
         title ="Total energy balance in <b>week {startingweek}</b> on hourly resolution".format(startingweek = startingweek),
         xaxis_title="Day of the year",
-        yaxis_title="Hourly power [KWh/h]",
+        yaxis_title="Hourly power",
         plot_bgcolor  = 'white',
         )
     
@@ -115,7 +115,7 @@ def make_capex_pie(data):
         margin= global_margins
     )
 
-    title = 'CAPEX by component [k€]'
+    title = 'CAPEX by component'
 
     return fig
 

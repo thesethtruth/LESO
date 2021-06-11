@@ -313,14 +313,14 @@ def get_etm_curve(
     etmDemand_instance, 
     session_id, 
     allow_import=False, 
-    generation_whitelist=None,
+    allow_export=False,
     raw=False
 ):
-
+    etmd = etmDemand_instance
+    generation_whitelist = etmd.generation_whitelist
     # read file and find inputs / outputs
     url = f"https://engine.energytransitionmodel.com/api/v3/scenarios/{session_id}/curves/merit_order.csv"
     df = pd.read_csv(url)
-    default_deficit = df["deficit"]
 
     inputs, outputs = [], []
     for col in df.columns:
@@ -328,23 +328,39 @@ def get_etm_curve(
             inputs.append(col)
         if ".output" in col:
             outputs.append(col)
+    
+    export_grid, import_grid = [], []
+    for col in df.columns:
+        if 'inter' in col and 'export' in col:
+            export_grid.append(col)
+        if 'inter' in col and 'import' in col:
+            import_grid.append(col)
+    
+    default_deficit = df["deficit"]
+    demand = df[inputs].copy(deep=True)
+
+    if not allow_export:
+        demand.drop(labels=export_grid, axis=1, inplace=True)
 
     # for input analysis ('sustainable') options only
     if generation_whitelist is None:
+        
         generation_whitelist = LESO.defaultvalues.generation_whitelist
-    interconnectors = LESO.defaultvalues.interconnectors
 
-    # generate the required data for LESO
-    if allow_import:
-        production = df[[*generation_whitelist, *interconnectors]].copy(deep=True)
-    else:
-        production = df[generation_whitelist].copy(deep=True)
+        if allow_import:
+            production = df[[*generation_whitelist, *import_grid]].copy(deep=True)
+        else:
+            production = df[generation_whitelist].copy(deep=True)
 
-    demand = df[inputs].copy(deep=True)
+        # in convention; demand is negative and in w (MW 1e6)
+        deficit = (production.sum(axis=1) - demand.sum(axis=1) - default_deficit) * 1e6
+        deficit.index = etmd.state.index
 
-    # in convention; demand is negative and in w (MW 1e6)
-    deficit = (production.sum(axis=1) - demand.sum(axis=1) - default_deficit) * 1e6
-    deficit.index = etmDemand_instance.state.index
+    # if all energy generation is a DoF
+    if generation_whitelist is False:
+
+        deficit = ( -demand.sum(axis=1) - default_deficit) * 1e6
+        deficit.index = etmd.state.index 
 
     if raw:
         return df

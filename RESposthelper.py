@@ -72,3 +72,42 @@ def extract_plotting_specs(data, whitelist=['pv','wind','lith','hy']):
     colors = extract_colors(ckeys)
 
     return labels, colors
+
+
+def res_compare_pies(df, colors):
+    
+    fig = make_subplots(
+                    rows=2, cols=6, 
+                    specs=[
+                        [{'type':'domain'}, {'type':'domain'}, {'type':'domain'}, {'type':'domain'}, {'type':'domain'}, {'type':'domain'}],
+                        [{'type':'domain'}, {'type':'domain'}, {'type':'domain'}, {'type':'domain'}, {'type':'domain'}, {'type':'domain'}],
+                        ],
+                    subplot_titles=df.index,
+                    vertical_spacing=0
+                )
+    
+    for i, (col, row) in enumerate(df.iterrows()):
+        fig.add_trace(go.Pie(
+                        values = [row.iloc[0], row.iloc[1]],
+                        labels = [row.index[0], row.index[1]],
+                        marker_colors = [colors[0], colors[1]],
+                        name=col,
+                        opacity = global_alpha,
+                        textinfo='none'),
+                        2, i+1,)
+
+        fig.add_trace(go.Pie(
+                            values = [row.iloc[2], row.iloc[3]],
+                            labels = [row.index[2], row.index[3]],
+                            marker_colors = [colors[2], colors[3]],
+                            name=col,
+                            opacity = global_alpha,
+                            textinfo='none'),
+                        1, i+1)
+
+    fig.update_layout(
+        legend_orientation = "h",
+        margin=global_margins,
+    )
+
+    return fig

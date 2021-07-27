@@ -170,6 +170,8 @@ wind = dict(
         installed = 600e3,          # total wind power installed [W]
         hubheight = 120,            # h_hub hub height [m]
         roughness = 0.25,           # z0 roughness length [m]
+        # data source
+        use_dowa = False,
         # optimizer
         lower = 0,
         upper = upper_bound,

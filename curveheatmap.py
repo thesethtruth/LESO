@@ -117,7 +117,7 @@ def curve_to_heatmap(curve, normalize=False, absolute=True, colorscale='Viridis'
     
     if normalize:   
         matrix = kotzur_normalize(matrix)
-    times = pd.to_datetime(pd.date_range(start, periods=24, freq='h')[::-1].values).strftime('%H:%M')
+    times = ["{:02d}:00".format(i) for i in [k+1 for k in range(24)]]
     
     days_months = pd.date_range(start, periods=days, freq='d')
     heatmap = go.Heatmap(

@@ -20,8 +20,7 @@ setup(
     # that you indicate whether you support Python 2, Python 3 or both.
     'Programming Language :: Python :: 3',
 ],
-    packages=find_packages("LESO", exclude=("webdriver",)),  # include all packages under src
-    package_dir={"": "LESO"},   # tell distutils packages are under src
+    packages=find_packages(include=["LESO", "LESO.*"]),  # include all packages under src
     package_data={
         # And include any *.pkl files found in the "data" subdirectory
         # of the "ETMeta" package, also:
@@ -44,6 +43,7 @@ setup(
         'dash',
         'dash-table',
         'openpyxl',
+        'pyproj'
     ],
     python_requires='>=3.6',
 )

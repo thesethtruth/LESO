@@ -276,7 +276,8 @@ class Wind(SourceSink):
         set_finance_variables(self)
 
         # fetch own tmy set
-        self.dowa = get_dowa(lat, lon, height=height)
+        if self.use_dowa:
+            self.dowa = get_dowa(lat, lon, height=height)
 
         Wind.instances += 1
         self.number = Wind.instances
@@ -286,8 +287,10 @@ class Wind(SourceSink):
         return "wind{number}".format(number=self.number)
 
     def calculate_time_serie(self, tmy):
-        # accepts but ignores system tmy
-        self.state.power = feedinfunctions.windpower(self, self.dowa)
+        if self.use_dowa:
+            self.state.power = feedinfunctions.windpower(self, self.dowa)
+        else:
+            self.state.power = feedinfunctions.windpower(self, tmy)
 
 class WindOffshore(SourceSink):
 

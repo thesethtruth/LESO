@@ -36,6 +36,7 @@ Dependencies are specified in the setup.py without versioning to retain flexibil
 * `dash`
 * `dash-table`
 * `openpyxl`
+* `pyproj`
 
 
 ## Optimization

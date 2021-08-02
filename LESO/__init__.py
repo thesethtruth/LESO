@@ -5,4 +5,5 @@ from .optimizer import util
 from .dataservice import *
 from . import feedinfunctions
 from . import finance
+from attrdict import AttrDict
 

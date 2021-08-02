@@ -1,0 +1,49 @@
+from setuptools import setup, find_packages
+setup(
+    name='LESO',
+    version='0.0.11',
+    description='A minimal and low-code multi-mode framework to investigate cost-optimal renewable energy systems and help guide policy and decission makers in the energy transition.',
+    url='https://github.com/thesethtruth/LESO',
+    author='Seth van Wieringen',
+    author_email='seth@uu-engineering.nl',
+    license='MIT',
+
+    classifiers=[
+    'Development Status :: 3 - Alpha',
+    'Intended Audience :: Developers :: Energy consultants',
+    'Topic :: Energy Transition :: Optimization :: ETM :: MILP :: Wind :: Solar',
+
+    # Pick your license as you wish (should match "license" above)
+    'License :: MIT License',
+
+    # Specify the Python versions you support here. In particular, ensure
+    # that you indicate whether you support Python 2, Python 3 or both.
+    'Programming Language :: Python :: 3',
+],
+    packages=find_packages("LESO", exclude=("webdriver",)),  # include all packages under src
+    package_dir={"": "LESO"},   # tell distutils packages are under src
+    package_data={
+        # And include any *.pkl files found in the "data" subdirectory
+        # of the "ETMeta" package, also:
+        "LESO": ["data/*.pkl"],
+        "LESO": ["data/*.csv"],
+    },
+    install_requires=[
+        'ETMeta',
+        'pandas',
+        'numpy',
+        'plotly',
+        'pyomo',
+        'pvlib',
+        'windpowerlib',
+        'ema-workbench',
+        'xarray',
+        'requests',
+        'beautifulsoup4',
+        'xarray',
+        'dash',
+        'dash-table',
+        'openpyxl',
+    ],
+    python_requires='>=3.6',
+)

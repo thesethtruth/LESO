@@ -3,3 +3,4 @@ __pycache__
 .venv
 LESO/dataservice/cache
 energy-vis-html/*
+LESO.egg-info

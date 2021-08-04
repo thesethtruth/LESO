@@ -15,7 +15,7 @@ from pyomo.environ import value
 import LESO.defaultvalues as defs
 import LESO.feedinfunctions as feedinfunctions
 import LESO.functions as functions
-import LESO.optimizer.util as util
+import LESO.optimizer.core as core
 from LESO.optimizer.preprocess import initializeGenericPyomoVariables
 from LESO.finance import set_finance_variables
 from LESO.dataservice import get_pvgis, get_dowa, etm_id_extractor_external
@@ -256,7 +256,7 @@ class FinalBalance(SourceSink):
 
     def construct_constraints(self, system):
 
-        util.final_balance_power_control_constraints(system.model, self)
+        core.final_balance_power_control_constraints(system.model, self)
 
 
 class Wind(SourceSink):
@@ -374,7 +374,7 @@ class Lithium(Storage):
 
     def construct_constraints(self, system):
 
-        util.battery_control_constraints(system.model, self)
+        core.battery_control_constraints(system.model, self)
 
     def get_variable_cost(self, pM):
         time = pM.time
@@ -438,7 +438,7 @@ class Hydrogen(Storage):
 
     def construct_constraints(self, system):
 
-        util.battery_control_constraints(system.model, self)
+        core.battery_control_constraints(system.model, self)
     
     def get_variable_cost(self, pM):
         time = pM.time
@@ -609,7 +609,7 @@ class Grid(SourceSink):
 
     def construct_constraints(self, system):
 
-        util.direct_power_control_constraints(system.model, self)
+        core.direct_power_control_constraints(system.model, self)
 
 
 ComponentClasses = {

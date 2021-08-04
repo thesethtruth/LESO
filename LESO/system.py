@@ -14,9 +14,9 @@ from pyomo.environ import value
 # module with default values
 import LESO.defaultvalues as defs
 from LESO.dataservice import get_pvgis
-import LESO.optimizer.util as util
-from LESO.optimizer.util import power
-from LESO.optimizer.util import set_objective
+import LESO.optimizer.core as core
+from LESO.optimizer.core import power
+from LESO.optimizer.core import set_objective
 from LESO.optimizer.postprocess import process_results
 from LESO.components import FinalBalance
 from LESO.test import attribute_test

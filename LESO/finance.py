@@ -54,8 +54,8 @@ def tco(component, eM):
     """
     Total Cost of Ownership
     """
-    pM = eM.model
-    system = eM
+    pM = eM.model # extract pyomo model from enery model
+    system = eM # energy model is system
     
     if component.capex != 0:
         unit_capex =    component.capex + (
@@ -65,16 +65,41 @@ def tco(component, eM):
     else:
         unit_capex = 0
     
-    lifetime_opex = component.opex * system.lifetime
-    pyoVar = component.pyoVar
-    lifetime_variable_cost = component.get_variable_cost(pM) * system.lifetime
+    lifetime_fixed_cost = component.opex * system.lifetime #  fixed operation expences over lifetime
+    pyoVar = component.pyoVar # scaling factor in optimization issue
+    lifetime_variable_cost = component.get_variable_cost(pM) * system.lifetime # variable operation expences over lifetime
     
     objective = system.crf*(
-                (unit_capex + lifetime_opex)*pyoVar +
+                (unit_capex + lifetime_fixed_cost)*pyoVar +
                 lifetime_variable_cost
                 )
                 # use crf to discount all cashflows over the system lifetime
                 # and come to annualized cash flows
+    
+    return objective
+
+def osc(component, eM):
+    """
+    Overnight system cost
+    """
+    pM = eM.model # extract pyomo model from enery model
+    system = eM # energy model is system
+    
+    if component.capex != 0:
+        unit_capex =    component.capex + (
+                        system.lifetime - component.lifetime ) / (
+                        component.lifetime ) * component.replacement
+                        # linear replacement assumption
+    else:
+        unit_capex = 0
+    
+    fixed_cost = component.opex # without system lifetime, only the first year
+    pyoVar = component.pyoVar # scaling factor in optimization issue
+    variable_cost = component.get_variable_cost(pM) # without system lifetime, only the first year 
+    
+    objective = (system.crf*(unit_capex)+fixed_cost)*pyoVar + variable_cost
+                # use crf to discount *only investment* over the system lifetime
+                # and add all operation (yearly) cost to come to overnight system cost
     
     return objective
 
@@ -89,7 +114,8 @@ def functionmapper(objective):
 
     sdict = {
         'tco': tco,
-        'lcoe': lcoe
+        'lcoe': lcoe,
+        'osc': osc
     }
 
     return sdict[objective]

@@ -5,6 +5,7 @@ import warnings
 import pickle
 import json
 from datetime import datetime
+import os
 
 # for optimizing
 import pyomo.environ as pyo
@@ -366,15 +367,17 @@ class System:
         else:
             return info
 
-    def to_pickle(self, folder="cache"):
+    def to_pickle(self, filepath=None):
 
-        location_string = folder + "/" + self.name + ".pkl"
-        picklefile = open(location_string, "wb")
+        if filepath is None:
+            filepath = os.path.join(os.getcwd(), self.name + ".pkl")
+
+        picklefile = open(filepath, "wb")
         pickle.dump(self, picklefile)
         picklefile.close()
 
         print()
-        print("Saved and pickled model instance to {}".format(location_string))
+        print("Saved and pickled model instance to {}".format(filepath))
 
     @staticmethod
     def read_pickle(filepath):

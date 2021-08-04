@@ -1,3 +1,4 @@
+from LESO import dataservice
 import requests
 from datetime import datetime
 import pandas as pd
@@ -22,11 +23,15 @@ def get_pvgis(lat, lon):
     Checks the cache for a match (stored offline) to save the time of getting 
     data from PV GIS
     """
-    filestring = f"LESO/dataservice/cache/DOWA_lat_{str(lat)}_lon_{str(lon)}.pkl"
-    if os.path.isfile(filestring):
+    filestring = f"cache\\DOWA_lat_{str(lat)}_lon_{str(lon)}.pkl"
+    dataservice_folder = os.path.dirname(__file__)
+
+    filepath = os.path.join(dataservice_folder, filestring)
+
+    if os.path.isfile(filepath):
         
         # read last API call
-        tmy = pd.read_pickle(filestring)
+        tmy = pd.read_pickle(filepath)
         
         if not (tmy['lat'][1] == lat and tmy['lon'][1] == lon):
             
@@ -34,7 +39,7 @@ def get_pvgis(lat, lon):
             print('Fetching data through API...')
             tmy = _getPVGIS(lat, lon)
             print('Code 200: Succes!')
-            tmy.to_pickle(filestring)
+            tmy.to_pickle(filepath)
             
         else: 
                 
@@ -46,7 +51,7 @@ def get_pvgis(lat, lon):
         print('Fetching data through API...')
         tmy = _getPVGIS(lat, lon)
         print('Code 200: Succes!')
-        tmy.to_pickle(filestring)
+        tmy.to_pickle(filepath)
     
     
     # set relevant parameters needed for further processing based on PVgis

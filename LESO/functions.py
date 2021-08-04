@@ -2,13 +2,18 @@ import pandas as pd
 import numpy as np
 import requests
 from bs4 import BeautifulSoup
+import os
 
 
 def read_consumption_profile(consumer_instance, 
-                             filepath = "LESO/data/consumption.csv"):
+                             path_to_data = "data\\consumption.csv"):
     
     consumer = consumer_instance
     
+    dir = os.path.dirname(__file__)
+    filepath = os.path.join(dir, path_to_data)
+    print(filepath)
+
     # read data
     temp_consumption = pd.read_csv(filepath,
                          nrows=35040,skiprows=5,
@@ -29,8 +34,11 @@ def read_consumption_profile(consumer_instance,
 
 
 def calculate_charging_demand(fastcharger_instance, 
-                              filepath = 'LESO/data/EV_charge.pkl'):
+                              path_to_data = "data\\EV_charge.pkl"):
     
+    dir = os.path.dirname(__file__)
+    filepath = os.path.join(dir, path_to_data)
+
     charger = fastcharger_instance
     
     # read traffic data

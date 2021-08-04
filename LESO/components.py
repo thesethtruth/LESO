@@ -59,7 +59,7 @@ class Component:
                     self.dof = value
                     self.installed = 1
             else:
-                print("Warning: Invalid input argument supplied -- default used")
+                print(f"Warning: Invalid input argument supplied -- default used: {key} for {self.name}")
 
         pass
 
@@ -234,6 +234,12 @@ class FinalBalance(SourceSink):
     control_states = {"power": 1}
 
     def __init__(self, **kwargs):
+        
+        name = kwargs.pop("name", None)
+        if name:
+            self.name = name
+        else:
+            self.name = self.__str__()
 
         # Set default values as instance attribute
         self.default()
@@ -242,9 +248,7 @@ class FinalBalance(SourceSink):
         self.custom(**kwargs)
         # Initiate the financial variables
         set_finance_variables(self)
-
-        self.name = self.__str__()
-
+        
     def __str__(self):
         return "FinalBalance"
 

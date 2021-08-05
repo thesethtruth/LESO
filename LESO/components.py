@@ -59,7 +59,7 @@ class Component:
                     self.dof = value
                     self.installed = 1
             else:
-                print(f"Warning: Invalid input argument supplied -- default used: {key} for {self.name}")
+                print(f"Warning: Invalid input argument supplied -- default used: {key} for {self}")
 
         pass
 

@@ -168,8 +168,9 @@ wind = dict(
         # transform
         dof = False,
         installed = 600e3,          # total wind power installed [W]
-        hubheight = 120,            # h_hub hub height [m]
         roughness = 0.25,           # z0 roughness length [m]
+        turbine_type = "E-126/4200",  # turbine type as in oedb turbine library
+        hub_height = 135,  # in m
         # data source
         use_dowa = False,
         # optimizer

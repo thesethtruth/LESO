@@ -6,7 +6,6 @@ import os
 modelname = "Cablepooling"
 lat, lon = 51.81, 5.84  # Nijmegen
 
-
 # initiate System component
 system = System(latitude=lat, longitude=lon, model_name=modelname)
 
@@ -35,7 +34,21 @@ system.add_components(component_list)
 
 #%% Pickle the model
 from experiments_overview import MODEL_FOLDER
+from LESO import System
 
 name = "cablepool.pkl"
 filepath = os.path.join(MODEL_FOLDER, name)
-system.to_pickle(filepath=filepath)
+
+## Solve
+if False:
+    system.optimize(
+            objective='osc',        # overnight system cost
+            time=None,              # resorts to default; year 8760h
+            store=False,             # write-out to json
+            solver='gurobi',        # default solver
+            nonconvex=False,        # solver option (warning will show if needed)
+            solve=True,             # solve or just create model
+    )
+## Or write to pickle
+else: 
+    system.to_pickle(filepath=filepath)

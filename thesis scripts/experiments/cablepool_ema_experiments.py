@@ -28,7 +28,7 @@ model.uncertainties = [
 model.outcomes = [ScalarOutcome(metric) for metric in METRICS]
 
 # run experiments
-results = perform_experiments(model, scenarios=25, policies=3)
+results = perform_experiments(model, scenarios=100, policies=3)
 
 # save results
 results_file_name = os.path.join(RESULT_FOLDER, f"cabelpooling_ema_results_{RUNID}.tar.gz")

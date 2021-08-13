@@ -1,9 +1,8 @@
 import LESO
+from LESO import ema_pyomo_interface
 import os
 from copy import deepcopy as copy
 import uuid
-import numpy as np
-from numpy import float64
 from tinydb import TinyDB
 
 from models.experiments_overview import MODEL_FOLDER, RESULT_FOLDER
@@ -45,11 +44,11 @@ def Handshake(
     for component in system.components:
 
         if isinstance(component, LESO.PhotoVoltaic):
-            component.capex = component.capex * float(pv_cost_factor)
-            component.opex = component.capex * float(pv_cost_factor)
+            component.capex = component.capex * pv_cost_factor
+            component.opex = component.opex * pv_cost_factor
         if isinstance(component, LESO.Lithium):
-            component.capex = component.capex * float(battery_cost_factor)
-            component.capex = component.capex * float(battery_cost_factor)
+            component.capex = component.capex * battery_cost_factor
+            component.opex = component.opex * battery_cost_factor
         if isinstance(component, LESO.Grid):
             component.installed = grid_capacity
     
@@ -70,8 +69,8 @@ def Handshake(
 
     return system, filename_export
 
-
-def CablePooling(
+@ema_pyomo_interface
+def EVhub(
     pv_cost_factor=1,
     battery_cost_factor=1,
     grid_capacity=10

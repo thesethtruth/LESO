@@ -1,9 +1,8 @@
 import LESO
+from LESO import ema_pyomo_interface
 import os
 from copy import deepcopy as copy
 import uuid
-import numpy as np
-from numpy import float64
 from tinydb import TinyDB
 
 from models.experiments_overview import MODEL_FOLDER, RESULT_FOLDER
@@ -45,13 +44,13 @@ def Handshake(
     for component in system.components:
 
         if isinstance(component, LESO.PhotoVoltaic):
-            component.capex = component.capex * float(pv_cost_factor)
-            component.opex = component.opex * float(pv_cost_factor)
+            component.capex = component.capex * pv_cost_factor
+            component.opex = component.opex * pv_cost_factor
         if isinstance(component, LESO.Lithium):
-            component.capex = component.capex * float(battery_cost_factor)
-            component.opex = component.opex * float(battery_cost_factor)
+            component.capex = component.capex * battery_cost_factor
+            component.opex = component.opex * battery_cost_factor
         if isinstance(component, LESO.Grid):
-            component.installed = float(grid_capacity)
+            component.installed = grid_capacity
     
     filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1])[:6] + ".json"
 
@@ -70,7 +69,7 @@ def Handshake(
 
     return system, filename_export
 
-
+@ema_pyomo_interface
 def CablePooling(
     pv_cost_factor=1,
     battery_cost_factor=1,
@@ -143,9 +142,6 @@ def CablePooling(
     db_path = os.path.join(RESULT_FOLDER, f"cablepooling_db{RUNID}.json")
     with TinyDB(db_path) as db:
         db.insert(db_entry)
-    
-    ## force to float64 for further processing
-    results = {key: float64(value) for key, value in results.items()}
     
     return results
 

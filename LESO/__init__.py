@@ -6,4 +6,5 @@ from .dataservice import *
 from . import feedinfunctions
 from . import finance
 from .attrdict import AttrDict
+from .ema import ema_pyomo_interface
 

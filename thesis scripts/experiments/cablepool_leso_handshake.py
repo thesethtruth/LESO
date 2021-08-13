@@ -46,12 +46,12 @@ def Handshake(
 
         if isinstance(component, LESO.PhotoVoltaic):
             component.capex = component.capex * float(pv_cost_factor)
-            component.opex = component.capex * float(pv_cost_factor)
+            component.opex = component.opex * float(pv_cost_factor)
         if isinstance(component, LESO.Lithium):
             component.capex = component.capex * float(battery_cost_factor)
-            component.capex = component.capex * float(battery_cost_factor)
+            component.opex = component.opex * float(battery_cost_factor)
         if isinstance(component, LESO.Grid):
-            component.installed = grid_capacity
+            component.installed = float(grid_capacity)
     
     filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1])[:6] + ".json"
 

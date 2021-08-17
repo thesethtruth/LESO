@@ -159,6 +159,18 @@ class PhotoVoltaic(SourceSink):
             "---> Note: Change the module power or -area to change this variable"
         )
 
+    @property
+    def opex(self):
+        try:
+            opex = self._opex
+        except AttributeError:
+            opex = self.capex * self.opex_ratio
+        return opex
+        
+    @opex.setter
+    def opex(self, value):
+        self._opex = value
+    
     def __str__(self):
         return "pv{number}".format(number=self.number)
 
@@ -585,15 +597,20 @@ class Grid(SourceSink):
         neg = getattr(pM, ckey+'_Pneg', 1)
         pos = getattr(pM, ckey+'_Ppos', 1)
 
+        if not isinstance(self.variable_income, list):
+            self.variable_income = [self.variable_income]*len(time)
+        if not isinstance(self.variable_cost, list):
+            self.variable_cost = [self.variable_cost]*len(time)
+
         if neg == 1 and pos == 1:
             income = sum(
-                power[t]*self.variable_income
+                power[t]*self.variable_income[t]
                 if power[t] < 0
                 else 0
                 for t in time
             )
             cost = sum(
-                power[t]*self.variable_cost
+                power[t]*self.variable_cost[t]
                 if power[t] > 0
                 else 0
                 for t in time
@@ -601,11 +618,11 @@ class Grid(SourceSink):
 
         else:
             income = sum(
-                neg[t]*self.variable_income
+                neg[t]*self.variable_income[t]
                 for t in time
             )
             cost = sum(
-                pos[t]*self.variable_cost
+                pos[t]*self.variable_cost[t]
                 for t in time
             )
 

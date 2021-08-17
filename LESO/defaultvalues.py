@@ -84,7 +84,7 @@ pv = dict(
         # financials
         lifetime = 25,
         capex = 0.6,
-        opex = 5e-3,
+        opex_ratio = 0.0015, #% based on ETRI2014
         variable_cost = 0,
         variable_income = 0,
         interest = 0.02,

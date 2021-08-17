@@ -35,7 +35,8 @@ OUTPUT_PREFIX = "cablepooling_exp_"
 def Handshake(
     pv_cost_factor=None,
     battery_cost_factor=None,
-    grid_capacity=None
+    grid_capacity=None,
+    model_to_open=model_to_open,
 ):
 
     # initiate System component
@@ -73,7 +74,8 @@ def Handshake(
 def CablePooling(
     pv_cost_factor=1,
     battery_cost_factor=1,
-    grid_capacity=10
+    grid_capacity=10,
+    hand_shake_function=Handshake
 ):
 
     system, filename_export = Handshake(

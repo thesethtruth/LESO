@@ -74,4 +74,27 @@ def add_author_source(fig, author="Seth van Wieringen", source="Source will be d
     
     return fig
 
+def thesis_default_styling(fig):
+    
+    fig.update_layout(
+        # template
+        template="simple_white",
+        # move legend
+        legend_yanchor='middle', 
+        legend_y=0.5,
+        # set size
+        width=600,
+        height=350,
+        # remove margins
+        margin = dict(
+            l=0,
+            r=0,
+            t=0,
+            b=0
+        ),
+        # remove title if present
+        title=None,
+        ) 
+    return fig   
+
 

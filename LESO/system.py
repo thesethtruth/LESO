@@ -9,7 +9,6 @@ import os
 
 # for optimizing
 import pyomo.environ as pyo
-from pyomo.environ import value
 
 # module with default values
 import LESO.defaultvalues as defs
@@ -267,13 +266,18 @@ class System:
         if solve:
             self.pyomo_solve(solver=solver, noncovex=nonconvex, tee=tee)
 
-            self.pyomo_post_process(unit=unit)
+        # check solver status before proceeding to post process options
+        if pyo.check_optimal_termination(self.model.results):
+            if solve:
+                self.pyomo_post_process(unit=unit)
 
-        self.pyomo_extract_results()
+            self.pyomo_extract_results()
 
-        if store:
-            self.to_json(filepath=filepath)
-
+            if store:
+                self.to_json(filepath=filepath)
+        else:
+            warnings.warn("LESO: Exiting without processing a solution since non-optimal solver exit.")
+        
     def pyomo_print(self, time=None):
         """
         Method to inspect constraints and objective function.

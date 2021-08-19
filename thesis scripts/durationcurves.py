@@ -7,13 +7,7 @@ import plotly.graph_objects as go
 import json
 
 
-wd = os.getcwd()
-filepaths = glob.glob(wd + "/results/2030*.json")
-prenames = [os.path.split(filepath)[-1] for filepath in filepaths]
-names = [prename.replace(".json", "").replace("2030RES_", "") for prename in prenames]
-
-
-def kotzur_normalize(array):
+def kotzur_normalize(array, absolute=False):
     """
     Normalizes an array as proposed in DOI: 10.1016/j.renene.2017.10.017
         $$
@@ -24,10 +18,11 @@ def kotzur_normalize(array):
         array: np.array of times series
 
     Returns
-        n_array: np.array of normalized time series (will be *absolute*)
+        n_array: np.array of normalized time series (if desired, can be given as amplitude spectrum; use absolute=True)
     """
 
-    array = np.abs(array)
+    if absolute:
+        array = np.abs(array)
     max_a = np.max(array)
     min_a = np.min(array)
 
@@ -99,21 +94,22 @@ def extract_simulation_data_duration_curve(
     return fig_data
 
 
-def plot_duration_curve(data, names, colors, unit, normalize=False):
+def plot_duration_curve(data, names, unit='M', normalize=False, absolute_normalize=True, colors=None):
 
     fig = go.Figure()
 
     if not isinstance(data, list):
         data = [data]
-
-    colors = sns.color_palette("cubehelix", n_colors=len(data)).as_hex()
+    
+    if colors is None:
+        colors = sns.color_palette("cubehelix", n_colors=len(data)).as_hex()
 
     for i, d in enumerate(data):
 
         magnitude = np.sort(d)[::-1]
         percentile = np.arange(1.0, len(magnitude) + 1) / len(magnitude)
         if normalize:
-            magnitude = kotzur_normalize(magnitude)
+            magnitude = kotzur_normalize(array=magnitude, absolute=absolute_normalize)
 
         fig.add_trace(
             go.Scatter(
@@ -135,7 +131,7 @@ def plot_duration_curve(data, names, colors, unit, normalize=False):
     if normalize:
         fig.update_yaxes(title_text="<b>Normalized power</b>", nticks=5)
     else:
-        fig.update_yaxes(title_text="<b>Power</b>", ticksuffix=" MW", nticks=5)
+        fig.update_yaxes(title_text="<b>Power</b>", ticksuffix=f" {unit}W", nticks=5)
 
     return fig
 
@@ -157,49 +153,55 @@ def make_duration_curve(
 
     return fig
 
+if __name__ == "__main__":
 
-wl = [
-    "pv",
-    "wind",
-    "ETMdemand",
-    "lithium",
-    "hydrogen",
-    "grid",
-    "Balance",
-    "pva",
-    "pv-bi",
-    "windoffshore",
-    "fastcharger",
-    "consumer",
-]
+    wd = os.getcwd()
+    filepaths = glob.glob(wd + "/results/2030*.json")
+    prenames = [os.path.split(filepath)[-1] for filepath in filepaths]
+    names = [prename.replace(".json", "").replace("2030RES_", "") for prename in prenames]
 
-normalize = False
-component = 'hydrogen'
-col_str = 'power [+]'
+    wl = [
+        "pv",
+        "wind",
+        "ETMdemand",
+        "lithium",
+        "hydrogen",
+        "grid",
+        "Balance",
+        "pva",
+        "pv-bi",
+        "windoffshore",
+        "fastcharger",
+        "consumer",
+    ]
 
-fig = make_duration_curve(
-    filepaths=filepaths,
-    names=names,
-    unit="MW",
-    normalize=normalize,
-    comp_str=component,
-    col_str=col_str
-)
+    normalize = False
+    component = 'hydrogen'
+    col_str = 'power [+]'
 
-import plotly.io as pio
-
-if normalize:
-    pio.write_image(
-        fig, f"images/2030_RES_cumdist_{component}_norm.svg", engine="kaleido"
-    )
-else:
-    pio.write_image(
-        fig, f"images/2030_RES_cumdist_{component}.svg", engine="kaleido"
+    fig = make_duration_curve(
+        filepaths=filepaths,
+        names=names,
+        unit="MW",
+        normalize=normalize,
+        comp_str=component,
+        col_str=col_str
     )
 
-fig.show()
+    import plotly.io as pio
 
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
+    if normalize:
+        pio.write_image(
+            fig, f"images/2030_RES_cumdist_{component}_norm.svg", engine="kaleido"
+        )
+    else:
+        pio.write_image(
+            fig, f"images/2030_RES_cumdist_{component}.svg", engine="kaleido"
+        )
 
-fig = make_subplots(rows=1, cols=2)
+    fig.show()
+
+    from plotly.subplots import make_subplots
+    import plotly.graph_objects as go
+
+    fig = make_subplots(rows=1, cols=2)

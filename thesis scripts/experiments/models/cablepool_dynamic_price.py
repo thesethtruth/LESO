@@ -8,8 +8,7 @@ import csv
 
 #%% Define system and components
 modelname = "Cablepooling"
-lat, lon = 51.81, 5.84  # Nijmegen
-
+lat, lon = 51.89, 5.86  # Nijmegen 
 # initiate System component
 system = System(latitude=lat, longitude=lon, model_name=modelname)
 

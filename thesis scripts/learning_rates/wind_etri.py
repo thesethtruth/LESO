@@ -21,6 +21,26 @@ capacity_factor = [35, 40, 45]
 etri_values = etri_values/1000
 etri_factors = etri_values/ref_2013_e
 
+## ETRI 2017
+etri_2017 = np.array([
+    [720, 580, 500],
+    [600, 450, 370],
+    [450, 370, 320],
+    [390, 310, 260],
+    [870, 780, 730]]
+).T # data from excel sheet 
+
+etri17_colums = [
+    "Baseline",
+    "Diversified",
+    "ProRES",
+    "Min",
+    "Max",
+]
+ref_2017_e = 1.02 # M€/MWp
+etri17_values = pd.DataFrame(etri_2017, index=etri.keys(), columns=etri17_colums)/1000
+etri17_factors = etri17_values/ref_2017_e
+
 #%% plotting
 
 import plotly.graph_objects as go

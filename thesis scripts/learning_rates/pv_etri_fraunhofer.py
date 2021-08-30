@@ -1,3 +1,4 @@
+from LESO.plotly_extension import lighten_color
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -58,79 +59,93 @@ outer_factors['max'] = all_factors.max(axis=1)
 
 outer_factors = outer_factors.round(2)
 
-# if __name__ == "__main__":
-fig = go.Figure()
-fig.update_layout(template='simple_white')
+from palettable.scientific.sequential import Davos_5 as color
+etri14_color = color.hex_colors[-4]
+etri17_color = color.hex_colors[-3]
+fraunhofer_color = color.hex_colors[-2]
+
+if True:
+
+    fig = go.Figure()
+    fig.update_layout(template='simple_white')
 
 
-fig.add_trace(go.Scatter(
-    x=list(etri17_factors.index) + list(etri17_factors.index)[::-1],
-    y=list(etri17_factors.Min) + list(etri17_factors.Max)[::-1],
-    fill='toself',
-    fillcolor= '#ab9e6a',
-    line_color= 'rgba(0,0,0,0)',
-    showlegend=True,
-    name='ETRI 2017 range',    
-    opacity=0.7
-))
+    fig.add_trace(go.Scatter(
+        x=list(etri17_factors.index) + list(etri17_factors.index)[::-1],
+        y=list(etri17_factors.Min) + list(etri17_factors.Max)[::-1],
+        fill='toself',
+        fillcolor= lighten_color(etri17_color, 0.5),
+        line_color= 'rgba(0,0,0,0)',
+        showlegend=True,
+        name='ETRI 2017 range',    
+    ))
 
-fig.add_trace(go.Scatter(
-    x=list(fraunhofer_factors.index) + list(fraunhofer_factors.index)[::-1],
-    y=list(fraunhofer_factors["Fraunhofer high"]) + list(fraunhofer_factors['Fraunhofer low'])[::-1],
-    fill='toself',
-    fillcolor= '#ab911d',
-    line_color= 'rgba(0,0,0,0)',
-    showlegend=True,
-    name='Fraunhofer 2015 range',    
-    opacity=0.7
-))
+    fig.add_trace(go.Scatter(
+        x=list(fraunhofer_factors.index) + list(fraunhofer_factors.index)[::-1],
+        y=list(fraunhofer_factors["Fraunhofer high"]) + list(fraunhofer_factors['Fraunhofer low'])[::-1],
+        fill='toself',
+        fillcolor= lighten_color(fraunhofer_color, 0.5),
+        line_color= 'rgba(0,0,0,0)',
+        showlegend=True,
+        name='Fraunhofer 2015 range',    
+    ))
 
-fig.add_trace(go.Scatter(
-    x=list(etri14_factors.index) + list(etri14_factors.index)[::-1],
-    y=list(etri14_factors['ETRI high']) + list(etri14_factors['ETRI low'])[::-1],
-    fill='toself',
-    fillcolor= '#d9c464',
-    line_color= 'rgba(0,0,0,0)',
-    showlegend=True,
-    name='ETRI 2014 range',    
-    opacity=0.7
-))
+    fig.add_trace(go.Scatter(
+        x=list(etri14_factors.index) + list(etri14_factors.index)[::-1],
+        y=list(etri14_factors['ETRI high']) + list(etri14_factors['ETRI low'])[::-1],
+        fill='toself',
+        fillcolor= lighten_color(etri14_color, 0.5),
+        line_color= 'rgba(0,0,0,0)',
+        showlegend=True,
+        name='ETRI 2014 range',    
+    ))
 
-fig.add_trace(go.Scatter(
-    x=list(etri14_factors.index), 
-    y=list(etri14_factors['ETRI ref.']),
-    line_color= '#eb735b',
-    line_dash='dash',
-    mode='lines+markers',
-    name='ETRI 2014 baseline',    
-    opacity=1
-))
+    for col in fraunhofer_factors.columns:
+        fig.add_trace(go.Scatter(
+            x=list(fraunhofer_factors.index), 
+            y=list(fraunhofer_factors[col]),
+            line_color= fraunhofer_color,
+            line_dash= None if "high" in col or "low" in col else'dot',
+            mode='lines+markers',
+            name='ETRI 2014 baseline',
+            showlegend= False if "high" in col or "low" in col else True,    
+            opacity=1
+        ))
 
-fig.add_trace(go.Scatter(
-    x=list(fraunhofer_factors.index), 
-    y=list(fraunhofer_factors['Fraunhofer ref.']),
-    line_color= '#854646',
-    line_dash='dashdot',
-    mode='lines+markers',
-    name='Fraunhofer 2015 baseline',    
-    opacity=1
-))
 
-fig.add_trace(go.Scatter(
-    x=list(etri17_factors.index), 
-    y=list(etri17_factors.Baseline),
-    line_color= '#eb5b5b',
-    line_dash='dot',
-    mode='lines+markers',
-    name='ETRI 2017 baseline',    
-    opacity=1
-))
-fig.update_traces(mode='lines')
-fig.update_yaxes(title='projected cost factor', range=[0, 1])
+    for col in etri14_factors.columns:
+        fig.add_trace(go.Scatter(
+            x=list(etri14_factors.index), 
+            y=list(etri14_factors[col]),
+            line_color= etri14_color,
+            line_dash= None if "high" in col or "low" in col else'dot',
+            mode='lines+markers',
+            name='ETRI 2014 baseline',
+            showlegend= False if "high" in col or "low" in col else True,    
+            opacity=1
+        ))
 
-from LESO.plotly_extension import thesis_default_styling
-fig = thesis_default_styling(fig)
-fig.show()
 
-fig.write_image("pv_price_projections.pdf")
-print(outer_factors)
+    for col in etri17_factors.columns:
+        fig.add_trace(go.Scatter(
+            x=list(etri17_factors.index), 
+            y=list(etri17_factors[col]),
+            line_color= etri17_color,
+            line_dash= None if "Min" in col or "Max" in col else'dot',
+            mode='lines+markers',
+            name=f'ETRI 2017 {col}',
+            showlegend= False if "Min" in col or "Max" in col else True,    
+            opacity=1
+        ))
+    # fig.update_traces(mode='lines')
+
+    fig.update_yaxes(title='projected cost factor', range=[0, 1])
+
+    from LESO.plotly_extension import thesis_default_styling
+    fig = thesis_default_styling(fig)
+    fig.update_layout(width=800)
+    
+    if False:
+        fig.write_image("pv.pdf")
+    else:
+        fig.show()

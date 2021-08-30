@@ -2,11 +2,9 @@
 Default value vault
     contains the default values to run the main code
 """
+from copy import deepcopy as copy
+
 # Often-used variables
-from pvlib import tracking
-from LESO.feedinfunctions import bifacial
-
-
 lower_bound = -1e7
 upper_bound = 1e7
 system_lifetime = 25
@@ -90,6 +88,12 @@ pv = dict(
         interest = 0.02,
         exp_inflation_rate = exp_inflation_rate,
     )
+
+renewable_ninja = dict(
+    date_from ='2015-01-01',
+    date_to = '2015-12-31',
+    dataset = 'merra2',
+)
 
 pva = dict(
         # Merit order 
@@ -316,11 +320,11 @@ lithium = dict(
             'group': 'energy',
         }],
         # specs
-        installed = 1000e3,      # 1000 kWh installed capacity
-        EP_ratio = 1.25,         # ratio of energy to power (influences component cost)
-        startingSOC = .7,        # Starting SOC
-        discharge_rate = 0.9995,   # hourly discharge
-        cycle_efficieny = .89,  # round trip efficiency
+        installed = 1,              # 1000 kWh installed capacity
+        EP_ratio = 2,               # Energy to power ratio ; duration of storage
+        startingSOC = .7,           # Starting SOC
+        discharge_rate = 0.9995,    # hourly discharge
+        cycle_efficieny = .85,      # cite: ATB NPREL
         # optimizer
         dof = False,
         lower = 0,
@@ -328,10 +332,10 @@ lithium = dict(
         negative = True,
         upper = upper_bound,
         # financials
-        lifetime = 10,
-        capex = 280e-3,             # capex at EP = 1
-        capex_EP_ratio = .55,       # part of component cost related to storage only
-        opex = 8e-3,
+        lifetime = 15,              # cite: ATB NPREL
+        capex_storage = 277e-3,     # cite: ATB NPREL
+        capex_power = 257e-3,       # part of component cost related to storage only
+        opex = 2.5e-2,              # [%] cite: ATB NPREL (fraction of TOTAL cost)
         variable_cost = 2.8e-12,
         variable_income = 2.8e-12,
         interest = interest,

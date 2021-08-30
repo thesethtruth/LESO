@@ -1,78 +1,29 @@
-# wind_etri.py
-
+from LESO.plotly_extension import lighten_color
 import pandas as pd
 import numpy as np
-
-
-## ETRI 2014
-ref_2013_e = 1.4 # M€/MWp
-etri_values = pd.DataFrame(
-    data=np.array([
-    [1800, 1700, 1700],
-    [1300, 1200, 1100],
-    [1000, 900, 800],
-    ]).T,
-    index = ['2030', "2040", "2050"],
-    columns = ["High", "Ref.", "Low"]
-) # data from table 4, page 16
-cf_ref_2013_e = 23
-capacity_factor = [35, 40, 45]
-
-etri_values = etri_values/1000
-etri_factors = etri_values/ref_2013_e
-
-## ETRI 2017
-etri_2017 = np.array([
-    [720, 580, 500],
-    [600, 450, 370],
-    [450, 370, 320],
-    [390, 310, 260],
-    [870, 780, 730]]
-).T # data from excel sheet 
-
-etri17_colums = [
-    "Baseline",
-    "Diversified",
-    "ProRES",
-    "Min",
-    "Max",
-]
-ref_2017_e = 1.02 # M€/MWp
-etri17_values = pd.DataFrame(etri_2017, index=etri.keys(), columns=etri17_colums)/1000
-etri17_factors = etri17_values/ref_2017_e
-
-#%% plotting
-
 import plotly.graph_objects as go
 
-fig = go.Figure()
-fig.update_layout(template='simple_white')
+## NP REL ATB
+# storage cost
+ref_2020_s = 277 # $/kWh
+storage_projection = np.array([
+    [1.0, 1.0, 1.0], 
+    [0.61, 0.69, 0.85], 
+    [0.41, 0.53, 0.7], 
+    [0.25, 0.37, 0.7]
+]) # kWh from ATB sheet
 
+ref_2020_p = 257 # $/kW
+power_projection = np.array([
+    [1.0, 1.0, 1.0], 
+    [0.62, 0.77, 0.87], 
+    [0.42, 0.77, 0.81], 
+    [0.25, 0.71, 0.81]
+]) # kW from ATB sheet
 
-fig.add_trace(go.Scatter(
-    x=list(etri_factors.index) + list(etri_factors.index)[::-1],
-    y=list(etri_factors.High) + list(etri_factors.Low)[::-1],
-    fill='toself',
-    fillcolor= '#8cc0ed',
-    line_color= 'rgba(0,0,0,0)',
-    showlegend=True,
-    name='uncertainty range',    
-    opacity=0.4
-))
-
-fig.add_trace(go.Scatter(
-    x=list(etri_factors.index), 
-    y=list(etri_factors['Ref.']), 
-    line_color= '#8cc0ed',
-    mode='lines+markers',
-    name='center values',    
-    opacity=1
-))
-
-
-
-fig.update_xaxes(title='years', range=[2030, 2050])
-fig.update_yaxes(title='cost factor', range=[0.5, 1.4])
-fig.show()
-
-# %%
+years = [2020, 2025, 2030, 2050]
+scenarios = ["Advanced", "Moderate", "Conservative"]
+atb_storage = pd.DataFrame(storage_projection, index=years, columns=scenarios)
+atb_power = pd.DataFrame(power_projection, index=years, columns=scenarios)
+print(atb_storage)
+print(atb_power)

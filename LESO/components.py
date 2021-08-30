@@ -60,7 +60,6 @@ class Component:
                     self.installed = 1
             else:
                 print(f"Warning: Invalid input argument supplied -- default used: {key} for {self}")
-
         pass
 
     @property
@@ -370,17 +369,21 @@ class Lithium(Storage):
 
     @property
     def capex(self):
-        cpx = self._capex 
-        cpxr = self.capex_EP_ratio
+        cpxs = self.capex_storage
+        cpxp = self.capex_power
         epr = self.EP_ratio
-        return cpx * (1-cpxr)/epr + cpx*cpxr
+        return (cpxs*epr + cpxp)/epr
     
-    @capex.setter
-    def capex(self, value):
-        self._capex = value
+    @property
+    def opex(self):
+        return self.capex * self.EP_ratio * self._opex
+    
+    @opex.setter
+    def opex(self, value):
+        self._opex = value
         
     def __str__(self):
-        return "lithium{number}".format(number=self.number)
+        return f"lithium{self.EP_ratio}_{self.number}"
 
     def power_control(self, balance_in):
 

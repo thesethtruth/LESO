@@ -216,6 +216,62 @@ def _getDOWA(lat, lon, height=100):
     os.remove(temp_writeout_file)
     return dowa
 
+def renewable_ninja(instance, tmy):
+    
+    
+    token = 'ce0b2b82994ce55769edbf208b1d800be38b1085'
+    api_base = 'https://www.renewables.ninja/api/'
+
+    s = requests.session()
+    # Send token header with each request
+    s.headers = {'Authorization': 'Token ' + token}
+
+    ## General
+    args ={
+        'lat': tmy.lat,
+        'lon': tmy.lon,
+        'date_from': instance.date_from,
+        'date_to': instance.date_to,
+        'dataset': instance.dataset,
+        'format': 'json'
+    }         
+        
+    ## PV
+    if hasattr(instance, 'tilt'):
+
+        api_end = 'data/pv'
+        pv = instance
+
+        args.update({
+        'capacity': pv.installed,
+        'system_loss': 0.1,
+        'tracking': 0,
+        'tilt': pv.tilt,
+        'azim': pv.azimuth,
+        })
+
+    ## Wind
+    elif hasattr(instance, 'hubheight'):
+
+        api_end = 'data/wind'
+        wind = instance
+
+        args.update({
+            'capacity': wind.installed,
+            'height': wind.hubheight,
+            'turbine': wind.turbine_type,
+        })
+    
+    url = api_base + api_end
+    r = s.get(url, params=args)
+
+    # Parse JSON to get a pandas.DataFrame of data and dict of metadata
+    parsed_response = json.loads(r.text)
+
+    data = pd.read_json(json.dumps(parsed_response['data']), orient='index')
+
+    return data
+
 def etm_id_extractor_external(etmDemand_instance, scenario_id):
         etmd = etmDemand_instance
         # if 4 digit and not None (also len = 4) then extract id
@@ -265,3 +321,4 @@ def etm_get_title_external(scenario_id):
     title = di["title"]
 
     return title
+

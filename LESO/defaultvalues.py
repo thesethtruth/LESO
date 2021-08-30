@@ -66,12 +66,12 @@ pv = dict(
         },
         # transform
         dof = False,
-        installed = 5000e3,           # Total power of the PV system in terms of DC       !DOF!
-        azimuth = 180,                # Module orientation, N = 0                         !DOF!
-        tilt = 15,                    # Optimum angle for max production                  !DOF!
-        efficiency = .185,            # Total system efficiency to reach realistic values
-        module_power = 350,           # STC
-        module_area = 1.6,            # [m2]
+        installed = 5000e3,           # [..W] total installed capacity 
+        azimuth = 180,                # [degree] Module orientation
+        tilt = 15,                    # [degree] Tilt of plane relative to horizontal 
+        efficiency = .185,            # [-] Total system efficiency to reach realistic values
+        module_power = 350,           # [w] output power under STC
+        module_area = 1.6,            # [m2] module area
         # unused
         t_coeff = -.37,               # [%/K]
         voc = 52,                     # [V]
@@ -87,13 +87,12 @@ pv = dict(
         variable_income = 0,
         interest = 0.02,
         exp_inflation_rate = exp_inflation_rate,
+        # options for using renewable ninja
+        use_ninja = False,
+        date_from ='2015-01-01',
+        date_to = '2015-12-31',
+        dataset = 'merra2',
     )
-
-renewable_ninja = dict(
-    date_from ='2015-01-01',
-    date_to = '2015-12-31',
-    dataset = 'merra2',
-)
 
 pva = dict(
         # Merit order 
@@ -188,7 +187,12 @@ wind = dict(
         variable_income = 0,
         interest = 0.04,
         exp_inflation_rate = exp_inflation_rate,
-    )
+        # options for using renewable ninja
+        use_ninja = False,
+        date_from ='2015-01-01',
+        date_to = '2015-12-31',
+        dataset = 'merra2',
+)
 
 windoffshore = dict(
         # Merit order 

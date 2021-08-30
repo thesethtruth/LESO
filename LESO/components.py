@@ -175,7 +175,10 @@ class PhotoVoltaic(SourceSink):
 
     def calculate_time_serie(self, tmy):
 
-        self.state.power = feedinfunctions.PVpower(self, tmy)
+        if self.use_ninja:
+            self.state.power = feedinfunctions.ninja_PVpower(self, tmy) # TODO
+        else:
+            self.state.power = feedinfunctions.PVpower(self, tmy)
 
 class PhotoVoltaicAdvanced(SourceSink):
 
@@ -304,6 +307,8 @@ class Wind(SourceSink):
     def calculate_time_serie(self, tmy):
         if self.use_dowa:
             self.state.power = feedinfunctions.windpower(self, self.dowa)
+        elif self.use_ninja:
+            self.state.power = feedinfunctions.ninja_windpower(self, tmy) # TODO
         else:
             self.state.power = feedinfunctions.windpower(self, tmy)
 

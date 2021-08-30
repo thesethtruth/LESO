@@ -52,10 +52,10 @@ class System:
             name (__str__) in binary format
     """
 
-    def __init__(self, latitude, longitude, model_name="LESO model"):
+    def __init__(self, lat, lon, model_name="LESO model"):
 
-        self.latitude = latitude
-        self.longitude = longitude
+        self.lat = lat
+        self.lon = lon
         self.name = model_name
         self.merit_order_dict = defs.merit_order
         self.start_date = defs.start_date
@@ -98,11 +98,11 @@ class System:
     def fetch_input_data(self, lat=None, long=None):
 
         if lat is not None:
-            self.latitude = lat
+            self.lat = lat
         if long is not None:
-            self.longitude = long
+            self.lon = long
 
-        self.tmy = get_pvgis(self.latitude, self.longitude)
+        self.tmy = get_pvgis(self.lat, self.lon)
 
     def calculate_time_series(self):
 

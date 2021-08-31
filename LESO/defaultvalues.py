@@ -66,9 +66,9 @@ pv = dict(
         },
         # transform
         dof = False,
-        installed = 5000e3,           # [..W] total installed capacity 
+        installed = 5000,           # [..W] total installed capacity 
         azimuth = 180,                # [degree] Module orientation
-        tilt = 15,                    # [degree] Tilt of plane relative to horizontal 
+        tilt = 37,                    # [degree] Tilt of plane relative to horizontal 
         efficiency = .185,            # [-] Total system efficiency to reach realistic values
         module_power = 350,           # [w] output power under STC
         module_area = 1.6,            # [m2] module area
@@ -291,6 +291,7 @@ grid = dict(
         positive = True,    # Export
         upper = upper_bound,
         lower = lower_bound,
+        variable_capacity = None, # use if grid capacity is a function of time
         # specs
         installed = 200e3,       # grid connection
         # financials

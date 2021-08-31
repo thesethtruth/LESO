@@ -1,3 +1,4 @@
+from LESO.attrdict import AttrDict
 from LESO.finance import functionmapper
 import pyomo.environ as pyo
 import numpy as np
@@ -102,13 +103,19 @@ def direct_power_control_constraints(model, component):
     if not component.dof:
         component.upper = 1
         component.lower = -1
-
+    
+    # allows for implementing variable capacity on power-controllable assets
+    try: 
+        available_capacity = component.variable_capacity
+    except AttributeError:
+        available_capacity = [component.installed]*len(time)
+    
     # Time variable constraints
     for t in time:
         # limit to max import cap
-        contraintlist.add(P[t] <= component.positive * component.upper * component.installed)
+        contraintlist.add(P[t] <= component.positive * component.upper * available_capacity[t])
         # limit to max export cap
-        contraintlist.add(P[t] >= component.negative * component.lower * component.installed)
+        contraintlist.add(P[t] >= component.negative * component.lower * available_capacity[t])
         
         # Make total power the sum of positive and negative instances of powercurve
         contraintlist.add(P[t] == Ppos[t] + Pneg[t])

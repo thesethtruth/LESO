@@ -1,5 +1,6 @@
 # finance.py
 import LESO.defaultvalues as default
+from pyomo.environ import value
 
 def wacc(equity_share, interest, return_on_investment, corporate_tax):
     """
@@ -102,36 +103,8 @@ def osc(component, eM):
     fixed_cost = component.opex # without system lifetime, only the first year
     pyoVar = component.pyoVar # scaling factor in optimization issue
     variable_cost = component.get_variable_cost(pM) # without system lifetime, only the first year 
-    
-    objective = (system.crf*(unit_capex)+fixed_cost)*pyoVar + variable_cost
-                # use crf to discount *only investment* over the system lifetime
-                # and add all operation (yearly) cost to come to overnight system cost
-    
-    return objective
-
-def osc_new(component, eM):
-    """
-    Overnight system cost :: applicable to any large scale optimization issues.
-        Meaning of outcome:
-            anything below zero means profitable without subsidies
-            anything above zero means that business cases are not atractive without subsidies
-    """
-    pM = eM.model # extract pyomo model from enery model
-    system = eM # energy model is system
-    
-    if component.capex != 0:
-        unit_capex =    component.capex + (
-                        system.lifetime - component.lifetime ) / (
-                        component.lifetime ) * component.replacement
-                        # linear replacement assumption
-    else:
-        unit_capex = 0
-    
-    fixed_cost = component.opex # without system lifetime, only the first year
-    pyoVar = component.pyoVar # scaling factor in optimization issue
-    variable_cost = component.get_variable_cost(pM) # without system lifetime, only the first year 
     crf = component.crf if hasattr(component, "crf") else system.crf
-    
+
     objective = (crf*(unit_capex)+fixed_cost)*pyoVar + variable_cost
                 # use crf to discount *only investment* over the system lifetime
                 # and add all operation (yearly) cost to come to overnight system cost
@@ -144,13 +117,14 @@ def profit(component, eM):
         Adviced to use in combination with aditional ROI constraint. 
     """
     pM = eM.model # extract pyomo model from enery model
+    system = eM
     
     fixed_cost = component.opex # without system lifetime, only the first year
     pyoVar = component.pyoVar # scaling factor in optimization issue
     variable_cost = component.get_variable_cost(pM) # without system lifetime, only the first year 
     
     objective = fixed_cost*pyoVar + variable_cost
-    
+
     return objective
 
 def investment_cost(component, eM):
@@ -180,7 +154,7 @@ def roi(eM):
     system = eM
     pM = eM.model # extract pyomo model from enery model
 
-    net_income = -sum(
+    net_income = -sum( # <-- notice the minus sign!
             component.opex * component.pyoVar + component.get_variable_cost(pM)
             for component in system.components
     )
@@ -201,7 +175,37 @@ def lcoe():
     raise NotImplementedError('Lcoe does not exist (yet!)')
     pass
 
+## Ex post methods
+"""
+These functions simply wrap objective functions to a numeric value output.
+    Can only be applied after optimization!
+"""
 
+def determine_component_net_profit(component, eM):
+    """ex post determination method of profit"""
+    return value(profit(component, eM))
+
+def determine_component_investment_cost(component, eM):
+    """ex post determination method of roi"""
+    return value(investment_cost(component, eM))
+
+def determine_roi(eM):
+    """ex post determination method of roi"""
+    return value(roi(eM))
+
+def determine_total_investment_cost(eM):
+    """sums component investment over all components"""
+    return sum(
+        determine_component_investment_cost(component, eM)
+        for component in eM.components
+    )
+
+def determine_total_net_profit(eM):
+    """sums component investment over all components"""
+    return sum(
+        determine_component_net_profit(component, eM)
+        for component in eM.components
+    )
 
 def set_finance_variables(obj, system=None):
     """
@@ -251,7 +255,6 @@ def functionmapper(objective):
         'lcoe': lcoe,
         'osc': osc,
         'profit': profit,
-        'osc_new': osc_new,
     }
 
     return sdict[objective]

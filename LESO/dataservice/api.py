@@ -224,6 +224,9 @@ def get_renewable_ninja(instance, tmy):
 
     if hasattr(instance, 'tilt'):
         name = 'pv'
+        t = instance.tilt
+        a = instance.azimuth
+        filestring = f"cache\\ninja_{name}_lat_{str(lat)}_lon_{str(lon)}_a_{a}_t{t}.pkl"
         kwargs = {
             'tilt': instance.tilt,
             'azim': instance.azimuth,
@@ -231,12 +234,12 @@ def get_renewable_ninja(instance, tmy):
         }
     elif hasattr(instance, 'hub_height'):
         name = 'wind'
+        filestring = f"cache\\ninja_{name}_lat_{str(lat)}_lon_{str(lon)}.pkl"
         kwargs = {
             'height': instance.hub_height,
             'turbine': instance.turbine_type,
         }
-
-    filestring = f"cache\\ninja_{name}_lat_{str(lat)}_lon_{str(lon)}.pkl"
+    
     dataservice_folder = os.path.dirname(__file__)
     filepath = os.path.join(dataservice_folder, filestring)
 

@@ -1,16 +1,19 @@
 # finance.py
+import LESO.defaultvalues as default
 
-def wacc(interests, market_values):
+def wacc(equity_share, interest, return_on_investment, corporate_tax):
     """
     Weighted Average Cost of Capital
     Best but perhaps to detailed representation for cost of capital. 
-    (relates to multiple sources of capital, which are weighted by volume)
     """
-    
-    r = interests
-    MV = market_values
+    e = equity_share
+    d = 1 - e
+    i = interest
+    roi = return_on_investment
+    t = corporate_tax
+    tf = 1-t
 
-    wi = sum([r[i]*MV[i] for i in range(len(r))]) / sum([MV[i] for i in range(len(r))])
+    wi = e*roi + d*i*tf
 
     return wi
 
@@ -80,7 +83,10 @@ def tco(component, eM):
 
 def osc(component, eM):
     """
-    Overnight system cost
+    Overnight system cost :: applicable to any large scale optimization issues.
+        Meaning of outcome:
+            anything below zero means profitable without subsidies
+            anything above zero means that business cases are not atractive without subsidies
     """
     pM = eM.model # extract pyomo model from enery model
     system = eM # energy model is system
@@ -103,6 +109,91 @@ def osc(component, eM):
     
     return objective
 
+def osc_new(component, eM):
+    """
+    Overnight system cost :: applicable to any large scale optimization issues.
+        Meaning of outcome:
+            anything below zero means profitable without subsidies
+            anything above zero means that business cases are not atractive without subsidies
+    """
+    pM = eM.model # extract pyomo model from enery model
+    system = eM # energy model is system
+    
+    if component.capex != 0:
+        unit_capex =    component.capex + (
+                        system.lifetime - component.lifetime ) / (
+                        component.lifetime ) * component.replacement
+                        # linear replacement assumption
+    else:
+        unit_capex = 0
+    
+    fixed_cost = component.opex # without system lifetime, only the first year
+    pyoVar = component.pyoVar # scaling factor in optimization issue
+    variable_cost = component.get_variable_cost(pM) # without system lifetime, only the first year 
+    crf = component.crf if hasattr(component, "crf") else system.crf
+    
+    objective = (crf*(unit_capex)+fixed_cost)*pyoVar + variable_cost
+                # use crf to discount *only investment* over the system lifetime
+                # and add all operation (yearly) cost to come to overnight system cost
+    
+    return objective
+
+def profit(component, eM):
+    """
+    Maximizing the profit is minimizing cost; negative values are profitable; otherwise not. 
+        Adviced to use in combination with aditional ROI constraint. 
+    """
+    pM = eM.model # extract pyomo model from enery model
+    
+    fixed_cost = component.opex # without system lifetime, only the first year
+    pyoVar = component.pyoVar # scaling factor in optimization issue
+    variable_cost = component.get_variable_cost(pM) # without system lifetime, only the first year 
+    
+    objective = fixed_cost*pyoVar + variable_cost
+    
+    return objective
+
+def investment_cost(component, eM):
+    """
+    Simple investment cost definition
+    """
+    system = eM # energy model is system
+    
+    if component.capex != 0:
+        unit_capex =    component.capex + (
+                        system.lifetime - component.lifetime ) / (
+                        component.lifetime ) * component.replacement
+                        # linear replacement assumption
+    else:
+        unit_capex = 0
+    
+    pyoVar = component.pyoVar # scaling factor in optimization issue
+
+    investment_cost = unit_capex * pyoVar
+
+    return investment_cost
+
+def roi(eM):
+    """
+    Calculate the roi
+    """
+    system = eM
+    pM = eM.model # extract pyomo model from enery model
+
+    net_income = -sum(
+            component.opex * component.pyoVar + component.get_variable_cost(pM)
+            for component in system.components
+    )
+
+    total_investment_cost = sum(
+        investment_cost(component, eM)
+        for component in system.components
+    )
+    
+    roi_ = net_income/total_investment_cost
+
+    return roi_
+
 def lcoe():
     """
     Levelized Cost Of Energy
@@ -110,24 +201,57 @@ def lcoe():
     raise NotImplementedError('Lcoe does not exist (yet!)')
     pass
 
+
+
+def set_finance_variables(obj, system=None):
+    """
+    Sets all derived financial variables based on either component or system level financial parameters.
+    """
+    
+    print(f"setting finance for: {obj.name}") # TODO REMOVE
+    
+    f = get_cs_attr(obj, "exp_inflation_rate", system)
+    i = get_cs_attr(obj, "interest", system)
+    l = get_cs_attr(obj, "lifetime", system)
+    rrr = get_cs_attr(obj, "req_rate_of_return", system)
+    tax = get_cs_attr(obj, "corporate_tax", system)
+    eqs = get_cs_attr(obj, "equity_share", system)
+
+    if l is not None and l != 0:
+        obj.wacc = wacc(eqs, i, rrr, tax) # TODO
+        obj.rdr = rdr(obj.wacc, f)
+        obj.crf = crf(obj.rdr, l)
+        obj.annuity = 1/obj.crf
+    pass
+
+def get_cs_attr(object, attr, system=None):
+    """
+    Get component or system attribute
+        1. component attribute value if pressent
+        2. system attribute value if pressent
+        3. fallback to default value dict in default values
+    """
+
+    try:
+        value = getattr(object, attr)
+    except AttributeError:
+        if system is not None:
+            value = getattr(system, attr)
+        else:
+            value = default.system_parameters.get(attr)
+
+    return value
+
+
+
 def functionmapper(objective):
 
     sdict = {
         'tco': tco,
         'lcoe': lcoe,
-        'osc': osc
+        'osc': osc,
+        'profit': profit,
+        'osc_new': osc_new,
     }
 
     return sdict[objective]
-
-def set_finance_variables(obj):
-
-    f = obj.exp_inflation_rate
-    i = obj.interest
-    l = obj.lifetime
-
-    if l is not None and l != 0:
-        obj.rdr = rdr(i, f)
-        r = obj.rdr
-        obj.crf = crf(r, l)
-        obj.annuity = 1/obj.crf

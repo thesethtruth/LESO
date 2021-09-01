@@ -7,7 +7,7 @@ from copy import deepcopy as copy
 # Often-used variables
 lower_bound = -1e7
 upper_bound = 1e7
-system_lifetime = 25
+start_date = '01/01/2022'
 
 # Used to create an empty state data-frame in every component
 states = [
@@ -16,14 +16,34 @@ states = [
     'mh2',
     ]
 
+# hard coded merit order, could be overwriten; used by LESO.scenario
+merit_order_dict = {
+    "VRE" : 1,
+    "DRE" : 0,
+    "MM" : 1,
+    "ESS" : 2,
+    "H2": 2,
+    "Grid" : 3,
+    "finalbalance": 4,    
+    }
+
+# Parameters that govern the whole system
+# default / fallback option = d/fo
+system_parameters = dict(
+    # general settings
+    merit_order_dict=merit_order_dict,
+    start_date = start_date,
+    # financial
+    interest = 0.04,                # d/fo if no explicitly defined component interest
+    req_rate_of_return = 0.1,       # d/fo if no explicitly defined component interest
+    equity_share = 0.2,             # d/fo [cite: NDVE (2018) Ecofys/navigant]
+    corporate_tax = 0.25,           # [cite: NDVE (2018) Ecofys/navigant]
+    exp_inflation_rate = 0.015,     # expected inflation rate, to be used by every component [cite: NDVE (2018) Ecofys/navigant]
+    lifetime = 25,                  # project planning horizon 
+)
+
 # Actually an arbitraty date, as long as it is in the future and starts on the
 # first day of the year
-start_date = '01/01/2022'
-
-# Financial variables that govern the whole system
-interest = 0.04
-exp_inflation_rate = 0.015
-
 # ==================================Components=============================== #
 finalbalance = dict(
         # Merit order 
@@ -52,8 +72,6 @@ finalbalance = dict(
         opex = 0,
         variable_cost = 0,
         variable_income = 0,
-        interest = interest,
-        exp_inflation_rate = exp_inflation_rate,
     )
 
 pv = dict(
@@ -85,8 +103,8 @@ pv = dict(
         opex_ratio = 0.0015, #% based on ETRI2014
         variable_cost = 0,
         variable_income = 0,
-        interest = 0.02,
-        exp_inflation_rate = exp_inflation_rate,
+        interest = 0.02,                # cite: NDVE (2018) Ecofys/navigant
+        req_rate_of_return = 0.115,     # cite: NDVE (2018) Ecofys/navigant
         # options for using renewable ninja
         use_ninja = False,
         date_from ='2015-01-01',
@@ -123,8 +141,8 @@ pva = dict(
         opex = 5e-3,
         variable_cost = 0,
         variable_income = 0,
-        interest = 0.02,
-        exp_inflation_rate = exp_inflation_rate,
+        interest = 0.02,                # cite: NDVE (2018) Ecofys/navigant
+        req_rate_of_return = 0.115,     # cite: NDVE (2018) Ecofys/navigant
     )
 
 pvb = dict(
@@ -156,8 +174,8 @@ pvb = dict(
         opex = 5e-3,
         variable_cost = 0,
         variable_income = 0,
-        interest = 0.02,
-        exp_inflation_rate = exp_inflation_rate,
+        interest = 0.02,                # cite: NDVE (2018) Ecofys/navigant
+        req_rate_of_return = 0.115,     # cite: NDVE (2018) Ecofys/navigant
     )
 
 wind = dict(
@@ -185,8 +203,8 @@ wind = dict(
         opex = 12e-3,
         variable_cost = 0,
         variable_income = 0,
-        interest = 0.04,
-        exp_inflation_rate = exp_inflation_rate,
+        interest = 0.02,                # cite: NDVE (2018) Ecofys/navigant
+        req_rate_of_return = 0.145,     # cite: NDVE (2018) Ecofys/navigant
         # options for using renewable ninja
         use_ninja = False,
         date_from ='2015-01-01',
@@ -217,8 +235,8 @@ windoffshore = dict(
         opex = wind['opex']*1.4,        # 40% higher
         variable_cost = 0,
         variable_income = 0,
-        interest = 0.04,
-        exp_inflation_rate = exp_inflation_rate,
+        interest = 0.02,                # cite: NDVE (2018) Ecofys/navigant
+        req_rate_of_return = 0.145,     # cite: NDVE (2018) Ecofys/navigant
     )
 
 consumer = dict(
@@ -241,8 +259,6 @@ consumer = dict(
         opex = 0,
         variable_cost = 0,
         variable_income = 15e-5,
-        interest = interest,
-        exp_inflation_rate = exp_inflation_rate,   
     )
 
 etmdemand = dict(
@@ -265,8 +281,6 @@ etmdemand = dict(
         opex = 0,
         variable_cost = 0,
         variable_income = 0,
-        interest = interest,
-        exp_inflation_rate = exp_inflation_rate,   
     )
 
 
@@ -300,8 +314,6 @@ grid = dict(
         opex = 0,
         variable_cost = 125e-6,
         variable_income = 25e-6,
-        interest = interest,
-        exp_inflation_rate = exp_inflation_rate,
     )
 
 
@@ -343,8 +355,6 @@ lithium = dict(
         opex = 2.5e-2,              # [%] cite: ATB NPREL (fraction of TOTAL cost)
         variable_cost = 2.8e-12,
         variable_income = 2.8e-12,
-        interest = interest,
-        exp_inflation_rate = exp_inflation_rate,
     )
 
 hydrogen = dict(
@@ -385,8 +395,6 @@ hydrogen = dict(
         opex = 8e-3,
         variable_cost = 2.8e-12,
         variable_income = 2.8e-12,
-        interest = interest,
-        exp_inflation_rate = exp_inflation_rate,
     )
 
 fastcharger = dict(
@@ -414,8 +422,6 @@ fastcharger = dict(
         opex = 0,
         variable_cost = 0,
         variable_income = 35e-5,
-        interest = interest,
-        exp_inflation_rate = exp_inflation_rate,
     )
 
 

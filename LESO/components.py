@@ -17,7 +17,6 @@ import LESO.feedinfunctions as feedinfunctions
 import LESO.functions as functions
 import LESO.optimizer.core as core
 from LESO.optimizer.preprocess import initializeGenericPyomoVariables
-from LESO.finance import set_finance_variables
 from LESO.dataservice import get_pvgis, get_dowa, etm_id_extractor_external
 
 
@@ -140,8 +139,7 @@ class PhotoVoltaic(SourceSink):
         self.default()
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
 
         PhotoVoltaic.instances += 1
@@ -194,8 +192,7 @@ class PhotoVoltaicAdvanced(SourceSink):
         self.default()
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
 
         PhotoVoltaicAdvanced.instances += 1
@@ -223,8 +220,7 @@ class BifacialPhotoVoltaic(SourceSink):
         self.default()
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
 
         BifacialPhotoVoltaic.instances += 1
@@ -260,8 +256,7 @@ class FinalBalance(SourceSink):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
         
     def __str__(self):
         return "FinalBalance"
@@ -290,8 +285,7 @@ class Wind(SourceSink):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         # fetch own tmy set
         if self.use_dowa:
@@ -325,8 +319,7 @@ class WindOffshore(SourceSink):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         # fetch own tmy set
         self.dowa = get_dowa(lat, lon, height=height)
@@ -357,8 +350,7 @@ class Lithium(Storage):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         Lithium.instances += 1
         self.number = Lithium.instances
@@ -425,8 +417,7 @@ class Hydrogen(Storage):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         Hydrogen.instances += 1
         self.number = Hydrogen.instances
@@ -488,8 +479,7 @@ class FastCharger(SourceSink):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         FastCharger.instances += 1
         self.number = FastCharger.instances
@@ -516,8 +506,7 @@ class Consumer(SourceSink):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         Consumer.instances += 1
         self.number = Consumer.instances
@@ -580,8 +569,7 @@ class Grid(SourceSink):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         Grid.instances += 1
         self.number = Grid.instances
@@ -605,11 +593,15 @@ class Grid(SourceSink):
         neg = getattr(pM, ckey+'_Pneg', 1)
         pos = getattr(pM, ckey+'_Ppos', 1)
 
-        if not isinstance(self.variable_income, list):
+        try:
+            self.variable_income = list(self.variable_income)
+        except TypeError:
             self.variable_income = [self.variable_income]*len(time)
-        if not isinstance(self.variable_cost, list):
+        try:
+            self.variable_cost = list(self.variable_cost)
+        except TypeError:
             self.variable_cost = [self.variable_cost]*len(time)
-
+        
         if neg == 1 and pos == 1:
             income = sum(
                 power[t]*self.variable_income[t]

@@ -47,8 +47,8 @@ grid.variable_capacity = grid_variable_capacity
 pv_s = PhotoVoltaic("PV South", azimuth=180, use_ninja=True, dof=True)
 pv_e = PhotoVoltaic("PV East", azimuth=90, use_ninja=True, dof=True)
 pv_w = PhotoVoltaic("PV West", azimuth=270, use_ninja=True, dof=True)
-bat_2h = Lithium("2h battery", dof=True)
-bat_6h = Lithium("6h battery", dof=True)
+bat_2h = Lithium("2h battery", dof=True, EP_ratio=2)
+bat_6h = Lithium("6h battery", dof=True, EP_ratio=6)
 final = FinalBalance(name="curtailment_underload")
 
 #%% add the components to the system
@@ -61,7 +61,7 @@ system.add_components(component_list)
 ## Solve
 if True:
     system.optimize(
-            objective='osc',        # overnight system cost
+            objective='profit',        # overnight system cost
             time=None,              # resorts to default; year 8760h
             store=False,             # write-out to json
             solver='gurobi',        # default solver

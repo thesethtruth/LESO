@@ -51,21 +51,30 @@ class System:
             --> Saves current model in folder (default: models) under instance
             name (__str__) in binary format
     """
+    _default_parameters = defs.system_parameters
 
-    def __init__(self, lat, lon, model_name="LESO model"):
+    def __init__(self, lat, lon, model_name="LESO energy model", **kwargs):
 
         self.lat = lat
         self.lon = lon
         self.name = model_name
-        self.merit_order_dict = defs.merit_order
-        self.start_date = defs.start_date
         self.components = list()
 
-        # financials
-        self.lifetime = defs.system_lifetime
-        self.interest = defs.interest
-        self.exp_inflation_rate = defs.exp_inflation_rate
+        # Set default values as instance attribute
+        self.default_parameters()
+        # Let custom component setter handle the custom values
+        self.custom_parameters(**kwargs)
+
+        # initiate financial parameters based on values provided
         set_finance_variables(self)
+
+        ### old implementation:
+        # self.merit_order_dict = defs.merit_order
+        # self.start_date = defs.start_date
+        # # financials
+        # self.lifetime = defs.system_lifetime
+        # self.interest = defs.interest
+        # self.exp_inflation_rate = defs.exp_inflation_rate
 
     def __str__(self):
         return self.name
@@ -74,6 +83,7 @@ class System:
 
         for component in component_itterable:
             attribute_test(component)
+            set_finance_variables(component, self)
             self.components.append(component)
 
         # sort based on merit
@@ -88,6 +98,19 @@ class System:
         sorted_comps = components[inds]
 
         self.components = list(sorted_comps)
+    
+    def default_parameters(self):
+        for key, value in self._default_parameters.items():
+            setattr(self, key, value)
+        pass
+
+    def custom_parameters(self, **kwargs):
+        for key, value in kwargs.items():
+            if key in self._default_parameters.keys():
+                setattr(self, key, value)
+            else:
+                print(f"Warning: Invalid input argument supplied -- default used: {key} for {self}")
+        pass
 
     def update_component_attr(self, attribute, value, overwrite_zero=False):
         for component in self.components:

@@ -12,13 +12,13 @@ model = Model(name='Cablepool', function=CablePooling)
 
 # levers / policies
 model.levers = [
-    CategoricalParameter("grid_capacity", [7.5, 10, 12.5]),
+    CategoricalParameter("subsidy_scheme", [1, 0]),
 ]
 
 # uncertainties / scenarios
 model.uncertainties = [
-    RealParameter("pv_cost_factor", 0.5, 1.1),
-    RealParameter("battery_cost_factor", 0.5, 1.1),
+    RealParameter("pv_cost_factor", 0.38, 0.85),
+    RealParameter("battery_cost_factor", 0.41, 0.70),
 ]
 
 # specify outcomes

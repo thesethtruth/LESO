@@ -7,8 +7,8 @@ from experiments_overview import MODEL_FOLDER
 
 
 #%% read system definition from regular cable pool
-modelname = "cablepooling_dynamic"
-system = System.read_pickle("cablepool.pkl")
+modelname = "cablepool_dynamic"
+system = System.read_pickle(os.path.join(os.path.dirname(__file__), "cablepool.pkl"))
 system.name = modelname
 # extract grid component
 for component in system.components:
@@ -17,7 +17,8 @@ for component in system.components:
 
 #%% dynamic part
 # read .pkl from dynamic_price_analysis
-mwh_prices = pd.read_pickle("cablepool_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl")
+price_filename = "cablepool_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl"
+mwh_prices = pd.read_pickle(os.path.join(os.path.dirname(__file__), price_filename))
 energy_market_price = mwh_prices.values / 1e6 # convert from [eu / MWh] to [Meu / MWh]
 
 # set the dynamic pricing to the grid component

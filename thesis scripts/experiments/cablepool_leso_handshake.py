@@ -6,9 +6,14 @@ import uuid
 from tinydb import TinyDB
 import pyomo.environ as pyo
 import numpy as np
+from LESO.finance import (
+    determine_total_investment_cost,
+    determine_roi,
+    determine_total_net_profit
+)
 
 from models.experiments_overview import MODEL_FOLDER, RESULT_FOLDER
-RUNID = 120821
+RUNID = 120901
 
 MODELS = {
     "fixed-fee": "cablepool.pkl",
@@ -17,29 +22,39 @@ MODELS = {
 
 # ref_system = LESO.System.read_pickle(model_to_open)
 METRICS = [
-    "PV Full south installed capactiy",
+    "PV South installed capactiy",
     "PV West installed capactiy",
     "PV East installed capactiy",
-    "Nordex N100/2500 installed capactiy",
-    "Li-ion EES installed capactiy",
+    "2h battery installed capactiy",
+    "6h battery installed capactiy",
     "Grid connection installed capactiy",
 ]
 METRICS.extend(
     [
         "objective_result",
-        "total_renewable_energy",
-        "addtional_investment_cost",
+        "additional_renewable_energy",
+        # "additional_investment_cost",
         "curtailment",
+        # "return_on_add_investment",
+        # "net_profit_add_investment",
     ]
 )
 
 OUTPUT_PREFIX = "cablepooling_exp_"
 
+# this is needed due to the dependent but double variant uncertainty ranges given by ATB
+def linear_map(value, ):
+    min, max = 0.41, 0.70 # @@
+    map_min, map_max = 0.42, 0.81 # @@
+
+    frac = (value - min) / (max-min)
+    m_value = frac * (map_max-map_min) + map_min
+
+    return m_value
 
 def Handshake(
     pv_cost_factor=None,
     battery_cost_factor=None,
-    grid_capacity=None,
     model=None,
 ):
 
@@ -53,12 +68,9 @@ def Handshake(
     for component in system.components:
         if isinstance(component, LESO.PhotoVoltaic):
             component.capex = component.capex * pv_cost_factor
-            component.opex = component.opex * pv_cost_factor
         if isinstance(component, LESO.Lithium):
-            component.capex = component.capex * battery_cost_factor
-            component.opex = component.opex * battery_cost_factor
-        if isinstance(component, LESO.Grid):
-            component.installed = grid_capacity
+            component.capex_storage = component.capex_storage * battery_cost_factor
+            component.capex_power = component.capex_power * linear_map(battery_cost_factor)
     
     # generate file name and filepath for storing
     filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1])[:6] + ".json"
@@ -81,16 +93,20 @@ def Handshake(
 def CablePooling(
     pv_cost_factor=1,
     battery_cost_factor=1,
-    grid_capacity=10,
-    pricing_scheme='SDE',
+    subsidy_scheme=1,
 ):
+    if subsidy_scheme == 1:
+        model =MODELS['fixed-fee']
+        subsidy_scheme = 'fixed-fee'
+    else:
+        model = MODELS['dynamic']
+        subsidy_scheme = 'dynamic'
 
     # hand ema_inputs over to the LESO handshake
     system, filename_export = Handshake(
         pv_cost_factor=pv_cost_factor,
-        grid_capacity=grid_capacity,
         battery_cost_factor=battery_cost_factor,
-        model=MODELS[pricing_scheme]
+        model=model
     )
 
     # check for optimalitiy before trying to access all information
@@ -104,25 +120,13 @@ def CablePooling(
         }
 
         # calculate total renewable energy
-        total_renewable_energy = sum(sum(
+        additional_renewable_energy = sum(sum(
             component.state.power
             for component in system.components
             if any(
                 [isinstance(component, LESO.PhotoVoltaic), isinstance(component, LESO.Wind)]
             )
         ))
-
-        # calculate additional investment cost
-        addtional_investment_cost = sum(
-            component.installed * component.capex
-            for component in system.components
-            if any(
-                [
-                    isinstance(component, LESO.PhotoVoltaic),
-                    isinstance(component, LESO.Lithium),
-                ]
-            )
-        )
 
         # calculate curtailment
         curtailment = sum(sum(
@@ -131,12 +135,19 @@ def CablePooling(
             if isinstance(component, LESO.FinalBalance)
         ))
 
+        # calculate additional investment cost
+        # addtional_investment_cost = determine_total_investment_cost(system)
+        # roi = determine_roi(system),
+        # net_profit = determine_total_net_profit(system)
+
         # combine performance indicators to one dictionary
         pi = {
             "objective_result": system.model.results["Problem"][0]["Lower bound"],
-            "total_renewable_energy": total_renewable_energy,
-            "addtional_investment_cost": addtional_investment_cost,
+            "additional_renewable_energy": additional_renewable_energy,
+            # "additional_investment_cost ": addtional_investment_cost,
             "curtailment": curtailment,
+            # "return_on_add_investment": roi,
+            # "net_profit_add_investment": net_profit,
         }
 
         # create and update results dictionary
@@ -162,7 +173,7 @@ def CablePooling(
     db_entry.update({           # ema_inputs
         "battery_cost_factor": battery_cost_factor,
         "pv_cost_factor": pv_cost_factor,
-        "grid_capacity": grid_capacity,
+        "subsidy_scheme": subsidy_scheme,
     })
     db_entry.update(meta_data)  # metadata
 

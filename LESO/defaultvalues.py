@@ -99,8 +99,8 @@ pv = dict(
         upper = upper_bound,          # upper bound
         # financials
         lifetime = 25,
-        capex = 0.6,
-        opex_ratio = 0.0015, #% based on ETRI2014
+        capex = 0.8,            # cite: ERTI 2017 corrected for SDE PBL 2020
+        opex_ratio = 0.0015,    #% cite: ETRI2014
         variable_cost = 0,
         variable_income = 0,
         interest = 0.02,                # cite: NDVE (2018) Ecofys/navigant
@@ -126,7 +126,6 @@ pva = dict(
         azimuth = 180,                # Module orientation, N = 0                         !DOF!
         tilt = 15,                    # Optimum angle for max production                  !DOF!
         tracking = False,
-        
         # browse CEC files using pvlib to change the system
         module = 'Jinko_Solar_Co___Ltd_JKM350M_72_V',
         inverter = 'Huawei_Technologies_Co___Ltd___SUN2000_100KTL_USH0__800V_',
@@ -199,8 +198,8 @@ wind = dict(
         upper = upper_bound,
         # financials
         lifetime = 20,
-        capex = 2.8,
-        opex = 12e-3,
+        capex = 1.3,            # cite: ETRI2017 (2020 value, table 5 med-med)
+        opex_ratio = 0.03,      # cite: ETRI2017 (2020 value, table 5 med-med)
         variable_cost = 0,
         variable_income = 0,
         interest = 0.02,                # cite: NDVE (2018) Ecofys/navigant
@@ -232,7 +231,7 @@ windoffshore = dict(
         # financials
         lifetime = 20,
         capex = wind['capex']*1.2,      # 20% higher
-        opex = wind['opex']*1.4,        # 40% higher
+        opex_ratio = wind['opex_ratio']*1.4,        # 40% higher
         variable_cost = 0,
         variable_income = 0,
         interest = 0.02,                # cite: NDVE (2018) Ecofys/navigant
@@ -350,9 +349,9 @@ lithium = dict(
         upper = upper_bound,
         # financials
         lifetime = 15,              # cite: ATB NPREL
-        capex_storage = 277e-3,     # cite: ATB NPREL
-        capex_power = 257e-3,       # part of component cost related to storage only
-        opex = 2.5e-2,              # [%] cite: ATB NPREL (fraction of TOTAL cost)
+        capex_storage = 277e-3,     # cite: ATB NPREL storage cost only
+        capex_power = 257e-3,       # cite: ATB NPREL power cost only
+        opex_ratio = 2.5e-2,        # [%] cite: ATB NPREL (fraction of TOTAL cost)
         variable_cost = 2.8e-12,
         variable_income = 2.8e-12,
     )

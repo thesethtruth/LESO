@@ -294,7 +294,19 @@ class Wind(SourceSink):
         Wind.instances += 1
         self.number = Wind.instances
         self.name = name
-
+    
+    @property
+    def opex(self):
+        try:
+            opex = self._opex
+        except AttributeError:
+            opex = self.capex * self.opex_ratio
+        return opex
+        
+    @opex.setter
+    def opex(self, value):
+        self._opex = value
+    
     def __str__(self):
         return "wind{number}".format(number=self.number)
 
@@ -373,14 +385,18 @@ class Lithium(Storage):
     
     @property
     def opex(self):
-        return self.capex * self.EP_ratio * self._opex
+        try:
+            opex = self._opex
+        except AttributeError:
+            opex = self.capex * self.EP_ratio * self.opex_ratio
+        return opex
     
     @opex.setter
     def opex(self, value):
         self._opex = value
         
     def __str__(self):
-        return f"lithium{self.EP_ratio}_{self.number}"
+        return f"lithium{self.EP_ratio}h_{self.number}"
 
     def power_control(self, balance_in):
 

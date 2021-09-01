@@ -5,15 +5,15 @@ from experiments_overview import MODEL_FOLDER
 import pandas as pd
 
 #%% Define system and components
-modelname = "Cablepooling"
+modelname = "cablepool"
 lat, lon = 51.81, 5.84  # Nijmegen
 SDE_price = 55 # TODO
-retail_prices = pd.read_pickle("cablepool_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl")
-equity_share = 0.5 # to bump the roi up to about 7.5%
+equity_share = 0.5 # cite: ATB, to bump the roi up to about 7.5%
 correct_SDE = True
 
-
-retail_prices = pd.read_pickle("cablepool_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl")
+price_filename = "cablepool_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl"
+price_filepath = os.path.join(os.path.dirname(__file__), price_filename)
+retail_prices = pd.read_pickle(price_filepath)
 if correct_SDE:
     profile_factor = 0.65 # CE Delft, pag 22-  Scenario’s zon op grote daken
     basis_price = 55 # Arbitrary
@@ -77,6 +77,6 @@ if False:
     )
 ## Or write to pickle
 else: 
-    name = "cablepool.pkl"
+    name = modelname.lower()+".pkl"
     filepath = os.path.join(MODEL_FOLDER, name)
     system.to_pickle(filepath=filepath)

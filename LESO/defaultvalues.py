@@ -422,7 +422,7 @@ fastcharger = dict(
         capex = 0.065,               # Meu / piece TODO: this is problematic since it doesn't scale with other units
         opex = 0,
         variable_cost = 0,
-        variable_income = 35e-5,    # .eu/.wh (this does work)
+        variable_income = 0.35e-6,    # .eu/.wh (this does work)
     )
 
 

@@ -211,9 +211,7 @@ def set_finance_variables(obj, system=None):
     """
     Sets all derived financial variables based on either component or system level financial parameters.
     """
-    
-    print(f"setting finance for: {obj.name}") # TODO REMOVE
-    
+
     f = get_cs_attr(obj, "exp_inflation_rate", system)
     i = get_cs_attr(obj, "interest", system)
     l = get_cs_attr(obj, "lifetime", system)
@@ -245,8 +243,6 @@ def get_cs_attr(object, attr, system=None):
             value = default.system_parameters.get(attr)
 
     return value
-
-
 
 def functionmapper(objective):
 

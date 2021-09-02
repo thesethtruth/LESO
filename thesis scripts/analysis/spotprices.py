@@ -165,7 +165,7 @@ fig.update_layout(
 )
 filename = 'spot-prices.html'
 fig.write_html(filename, auto_open=False, config = {'displayModeBar': False})
-from plotly_extension import add_centering_to_plotly_html, add_title_to_plotly_html, open_html
+from LESO.plotly_extension import add_centering_to_plotly_html, add_title_to_plotly_html, open_html
 add_centering_to_plotly_html(filename)
 add_title_to_plotly_html(filename, 'ETS spot prices')
 open_html(filename)

@@ -13,7 +13,7 @@ import numpy as np
 from scipy.stats import kde
 from durationcurves import kotzur_normalize
 from scipy.signal import savgol_filter
-import plotly_extension as pe
+import LESO.plotly_extension as pe
 
 modelname = "ETM Noord-Veluwe trial 1"
 lat, lon = 52.4, 5.8

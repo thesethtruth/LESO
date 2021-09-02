@@ -404,23 +404,25 @@ fastcharger = dict(
         'color': '#a5c0c2',
         'group': 'load',
         },
-        installed = 4,           # 4 chargers
-        maxpower = 150e3,        # maximum charger power (change CARSPERHOUR)
-        carsperhour = 4,         # Change MANUALLY based on ^^^ !!!
+        installed = 20,           # amount of chargers
+        carsperhour = 4,         # maximum amount of cars assumed to charge in 1 hour at peaks
         efficiency = 0.85,       # DC fast charging reference
-        # related to EV 
-        EV_battery = 24e3,         # e3 = kWh
-        EV_consumption = 20e1,     # e1 = kWh/100km
+        # related to EV (traffic)
+        EV_charge_amount = 0.024,  # MWh TODO: this is problematic since it doesn't scale with other units
+        EV_share = 0.05,           # share of EVs in traffic that would consider charging
+        EV_min_soc = 0.4,          # miniumum state of charge to consider charging
+        weekendday_traffic_file = "data/weekendday_deventer.csv",
+        weekday_traffic_file = "data/weekday_deventer.csv",
         # optimizer
         dof = False,
         lower = 0,
         upper = 6,
         # financials
         lifetime = 15,
-        capex = 65e3,
+        capex = 0.065,               # Meu / piece TODO: this is problematic since it doesn't scale with other units
         opex = 0,
         variable_cost = 0,
-        variable_income = 35e-5,
+        variable_income = 35e-5,    # .eu/.wh (this does work)
     )
 
 

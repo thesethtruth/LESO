@@ -1,8 +1,12 @@
+import os
+import requests
 import pandas as pd
 import numpy as np
-import requests
 from bs4 import BeautifulSoup
-import os
+from pathlib import Path
+from scipy.stats import truncexpon
+
+FOLDER = Path(__file__).parent
 
 
 def read_consumption_profile(consumer_instance, 
@@ -32,25 +36,64 @@ def read_consumption_profile(consumer_instance,
     
     return power
 
+def determine_chargable_ev_traffic(fastcharger):
+    
+    def read_csv(fp):
+        return pd.read_csv(
+        fp, index_col=0
+        ).apply(lambda x: int(round(x)), axis=1
+        ).values
 
-def calculate_charging_demand(fastcharger_instance, 
-                              path_to_data = "data\\EV_charge.pkl"):
+    ## Read in the weekday traffic
+    try:
+        weekday = read_csv(fastcharger.weekday_traffic_file)
+    except FileNotFoundError:
+        weekday = read_csv(FOLDER / fastcharger.weekday_traffic_file)
     
-    dir = os.path.dirname(__file__)
-    filepath = os.path.join(dir, path_to_data)
+    ## Read in the weekendday traffic
+    try:
+        weekendday = read_csv(fastcharger.weekendday_traffic_file)
+    except FileNotFoundError:
+        weekendday = read_csv(FOLDER / fastcharger.weekendday_traffic_file)
 
-    charger = fastcharger_instance
+    # init empty series and assign the correct days based on the charger indices
+    EV_charge = pd.Series(index=fastcharger.state.index, dtype=int)
+    for i in range(365):
+        d = i * 24
+        if EV_charge.index[d].weekday()<5:
+            EV_charge.iloc[d:d+24] = weekday
+        else:   
+            EV_charge.iloc[d:d+24] = weekendday
+
+    # A truncated filter which is used to 'predict'/stochastically assign a soc to any vehicle
+    def soc_trunc_filter(traffic, min_soc):
+        socs = truncexpon.rvs(1, size=traffic, random_state=49816317) # TODO random seed might be counter productive
+        should_charge = len(socs[socs < min_soc])
+        return should_charge
     
-    # read traffic data
-    charger.EV_traffic = pd.read_pickle(filepath)
-    charger.EV_traffic.index = charger.state.index
+    # apply the filter
+    EV_traffic = EV_charge.apply(
+        soc_trunc_filter, 
+        args=(fastcharger.EV_min_soc,)
+        )
     
-    # cap to max capacity
-    charger.EV_to_chargers = charger.EV_traffic.where(
-        (charger.EV_traffic < charger.installed*charger.carsperhour), 
-        charger.installed*charger.carsperhour)
+    # mutliply by the EV share to
+    fastcharger.EV_traffic = (EV_traffic * fastcharger.EV_share).round(0)
+
+    return None
+
+def calculate_charging_demand(fastcharger):
     
-    power = -charger.EV_to_chargers * charger.EV_battery / charger.efficiency
+    # first determine the chargable ev traffic based on traffic data supplied
+    determine_chargable_ev_traffic(fastcharger)
+
+    # from the traffic, cap the actually demand to available chargers on hourly basis
+    fastcharger.EV_to_chargers = fastcharger.EV_traffic.where(
+        (fastcharger.EV_traffic < fastcharger.installed*fastcharger.carsperhour), 
+        fastcharger.installed*fastcharger.carsperhour)
+
+    # determine the power demand from EVs charging
+    power = -fastcharger.EV_to_chargers * fastcharger.EV_charge_amount / fastcharger.efficiency
 
     return power
 

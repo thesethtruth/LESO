@@ -4,6 +4,7 @@
 
 # required packages
 from warnings import WarningMessage
+import warnings
 import pandas as pd
 import numpy as np
 
@@ -500,12 +501,15 @@ class FastCharger(SourceSink):
         FastCharger.instances += 1
         self.number = FastCharger.instances
         self.name = name
+        warnings.warn(
+            "Fastcharger has financial assumptions that do not scale: "
+            + "please check .capex and .EV_charge_amount"
+        )
 
     def __str__(self):
         return "fastcharger{number}".format(number=self.number)
 
     def calculate_time_serie(self, *args):
-
         self.state.power = functions.calculate_charging_demand(self)
 
 

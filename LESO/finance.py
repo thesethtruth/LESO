@@ -48,12 +48,6 @@ def crf(interest, lifetime):
 
     return ci
 
-def roi():
-    """
-    Return On Investment
-    """
-    pass
-
 def tco(component, eM):
     """
     Total Cost of Ownership
@@ -183,7 +177,7 @@ These functions simply wrap objective functions to a numeric value output.
 
 def determine_component_net_profit(component, eM):
     """ex post determination method of profit"""
-    return value(profit(component, eM))
+    return -value(profit(component, eM)) # <-- notice the minus here
 
 def determine_component_investment_cost(component, eM):
     """ex post determination method of roi"""

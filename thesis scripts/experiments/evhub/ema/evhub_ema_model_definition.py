@@ -1,4 +1,4 @@
-from cablepool_leso_handshake import METRICS, CablePooling
+from evhub_leso_handshake import METRICS, EVHub
 
 from ema_workbench import (
     RealParameter,
@@ -8,16 +8,17 @@ from ema_workbench import (
     )
 
 # initiate model
-model = Model(name='Cablepool', function=CablePooling)
+model = Model(name='EVHub', function=EVHub)
 
 # levers / policies
 model.levers = [
-    CategoricalParameter("subsidy_scheme", [1, 0]),
+    CategoricalParameter("charging_fee", [0.35, 0.60]),
 ]
 
 # uncertainties / scenarios
 model.uncertainties = [
     RealParameter("pv_cost_factor", 0.38, 0.85),
+    RealParameter("wind_cost_factor", 0.77, 0.98),
     RealParameter("battery_cost_factor", 0.41, 0.70),
 ]
 

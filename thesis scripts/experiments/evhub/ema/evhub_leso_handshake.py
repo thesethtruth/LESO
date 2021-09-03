@@ -1,4 +1,5 @@
-import os
+from LESO import components
+from pathlib import Path
 import uuid
 import pyomo.environ as pyo
 import numpy as np
@@ -13,39 +14,47 @@ from LESO.finance import (
     determine_total_net_profit
 )
 
-MODEL_FOLDER = os.path.join(os.path.dirname(__file__), "../model")
-RESULTS_FOLDER = os.path.join(os.path.dirname(__file__), "../results")
-if not os.path.exists(RESULTS_FOLDER):
-    os.makedirs(RESULTS_FOLDER)
+MODEL_FOLDER = Path(__file__).parent.parent / "model"
+RESULTS_FOLDER = Path(__file__).parent.parent / "results"
+RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
 
-RUNID = 120901
+  
+RUNID = 120903
 
-MODELS = {
-    "fixed-fee": "cablepool.pkl",
-    "dynamic": "cablepool_dynamic.pkl",
-}
+MODEL = MODEL_FOLDER / 'evhub.pkl'
 
-# ref_system = LESO.System.read_pickle(model_to_open)
+if False: # use this to easily generate the metrics for installed capacity
+    ref_system = LESO.System.read_pickle(MODEL)
+    m = []
+    for c in ref_system.components:
+        if not isinstance(c, LESO.FinalBalance):
+            out = c.name + " installed capacity"
+            m.append(out)
+
 METRICS = [
-    "PV South installed capactiy",
-    "PV West installed capactiy",
-    "PV East installed capactiy",
-    "2h battery installed capactiy",
-    "6h battery installed capactiy",
-    "Grid connection installed capactiy",
-]
+    'PV South soundwall installed capacity',
+    'PV South installed capacity',
+    'PV West installed capacity',
+    'PV East installed capacity',
+    'Nordex N100 2500 installed capacity',
+    'Charging demand installed capacity',
+    '2h battery installed capacity',
+    '6h battery installed capacity',
+    'Grid connection installed capacity'
+ ]
+
 METRICS.extend(
     [
         "objective_result",
         "additional_renewable_energy",
-        # "additional_investment_cost",
         "curtailment",
-        # "return_on_add_investment",
-        # "net_profit_add_investment",
+        "additional_investment_cost",
+        "return_on_investment",
+        "net_profit",
     ]
 )
 
-OUTPUT_PREFIX = "cablepooling_exp_"
+OUTPUT_PREFIX = "evhub_exp_"
 
 # this is needed due to the dependent but double variant uncertainty ranges given by ATB
 def linear_map(value, ):
@@ -59,12 +68,11 @@ def linear_map(value, ):
 
 def Handshake(
     pv_cost_factor=None,
+    wind_cost_factor=None,
     battery_cost_factor=None,
-    model=None,
+    charging_fee=None,
+    model_to_open=MODEL,
 ):
-
-    # read model based on pricing scheme
-    model_to_open = os.path.join(MODEL_FOLDER, model)
 
     # initiate System component
     system = LESO.System.read_pickle(model_to_open)
@@ -76,10 +84,14 @@ def Handshake(
         if isinstance(component, LESO.Lithium):
             component.capex_storage = component.capex_storage * battery_cost_factor
             component.capex_power = component.capex_power * linear_map(battery_cost_factor)
+        if isinstance(component, LESO.Wind):
+            component.capex = component.capex * wind_cost_factor
+        if isinstance(component, LESO.FastCharger):
+            component.variable_income = charging_fee*1e-6
     
     # generate file name and filepath for storing
     filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1])[:6] + ".json"
-    filepath = os.path.join(RESULTS_FOLDER, filename_export)
+    filepath = RESULTS_FOLDER / filename_export
 
     ## SOLVE
     system.optimize(
@@ -95,23 +107,20 @@ def Handshake(
     return system, filename_export
 
 @ema_pyomo_interface
-def CablePooling(
+def EVHub(
     pv_cost_factor=1,
     battery_cost_factor=1,
-    subsidy_scheme=1,
+    wind_cost_factor=1,
+    charging_fee=1,
 ):
-    if subsidy_scheme == 1:
-        model =MODELS['fixed-fee']
-        subsidy_scheme = 'fixed-fee'
-    else:
-        model = MODELS['dynamic']
-        subsidy_scheme = 'dynamic'
 
     # hand ema_inputs over to the LESO handshake
     system, filename_export = Handshake(
         pv_cost_factor=pv_cost_factor,
+        wind_cost_factor=wind_cost_factor,
         battery_cost_factor=battery_cost_factor,
-        model=model
+        charging_fee=charging_fee,
+        model_to_open=MODEL,
     )
 
     # check for optimalitiy before trying to access all information
@@ -119,7 +128,7 @@ def CablePooling(
 
         # extract capacities from system components
         capacities = {
-            component.name + " installed capactiy": component.installed
+            component.name + " installed capacity": component.installed
             for component in system.components
             if not isinstance(component, LESO.FinalBalance)
         }
@@ -141,18 +150,18 @@ def CablePooling(
         ))
 
         # calculate additional investment cost
-        # addtional_investment_cost = determine_total_investment_cost(system)
-        # roi = determine_roi(system),
-        # net_profit = determine_total_net_profit(system)
+        addtional_investment_cost = determine_total_investment_cost(system)
+        roi = determine_roi(system)
+        net_profit = determine_total_net_profit(system)
 
         # combine performance indicators to one dictionary
         pi = {
             "objective_result": system.model.results["Problem"][0]["Lower bound"],
             "additional_renewable_energy": additional_renewable_energy,
-            # "additional_investment_cost ": addtional_investment_cost,
             "curtailment": curtailment,
-            # "return_on_add_investment": roi,
-            # "net_profit_add_investment": net_profit,
+            "return_on_investment": roi,
+            "net_profit": net_profit,
+            "additional_investment_cost": addtional_investment_cost,
         }
 
         # create and update results dictionary
@@ -178,13 +187,14 @@ def CablePooling(
     db_entry.update({           # ema_inputs
         "battery_cost_factor": battery_cost_factor,
         "pv_cost_factor": pv_cost_factor,
-        "subsidy_scheme": subsidy_scheme,
+        "wind_cost_factor": wind_cost_factor,
+        "charging_fee": charging_fee,
     })
     db_entry.update(meta_data)  # metadata
 
     # write to db
-    db_filename = f"cablepooling_db{RUNID}.json"
-    db_path = os.path.join(RESULTS_FOLDER, db_filename)
+    db_filename = f"{MODEL.stem}_db{RUNID}.json"
+    db_path = RESULTS_FOLDER / db_filename
     with TinyDB(db_path) as db:
         db.insert(db_entry)
     

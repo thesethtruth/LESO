@@ -10,7 +10,7 @@ SDE_price = 55 # TODO
 equity_share = 0.5 # cite: ATB, to bump the roi up to about 7.5%
 correct_SDE = True
 
-price_filename = "cablepool_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl"
+price_filename = "etm_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl"
 price_filepath = os.path.join(os.path.dirname(__file__), price_filename)
 retail_prices = pd.read_pickle(price_filepath)
 if correct_SDE:

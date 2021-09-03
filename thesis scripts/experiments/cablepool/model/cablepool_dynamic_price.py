@@ -15,7 +15,7 @@ for component in system.components:
 
 #%% dynamic part
 # read .pkl from dynamic_price_analysis
-price_filename = "cablepool_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl"
+price_filename = "etm_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl"
 mwh_prices = pd.read_pickle(os.path.join(os.path.dirname(__file__), price_filename))
 energy_market_price = mwh_prices.values / 1e6 # convert from [eu / MWh] to [Meu / MWh]
 

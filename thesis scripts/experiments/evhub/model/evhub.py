@@ -1,7 +1,5 @@
-from LESO.components import FastCharger
 from LESO import System
-from LESO import PhotoVoltaic, Wind, Lithium, Grid, FinalBalance
-import os
+from LESO.components import PhotoVoltaic, Wind, Lithium, Grid, FinalBalance, FastCharger
 import pandas as pd
 from pathlib import Path
 #%%
@@ -13,8 +11,8 @@ FOLDER = Path(__file__).parent
 # parameters used:
 modelname = "evhub"
 lat, lon = 52.24, 6.19  # Arnhem (A1 westBound naar Apeldoorn na afrit 24 ri afrit 23 thv hmp 105.5)
-equity_share = 0.5 # cite: ATB, to bump the roi up to about 7.5%
-price_filename = "cablepool_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl"
+equity_share = 0.3 # no cite
+price_filename = "etm_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl"
 retail_prices = list((pd.read_pickle(FOLDER / price_filename)/1e6).values)
 
 # initiate System component
@@ -23,8 +21,6 @@ system = System(
     lon=lon, 
     model_name=modelname,
     equity_share=equity_share)
-
-
 
 #%% initiate and define components
 turbine_type = "Nordex N100 2500" 
@@ -68,3 +64,11 @@ else:
     name = modelname.lower()+".pkl"
     filepath = FOLDER / name
     system.to_pickle(filepath=filepath)
+
+from LESO.finance import (
+    determine_component_investment_cost,
+    determine_total_investment_cost,
+    determine_roi,
+    determine_total_net_profit,
+    determine_component_investment_cost,
+)

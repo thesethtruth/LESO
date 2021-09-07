@@ -28,28 +28,17 @@ system = System(
     lon=lon, 
     model_name=modelname,
     equity_share=equity_share)
-system.fetch_input_data()
-tmy = system.tmy
 
-# for wind/grid we need to do some preprocessing
-turbine_type = "Nordex N100 2500" # actually Lagerwey L100 2.5 MW, best match
-hub_height = 100
+#%% 
+grid = Grid("Grid connection", installed=10, variable_cost=999e-6, variable_income=retail_prices)
 wind = Wind(
     "Nordex N100 2500",
     dof=False,
     installed=10,
-    turbine_type=turbine_type,
-    hub_height=hub_height,
+    turbine_type="Nordex N100 2500", # actually Lagerwey L100 2.5 MW, best match
+    hub_height=100,
     use_ninja=True,
 )
-wind.calculate_time_serie(tmy)
-grid_variable_capacity = list((-wind.state.power+10).values)
-
-#%%
-grid = Grid("Grid connection", installed=10, variable_cost=999e-6, variable_income=retail_prices)
-grid.variable_capacity = grid_variable_capacity
-
-# initiate and define components
 pv_s = PhotoVoltaic("PV South", azimuth=180, use_ninja=True, dof=True)
 pv_e = PhotoVoltaic("PV East", azimuth=90, use_ninja=True, dof=True)
 pv_w = PhotoVoltaic("PV West", azimuth=270, use_ninja=True, dof=True)
@@ -60,7 +49,7 @@ final = FinalBalance(name="curtailment_underload")
 
 #%% add the components to the system
 # note that we do not add wind now!
-component_list = [pv_s, pv_w, pv_e, bat_2h, bat_6h, bat_10h, final, grid]
+component_list = [pv_s, wind, pv_w, pv_e, bat_2h, bat_6h, bat_10h, final, grid]
 system.add_components(component_list)
 #%% Pickle the model
 

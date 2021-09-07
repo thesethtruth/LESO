@@ -136,20 +136,10 @@ def investment_cost(component, eM):
     """
     Simple investment cost definition
     """
-    system = eM # energy model is system
-    
-    if component.capex != 0:
-        unit_capex =    component.capex + (
-                        system.lifetime - component.lifetime ) / (
-                        component.lifetime ) * component.replacement
-                        # linear replacement assumption
+    if component.dof:
+        investment_cost = component.capex * component.pyoVar
     else:
-        unit_capex = 0
-    
-    pyoVar = component.pyoVar # scaling factor in optimization issue
-
-    investment_cost = unit_capex * pyoVar
-
+        investment_cost = component.capex * getattr(component, 'installed', 0)
     return investment_cost
 
 def roi(eM):

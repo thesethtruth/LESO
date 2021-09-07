@@ -18,30 +18,30 @@ RESULTS_FOLDER = os.path.join(os.path.dirname(__file__), "../results")
 if not os.path.exists(RESULTS_FOLDER):
     os.makedirs(RESULTS_FOLDER)
 
-RUNID = 120901
+RUNID = 210907
 
 MODELS = {
-    "fixed-fee": "cablepool.pkl",
-    "dynamic": "cablepool_dynamic.pkl",
+    "brownfield": "cablepool.pkl",
+    "greenfield": "cablepool_greenfield.pkl",
 }
 
 # ref_system = LESO.System.read_pickle(model_to_open)
 METRICS = [
-    "PV South installed capactiy",
-    "PV West installed capactiy",
-    "PV East installed capactiy",
-    "2h battery installed capactiy",
-    "6h battery installed capactiy",
-    "Grid connection installed capactiy",
+    "PV South installed capacity",
+    "PV West installed capacity",
+    "PV East installed capacity",
+    "2h battery installed capacity",
+    "6h battery installed capacity",
+    "Grid connection installed capacity",
 ]
 METRICS.extend(
     [
         "objective_result",
-        "additional_renewable_energy",
-        # "additional_investment_cost",
+        "total_renewable_energy",
+        "total_investment_cost",
         "curtailment",
-        # "return_on_add_investment",
-        # "net_profit_add_investment",
+        "return_on_add_investment",
+        "net_profit_add_investment",
     ]
 )
 
@@ -60,6 +60,7 @@ def linear_map(value, ):
 def Handshake(
     pv_cost_factor=None,
     battery_cost_factor=None,
+    wind_cost_factor=None,
     model=None,
 ):
 
@@ -73,6 +74,8 @@ def Handshake(
     for component in system.components:
         if isinstance(component, LESO.PhotoVoltaic):
             component.capex = component.capex * pv_cost_factor
+        if isinstance(component, LESO.Wind):
+            component.capex = component.capex * wind_cost_factor
         if isinstance(component, LESO.Lithium):
             component.capex_storage = component.capex_storage * battery_cost_factor
             component.capex_power = component.capex_power * linear_map(battery_cost_factor)
@@ -98,19 +101,22 @@ def Handshake(
 def CablePooling(
     pv_cost_factor=1,
     battery_cost_factor=1,
-    subsidy_scheme=1,
+    wind_cost_factor=1,
+    approach=1,
 ):
-    if subsidy_scheme == 1:
-        model =MODELS['fixed-fee']
-        subsidy_scheme = 'fixed-fee'
+    if approach == 1:
+        model =MODELS['brownfield']
+        subsidy_scheme = 'brownfield'
+        wind_cost_factor = 1 # force wind cost factor to 1 to prevent this from interferirng with brownfield results
     else:
-        model = MODELS['dynamic']
-        subsidy_scheme = 'dynamic'
+        model = MODELS['greenfield']
+        subsidy_scheme = 'greenfield'
 
     # hand ema_inputs over to the LESO handshake
     system, filename_export = Handshake(
         pv_cost_factor=pv_cost_factor,
         battery_cost_factor=battery_cost_factor,
+        wind_cost_factor=wind_cost_factor,
         model=model
     )
 
@@ -119,13 +125,13 @@ def CablePooling(
 
         # extract capacities from system components
         capacities = {
-            component.name + " installed capactiy": component.installed
+            component.name + " installed capacity": component.installed
             for component in system.components
             if not isinstance(component, LESO.FinalBalance)
         }
 
         # calculate total renewable energy
-        additional_renewable_energy = sum(sum(
+        total_renewable_energy = sum(sum(
             component.state.power
             for component in system.components
             if any(
@@ -141,18 +147,18 @@ def CablePooling(
         ))
 
         # calculate additional investment cost
-        # addtional_investment_cost = determine_total_investment_cost(system)
-        # roi = determine_roi(system),
-        # net_profit = determine_total_net_profit(system)
+        total_investment_cost = determine_total_investment_cost(system)
+        roi = determine_roi(system)
+        net_profit = determine_total_net_profit(system)
 
         # combine performance indicators to one dictionary
         pi = {
             "objective_result": system.model.results["Problem"][0]["Lower bound"],
-            "additional_renewable_energy": additional_renewable_energy,
-            # "additional_investment_cost ": addtional_investment_cost,
+            "total_renewable_energy": total_renewable_energy,
+            "total_investment_cost": total_investment_cost,
             "curtailment": curtailment,
-            # "return_on_add_investment": roi,
-            # "net_profit_add_investment": net_profit,
+            "return_on_add_investment": roi,
+            "net_profit_add_investment": net_profit,
         }
 
         # create and update results dictionary

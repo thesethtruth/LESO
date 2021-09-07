@@ -1,3 +1,5 @@
 .vscode
 __pycache__
 LESO.egg-info
+**/experiments/cablepool/results
+**/experiments/evhub/results

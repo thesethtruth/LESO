@@ -86,20 +86,31 @@ def osc(component, eM):
     pM = eM.model # extract pyomo model from enery model
     system = eM # energy model is system
     
-    if component.capex != 0:
-        unit_capex =    component.capex + (
-                        system.lifetime - component.lifetime ) / (
-                        component.lifetime ) * component.replacement
-                        # linear replacement assumption
+    if hasattr(component, "crf"):
+        crf = component.crf 
+        unit_capex = component.capex
+
     else:
-        unit_capex = 0
+        crf = system.crf
+        
+        if component.capex != 0:
+            unit_capex =    component.capex + (
+                            system.lifetime - component.lifetime ) / (
+                            component.lifetime ) * component.replacement
+                            # linear replacement assumption
+        
+        else:
+            unit_capex = 0
     
     fixed_cost = component.opex # without system lifetime, only the first year
-    pyoVar = component.pyoVar # scaling factor in optimization issue
-    variable_cost = component.get_variable_cost(pM) # without system lifetime, only the first year 
-    crf = component.crf if hasattr(component, "crf") else system.crf
+    if component.dof:
+        scaling_factor = component.pyoVar # scaling factor in optimization issue
+    else:
+        scaling_factor = getattr(component, "installed", 0)
 
-    objective = (crf*(unit_capex)+fixed_cost)*pyoVar + variable_cost
+    variable_cost = component.get_variable_cost(pM) # without system lifetime, only the first year 
+
+    objective = (crf*(unit_capex)+fixed_cost)*scaling_factor + variable_cost
                 # use crf to discount *only investment* over the system lifetime
                 # and add all operation (yearly) cost to come to overnight system cost
     
@@ -107,7 +118,7 @@ def osc(component, eM):
 
 def profit(component, eM):
     """
-    Maximizing the profit is minimizing cost; negative values are profitable; otherwise not. 
+    Maximizing the profit is minimizing cost; negative values are pofitable; otherwise not. 
         Adviced to use in combination with aditional ROI constraint. 
     """
     pM = eM.model # extract pyomo model from enery model

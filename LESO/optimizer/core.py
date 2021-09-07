@@ -106,7 +106,8 @@ def direct_power_control_constraints(model, component):
     
     # allows for implementing variable capacity on power-controllable assets
     try: 
-        component.variable_capacity[0]
+        component.variable_capacity[0] # will throw TypeError if not itterable
+        available_capacity = component.variable_capacity
     except TypeError:
         available_capacity = [component.installed]*len(time)
     

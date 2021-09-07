@@ -2,7 +2,6 @@
 Default value vault
     contains the default values to run the main code
 """
-from copy import deepcopy as copy
 
 # Often-used variables
 lower_bound = -1e7
@@ -100,7 +99,7 @@ pv = dict(
         # financials
         lifetime = 25,
         capex = 0.8,            # cite: ERTI 2017 corrected for SDE PBL 2020
-        opex_ratio = 0.0015,    #% cite: ETRI2014
+        opex_ratio = 0.015,    #% cite: ETRI2014
         variable_cost = 0,
         variable_income = 0,
         interest = 0.02,                # cite: NDVE (2018) Ecofys/navigant
@@ -351,9 +350,9 @@ lithium = dict(
         lifetime = 15,              # cite: ATB NPREL
         capex_storage = 277e-3,     # cite: ATB NPREL storage cost only
         capex_power = 257e-3,       # cite: ATB NPREL power cost only
-        opex_ratio = 2.5e-2,        # [%] cite: ATB NPREL (fraction of TOTAL cost)
-        variable_cost = 2.8e-12,
-        variable_income = 2.8e-12,
+        opex_ratio = 0.025,        # [%] cite: ATB NPREL (fraction of TOTAL cost)
+        variable_cost = 1e-13,
+        variable_income = 1e-13,
     )
 
 hydrogen = dict(
@@ -422,7 +421,7 @@ fastcharger = dict(
         capex = 0.065,               # Meu / piece TODO: this is problematic since it doesn't scale with other units
         opex = 0,
         variable_cost = 0,
-        variable_income = 0.35e-6,    # .eu/.wh (this does work)
+        variable_income = 350e-6,    # .eu/.wh (this does work)
     )
 
 

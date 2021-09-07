@@ -39,18 +39,19 @@ pv_e = PhotoVoltaic("PV East", azimuth=90, use_ninja=True, dof=True)
 pv_w = PhotoVoltaic("PV West", azimuth=270, use_ninja=True, dof=True)
 bat_2h = Lithium("2h battery", dof=True, EP_ratio=2)
 bat_6h = Lithium("6h battery", dof=True, EP_ratio=6)
+bat_10h = Lithium("10h battery", dof=True, EP_ratio=10)
 grid = Grid("Grid connection", installed=1, variable_cost=retail_prices, variable_income=retail_prices)
 charger = FastCharger("Charging demand", installed=20, EV_share= 0.05, dof=False)
 final = FinalBalance(name="curtailment_underload")
 
 #%% add the components to the system
-component_list = [pv_sv, pv_s, pv_w, pv_e, wind, bat_2h, bat_6h, final, grid, charger]
+component_list = [pv_sv, pv_s, pv_w, pv_e, wind, bat_2h, bat_6h, bat_10h, final, grid, charger]
 system.add_components(component_list)
 
 #%% Pickle the model
 
 ## Solve
-if True:
+if False:
     system.optimize(
             objective='osc',        # overnight system cost
             time=None,              # resorts to default; year 8760h
@@ -64,11 +65,3 @@ else:
     name = modelname.lower()+".pkl"
     filepath = FOLDER / name
     system.to_pickle(filepath=filepath)
-
-from LESO.finance import (
-    determine_component_investment_cost,
-    determine_total_investment_cost,
-    determine_roi,
-    determine_total_net_profit,
-    determine_component_investment_cost,
-)

@@ -12,7 +12,7 @@ model = Model(name='EVHub', function=EVHub)
 
 # levers / policies
 model.levers = [
-    CategoricalParameter("charging_fee", [350, 600]),
+    CategoricalParameter("grid_capacity", [0, 0.5, 1, 1.5]),
 ]
 
 # uncertainties / scenarios

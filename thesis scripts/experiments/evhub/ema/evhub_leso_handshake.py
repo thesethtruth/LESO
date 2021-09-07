@@ -40,6 +40,7 @@ METRICS = [
     'Charging demand installed capacity',
     '2h battery installed capacity',
     '6h battery installed capacity',
+    '10h battery installed capacity',
     'Grid connection installed capacity'
  ]
 
@@ -70,7 +71,7 @@ def Handshake(
     pv_cost_factor=None,
     wind_cost_factor=None,
     battery_cost_factor=None,
-    charging_fee=None,
+    grid_capacity=None,
     model_to_open=MODEL,
 ):
 
@@ -86,8 +87,8 @@ def Handshake(
             component.capex_power = component.capex_power * linear_map(battery_cost_factor)
         if isinstance(component, LESO.Wind):
             component.capex = component.capex * wind_cost_factor
-        if isinstance(component, LESO.FastCharger):
-            component.variable_income = charging_fee*1e-6
+        if isinstance(component, LESO.Grid):
+            component.installed = grid_capacity
     
     # generate file name and filepath for storing
     filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1])[:6] + ".json"
@@ -111,7 +112,7 @@ def EVHub(
     pv_cost_factor=1,
     battery_cost_factor=1,
     wind_cost_factor=1,
-    charging_fee=1,
+    grid_capacity=1,
 ):
 
     # hand ema_inputs over to the LESO handshake
@@ -119,7 +120,7 @@ def EVHub(
         pv_cost_factor=pv_cost_factor,
         wind_cost_factor=wind_cost_factor,
         battery_cost_factor=battery_cost_factor,
-        charging_fee=charging_fee,
+        grid_capacity=grid_capacity,
         model_to_open=MODEL,
     )
 
@@ -188,7 +189,7 @@ def EVHub(
         "battery_cost_factor": battery_cost_factor,
         "pv_cost_factor": pv_cost_factor,
         "wind_cost_factor": wind_cost_factor,
-        "charging_fee": charging_fee,
+        "grid_capacity": grid_capacity,
     })
     db_entry.update(meta_data)  # metadata
 

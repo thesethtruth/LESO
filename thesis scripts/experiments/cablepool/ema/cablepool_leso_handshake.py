@@ -32,6 +32,7 @@ METRICS = [
     "PV East installed capacity",
     "2h battery installed capacity",
     "6h battery installed capacity",
+    "10h battery installed capacity",
     "Grid connection installed capacity",
 ]
 METRICS.extend(

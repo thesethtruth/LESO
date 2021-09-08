@@ -9,7 +9,8 @@ from LESO import AttrDict
 
 def load_ema_leso_results(
     run_id: int, exp_prefix: str,
-    results_folder: str, return_db_as_df=True
+    results_folder: str, return_db_as_df=True,
+    exclude_solver_errors = True,
 ) -> Tuple[pd.DataFrame, dict, pd.DataFrame]:
     """Small helper function to load results easily from the document structure"""
 
@@ -20,6 +21,8 @@ def load_ema_leso_results(
     db = TinyDB(results_folder / db_file)
     if return_db_as_df:
         db = convert_db_to_df(db)
+        if exclude_solver_errors:
+            db = db[db.solver_status == "ok"]
 
     return experiments, outcomes, db
 

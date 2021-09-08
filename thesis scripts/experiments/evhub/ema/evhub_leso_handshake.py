@@ -91,7 +91,7 @@ def Handshake(
             component.installed = grid_capacity
     
     # generate file name and filepath for storing
-    filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1])[:6] + ".json"
+    filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1])[:10] + ".json"
     filepath = RESULTS_FOLDER / filename_export
 
     ## SOLVE

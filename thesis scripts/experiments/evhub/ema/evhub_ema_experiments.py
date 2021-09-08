@@ -4,7 +4,7 @@ from ema_workbench import perform_experiments, save_results
 from evhub_ema_model_definition import model
 
 # run experiments
-results = perform_experiments(model, scenarios=4, policies=4)
+results = perform_experiments(model, scenarios=150, policies=4)
 # save results
 RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
 results_file_name = RESULTS_FOLDER / f"evhub_ema_results_{RUNID}.tar.gz"

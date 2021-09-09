@@ -27,7 +27,7 @@ pip install -e .
 This project is currently being released to work with `pip` for an easy install.
 To install ETMeta use the following command (in your `venv` of choice).
 
-*As ETMeta is required but not available (yet) through PyPi you need pip install that first ([ETMeta git](https://github.com/thesethtruth/ETMeta))*
+*As ETMeta is required but not available (yet) through PyPi you need pip install first ([ETMeta git](https://github.com/thesethtruth/ETMeta))*
 
 ```
 pip install https://github.com/thesethtruth/ETMeta/archive/main.zip

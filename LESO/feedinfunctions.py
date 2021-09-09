@@ -162,7 +162,7 @@ def PVpower(PV_instance, tmy):
                 PV.area
     Output:     PV.power
 
-    This function should be updated to a more sophisticated power model!
+    This function could be updated to a more sophisticated power model!
     """
     PV = PV_instance
 
@@ -179,6 +179,15 @@ def PVpower(PV_instance, tmy):
 
     return power
 
+def ninja_PVpower(PV_instance, tmy):
+    """Simple wrapper for power profiles calculated with renewables.ninja"""
+    PV = PV_instance
+    # Generate the power curve using renewables.ninja
+    power = LESO.dataservice.api.get_renewable_ninja(PV, tmy)
+    power = power * PV.installed
+    # reset the indices to a future year based on starting year
+    power.index = PV.state.index
+    return power
 
 def windpower(wind_instance, tmy):
     """
@@ -239,6 +248,15 @@ def windpower(wind_instance, tmy):
     power.index = wind.state.index
     return power
 
+def ninja_windpower(wind_instance, tmy):
+    """Simple wrapper for power profiles calculated with renewables.ninja"""
+    wind = wind_instance
+    # Generate the power curve using renewables.ninja
+    power = LESO.dataservice.api.get_renewable_ninja(wind, tmy)
+    power = power*wind.installed
+    # reset the indices to a future year based on starting year
+    power.index = wind.state.index
+    return power
 
 def _calculate_poa(tmy, PV):
     """

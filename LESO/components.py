@@ -4,6 +4,7 @@
 
 # required packages
 from warnings import WarningMessage
+import warnings
 import pandas as pd
 import numpy as np
 
@@ -15,9 +16,8 @@ from pyomo.environ import value
 import LESO.defaultvalues as defs
 import LESO.feedinfunctions as feedinfunctions
 import LESO.functions as functions
-import LESO.optimizer.util as util
+import LESO.optimizer.core as core
 from LESO.optimizer.preprocess import initializeGenericPyomoVariables
-from LESO.finance import set_finance_variables
 from LESO.dataservice import get_pvgis, get_dowa, etm_id_extractor_external
 
 
@@ -59,8 +59,7 @@ class Component:
                     self.dof = value
                     self.installed = 1
             else:
-                print("Warning: Invalid input argument supplied -- default used")
-
+                print(f"Warning: Invalid input argument supplied -- default used: {key} for {self}")
         pass
 
     @property
@@ -141,8 +140,7 @@ class PhotoVoltaic(SourceSink):
         self.default()
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
 
         PhotoVoltaic.instances += 1
@@ -159,12 +157,27 @@ class PhotoVoltaic(SourceSink):
             "---> Note: Change the module power or -area to change this variable"
         )
 
+    @property
+    def opex(self):
+        try:
+            opex = self._opex
+        except AttributeError:
+            opex = self.capex * self.opex_ratio
+        return opex
+        
+    @opex.setter
+    def opex(self, value):
+        self._opex = value
+    
     def __str__(self):
         return "pv{number}".format(number=self.number)
 
     def calculate_time_serie(self, tmy):
 
-        self.state.power = feedinfunctions.PVpower(self, tmy)
+        if self.use_ninja:
+            self.state.power = feedinfunctions.ninja_PVpower(self, tmy) # TODO
+        else:
+            self.state.power = feedinfunctions.PVpower(self, tmy)
 
 class PhotoVoltaicAdvanced(SourceSink):
 
@@ -180,8 +193,7 @@ class PhotoVoltaicAdvanced(SourceSink):
         self.default()
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
 
         PhotoVoltaicAdvanced.instances += 1
@@ -209,8 +221,7 @@ class BifacialPhotoVoltaic(SourceSink):
         self.default()
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
 
         BifacialPhotoVoltaic.instances += 1
@@ -234,17 +245,20 @@ class FinalBalance(SourceSink):
     control_states = {"power": 1}
 
     def __init__(self, **kwargs):
+        
+        name = kwargs.pop("name", None)
+        if name:
+            self.name = name
+        else:
+            self.name = self.__str__()
 
         # Set default values as instance attribute
         self.default()
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
 
-        self.name = self.__str__()
-
+        
     def __str__(self):
         return "FinalBalance"
 
@@ -256,7 +270,7 @@ class FinalBalance(SourceSink):
 
     def construct_constraints(self, system):
 
-        util.final_balance_power_control_constraints(system.model, self)
+        core.final_balance_power_control_constraints(system.model, self)
 
 
 class Wind(SourceSink):
@@ -272,8 +286,7 @@ class Wind(SourceSink):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         # fetch own tmy set
         if self.use_dowa:
@@ -282,13 +295,27 @@ class Wind(SourceSink):
         Wind.instances += 1
         self.number = Wind.instances
         self.name = name
-
+    
+    @property
+    def opex(self):
+        try:
+            opex = self._opex
+        except AttributeError:
+            opex = self.capex * self.opex_ratio
+        return opex
+        
+    @opex.setter
+    def opex(self, value):
+        self._opex = value
+    
     def __str__(self):
         return "wind{number}".format(number=self.number)
 
     def calculate_time_serie(self, tmy):
         if self.use_dowa:
             self.state.power = feedinfunctions.windpower(self, self.dowa)
+        elif self.use_ninja:
+            self.state.power = feedinfunctions.ninja_windpower(self, tmy) # TODO
         else:
             self.state.power = feedinfunctions.windpower(self, tmy)
 
@@ -305,8 +332,7 @@ class WindOffshore(SourceSink):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         # fetch own tmy set
         self.dowa = get_dowa(lat, lon, height=height)
@@ -337,8 +363,7 @@ class Lithium(Storage):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         Lithium.instances += 1
         self.number = Lithium.instances
@@ -354,17 +379,25 @@ class Lithium(Storage):
 
     @property
     def capex(self):
-        cpx = self._capex 
-        cpxr = self.capex_EP_ratio
+        cpxs = self.capex_storage
+        cpxp = self.capex_power
         epr = self.EP_ratio
-        return cpx * (1-cpxr)/epr + cpx*cpxr
+        return (cpxs*epr + cpxp)/epr
     
-    @capex.setter
-    def capex(self, value):
-        self._capex = value
+    @property
+    def opex(self):
+        try:
+            opex = self._opex
+        except AttributeError:
+            opex = self.capex * self.EP_ratio * self.opex_ratio
+        return opex
+    
+    @opex.setter
+    def opex(self, value):
+        self._opex = value
         
     def __str__(self):
-        return "lithium{number}".format(number=self.number)
+        return f"lithium{self.EP_ratio}h_{self.number}"
 
     def power_control(self, balance_in):
 
@@ -374,7 +407,7 @@ class Lithium(Storage):
 
     def construct_constraints(self, system):
 
-        util.battery_control_constraints(system.model, self)
+        core.battery_control_constraints(system.model, self)
 
     def get_variable_cost(self, pM):
         time = pM.time
@@ -401,8 +434,7 @@ class Hydrogen(Storage):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         Hydrogen.instances += 1
         self.number = Hydrogen.instances
@@ -438,7 +470,7 @@ class Hydrogen(Storage):
 
     def construct_constraints(self, system):
 
-        util.battery_control_constraints(system.model, self)
+        core.battery_control_constraints(system.model, self)
     
     def get_variable_cost(self, pM):
         time = pM.time
@@ -464,18 +496,20 @@ class FastCharger(SourceSink):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         FastCharger.instances += 1
         self.number = FastCharger.instances
         self.name = name
+        warnings.warn(
+            "Fastcharger has financial assumptions that do not scale: "
+            + "please check .capex and .EV_charge_amount"
+        )
 
     def __str__(self):
         return "fastcharger{number}".format(number=self.number)
 
     def calculate_time_serie(self, *args):
-
         self.state.power = functions.calculate_charging_demand(self)
 
 
@@ -492,8 +526,7 @@ class Consumer(SourceSink):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         Consumer.instances += 1
         self.number = Consumer.instances
@@ -556,8 +589,7 @@ class Grid(SourceSink):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-        # Initiate the financial variables
-        set_finance_variables(self)
+
 
         Grid.instances += 1
         self.number = Grid.instances
@@ -581,15 +613,24 @@ class Grid(SourceSink):
         neg = getattr(pM, ckey+'_Pneg', 1)
         pos = getattr(pM, ckey+'_Ppos', 1)
 
+        try:
+            self.variable_income = list(self.variable_income)
+        except TypeError:
+            self.variable_income = [self.variable_income]*len(time)
+        try:
+            self.variable_cost = list(self.variable_cost)
+        except TypeError:
+            self.variable_cost = [self.variable_cost]*len(time)
+        
         if neg == 1 and pos == 1:
             income = sum(
-                power[t]*self.variable_income
+                power[t]*self.variable_income[t]
                 if power[t] < 0
                 else 0
                 for t in time
             )
             cost = sum(
-                power[t]*self.variable_cost
+                power[t]*self.variable_cost[t]
                 if power[t] > 0
                 else 0
                 for t in time
@@ -597,11 +638,11 @@ class Grid(SourceSink):
 
         else:
             income = sum(
-                neg[t]*self.variable_income
+                neg[t]*self.variable_income[t]
                 for t in time
             )
             cost = sum(
-                pos[t]*self.variable_cost
+                pos[t]*self.variable_cost[t]
                 for t in time
             )
 
@@ -609,7 +650,7 @@ class Grid(SourceSink):
 
     def construct_constraints(self, system):
 
-        util.direct_power_control_constraints(system.model, self)
+        core.direct_power_control_constraints(system.model, self)
 
 
 ComponentClasses = {

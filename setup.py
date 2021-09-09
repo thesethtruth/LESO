@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name='LESO',
-    version='0.0.11',
+    version='0.1.0',
     description='A minimal and low-code multi-mode framework to investigate cost-optimal renewable energy systems and help guide policy and decission makers in the energy transition.',
     url='https://github.com/thesethtruth/LESO',
     author='Seth van Wieringen',
@@ -28,7 +28,6 @@ setup(
         "LESO": ["data/*.csv"],
     },
     install_requires=[
-        'ETMeta',
         'pandas',
         'numpy',
         'plotly',

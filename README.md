@@ -1,4 +1,4 @@
-# LESO
+# LESO 0.1.0
 #### LESO: Local Energy Systems Optimzer
 > A minimal and low-code multi-mode framework to investigate cost-optimal renewable energy systems and help guide policy and decission makers in the energy transition.
 
@@ -12,12 +12,34 @@ This project is a result of my thesis project. My thesis works with this framewo
  * [ETM integration](#etm-integration)
 
 ---
+### Install in editable mode
+If you are interested in installing LESO while retaining the possibility to alter LESO use the following steps in the shell of your choice. (below is for cmd in windows)
+
+```powershell
+"path/to/your/virtualenv/Scripts/activate.bat"
+git clone https://github.com/thesethtruth/LESO.git
+cd LESO
+pip install https://github.com/thesethtruth/ETMeta/archive/main.zip
+pip install -e .
+```
 ## Getting started
 
 This project is currently being released to work with `pip` for an easy install.
 To install ETMeta use the following command (in your `venv` of choice).
 
-`pip install https://github.com/thesethtruth/LESO/archive/master.zip`
+*As ETMeta is required but not available (yet) through PyPi you need pip install that first ([ETMeta git](https://github.com/thesethtruth/ETMeta))*
+
+```
+pip install https://github.com/thesethtruth/ETMeta/archive/main.zip
+```
+
+After that you can just pip install this repo. 
+
+```
+pip install https://github.com/thesethtruth/LESO/archive/master.zip
+```
+
+
 
 Dependencies are specified in the setup.py without versioning to retain flexibility for users. Please make sure that you have latest versions of the modules listed below.
 
@@ -47,7 +69,7 @@ In LESO this is done using Pyomo. This module alows us to implement algebraic ex
 **Minimal use example:**
 
 Consider an energy system based in central Netherlands. The `system` component can contain any amount of energy sinks and supplies from the LESO library. The coordinates supplied will be used to automatically fetch TMY data. Using the `ETMdemand` component a demand curve is exported from the [ETM](https://pro.energytransitionmodel.com/). The `PhotoVoltaic` and `Wind` component are configurable objects that calculate feed-in power based on the TMY that they receive from `system`. These components are wrappers around `pvlib` and `windpowerlib`, respectively. Configuration can be specified using keyword arguments or by edditing the default values. Setting the `dof` key to `True` allows the optimizer to vary its installed capacity to find the optimal solution given constraints. 
-```
+```python
 eM = LESO.system(lat=52, lon=5, name="git-example")
 demand = LESO.ETMdemand(scenario_id=81589)
 solar = LESO.PhotoVoltaic('PV-south', dof=True, azimuth=0)
@@ -68,7 +90,6 @@ eM.optimize(
 )
 
 ```
-
 A major down-side of optimization is that it does not make trade-offs insightful as it typically only gives a single solution as output. To prevent model-says reasoning, explorative scenario mode is included.
 
 ## Explorative scenarios

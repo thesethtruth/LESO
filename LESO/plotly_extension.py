@@ -74,4 +74,51 @@ def add_author_source(fig, author="Seth van Wieringen", source="Source will be d
     
     return fig
 
+def thesis_default_styling(fig):
+    
+    fig.update_layout(
+        # template
+        template="simple_white",
+        # move legend
+        legend_yanchor='middle', 
+        legend_y=0.5,
+        # set size
+        width=600,
+        height=350,
+        # remove margins
+        margin = dict(
+            l=0,
+            r=0,
+            t=0,
+            b=0
+        ),
+        # remove title if present
+        title=None,
+        ) 
+    return fig   
+
+def lighten_color(color, amount=0.5, return_as_hex=True):
+    """
+    Taken from:
+    https://stackoverflow.com/questions/37765197/darken-or-lighten-a-color-in-matplotlib
+    Lightens the given color by multiplying (1-luminosity) by the given amount.
+    Input can be matplotlib color string, hex string, or RGB tuple.
+
+    Examples:
+    >> lighten_color('g', 0.3)
+    >> lighten_color('#F034A3', 0.6)
+    >> lighten_color((.3,.55,.1), 0.5)
+    """
+    import matplotlib.colors as mc
+    import colorsys
+    try:
+        c = mc.cnames[color]
+    except:
+        c = color
+    c = colorsys.rgb_to_hls(*mc.to_rgb(c))
+    hls = c[0], 1 - amount * (1 - c[1]), c[2]
+    lc = colorsys.hls_to_rgb(*hls)
+    if return_as_hex:
+        lc = '#%02x%02x%02x' % tuple([round(x * 255) for x in lc])
+    return lc
 

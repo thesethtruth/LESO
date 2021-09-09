@@ -12,8 +12,6 @@ basic = [
     'opex',
     'variable_cost',
     'variable_income',
-    'interest',
-    'exp_inflation_rate'
 ]
 
 power_control = [

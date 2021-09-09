@@ -1,4 +1,5 @@
 .vscode
 __pycache__
-.venv
-LESO/dataservice/cache
+LESO.egg-info
+**/experiments/cablepool/results
+**/experiments/evhub/results

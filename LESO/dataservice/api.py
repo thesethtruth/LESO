@@ -9,6 +9,8 @@ import pyproj
 from bs4 import BeautifulSoup
 import json
 from functools import lru_cache
+import warnings
+from .api_static import renewable_ninja_turbines
 
 @lru_cache(10)
 def get_pvgis(lat, lon):
@@ -22,11 +24,15 @@ def get_pvgis(lat, lon):
     Checks the cache for a match (stored offline) to save the time of getting 
     data from PV GIS
     """
-    filestring = f"LESO/dataservice/cache/DOWA_lat_{str(lat)}_lon_{str(lon)}.pkl"
-    if os.path.isfile(filestring):
+    filestring = f"cache\\pvgis_lat_{str(lat)}_lon_{str(lon)}.pkl"
+    dataservice_folder = os.path.dirname(__file__)
+
+    filepath = os.path.join(dataservice_folder, filestring)
+
+    if os.path.isfile(filepath):
         
         # read last API call
-        tmy = pd.read_pickle(filestring)
+        tmy = pd.read_pickle(filepath)
         
         if not (tmy['lat'][1] == lat and tmy['lon'][1] == lon):
             
@@ -34,7 +40,7 @@ def get_pvgis(lat, lon):
             print('Fetching data through API...')
             tmy = _getPVGIS(lat, lon)
             print('Code 200: Succes!')
-            tmy.to_pickle(filestring)
+            tmy.to_pickle(filepath)
             
         else: 
                 
@@ -46,7 +52,7 @@ def get_pvgis(lat, lon):
         print('Fetching data through API...')
         tmy = _getPVGIS(lat, lon)
         print('Code 200: Succes!')
-        tmy.to_pickle(filestring)
+        tmy.to_pickle(filepath)
     
     
     # set relevant parameters needed for further processing based on PVgis
@@ -211,6 +217,126 @@ def _getDOWA(lat, lon, height=100):
     os.remove(temp_writeout_file)
     return dowa
 
+def get_renewable_ninja(instance, tmy):
+    
+    lat = tmy.lat[0]
+    lon = tmy.lon[0]
+
+    if hasattr(instance, 'tilt'):
+        name = 'pv'
+        t = instance.tilt
+        a = instance.azimuth
+        filestring = f"cache\\ninja_{name}_lat_{str(lat)}_lon_{str(lon)}_a_{a}_t{t}.pkl"
+        kwargs = {
+            'tilt': instance.tilt,
+            'azim': instance.azimuth,
+            'system_loss': instance.efficiency
+        }
+    elif hasattr(instance, 'hub_height'):
+        name = 'wind'
+        filestring = f"cache\\ninja_{name}_lat_{str(lat)}_lon_{str(lon)}.pkl"
+        kwargs = {
+            'height': instance.hub_height,
+            'turbine': instance.turbine_type,
+        }
+    
+    dataservice_folder = os.path.dirname(__file__)
+    filepath = os.path.join(dataservice_folder, filestring)
+
+    if os.path.isfile(filepath):
+        
+        # read last API call
+        data = pd.read_pickle(filepath)
+        print('API call matches last call, using stored data')
+
+    else:
+        
+        # data does not exist locally
+        print('Fetching data through API...')
+        data = _get_renewable_ninja(
+            name=name,
+            date_from=instance.date_from,
+            date_to=instance.date_to,
+            dataset=instance.dataset,
+            lat=lat,
+            lon=lon,
+            **kwargs
+        )
+        print('Code 200: Succes!')
+        data.to_pickle(filepath)
+    
+    return data
+
+def _get_renewable_ninja(
+    name: str,
+    date_from: str, 
+    date_to: str, 
+    dataset: str, 
+    lat: float, 
+    lon: float, 
+    **kwargs) -> pd.DataFrame:
+    """" API handler for renewables.ninja """
+    
+    token = 'ce0b2b82994ce55769edbf208b1d800be38b1085'
+    api_base = 'https://www.renewables.ninja/api/'
+
+    s = requests.session()
+    # Send token header with each request
+    s.headers = {'Authorization': 'Token ' + token}
+
+    ## General
+    args ={
+        'lat': lat,
+        'lon': lon,
+        'date_from': date_from,
+        'date_to': date_to,
+        'dataset': dataset,
+        'format': 'json'
+    }         
+        
+    ## PV
+    if name == 'pv':
+
+        api_end = 'data/pv'
+
+        args.update({
+        'capacity': 1, # force to one to never exceed ninjas capacity limit 
+        'system_loss': kwargs.get('system_loss'),
+        'tracking': 0,
+        'tilt': kwargs.get('tilt'),
+        'azim': kwargs.get('azim'),
+        })
+
+    ## Wind
+    if name == 'wind':
+
+        api_end = 'data/wind'
+        turbine_type = kwargs.get('turbine')
+        
+        if turbine_type not in renewable_ninja_turbines:
+            turbine_type_d = "Vestas V90 2000"
+            msg = f"{turbine_type} not found in renwable.ninja, resorting to default ({turbine_type_d})."
+            warnings.warn(msg)
+            turbine_type = turbine_type_d
+
+        args.update({
+            'capacity': 1, # force to one to never exceed ninjas capacity limit 
+            'height': kwargs.get('height'),
+            'turbine': turbine_type,
+        })
+    
+    url = api_base + api_end
+    r = s.get(url, params=args)
+    if r.status_code != 200:
+        raise ConnectionError(f"Renewables.ninja did not return succesfully: {r.reason}")
+    
+    # Parse JSON to get a pandas.DataFrame of data and dict of metadata
+    parsed_response = json.loads(r.text)
+
+    data = pd.read_json(json.dumps(parsed_response['data']), orient='index')
+
+    return data
+
 def etm_id_extractor_external(etmDemand_instance, scenario_id):
         etmd = etmDemand_instance
         # if 4 digit and not None (also len = 4) then extract id
@@ -260,3 +386,4 @@ def etm_get_title_external(scenario_id):
     title = di["title"]
 
     return title
+

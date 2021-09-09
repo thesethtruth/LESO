@@ -1,4 +1,4 @@
-# LESO
+# LESO 0.1.0
 #### LESO: Local Energy Systems Optimzer
 > A minimal and low-code multi-mode framework to investigate cost-optimal renewable energy systems and help guide policy and decission makers in the energy transition.
 

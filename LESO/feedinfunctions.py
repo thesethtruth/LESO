@@ -330,56 +330,6 @@ def _prepare_wind_data(tmy, wind_instance):
 
     return wind_df
 
-
-@lru_cache(3)
-def get_etm_curve(
-    session_id, generation_whitelist, allow_import=False, allow_export=False, raw=False
-):
-    # read file and find inputs / outputs
-    url = f"https://engine.energytransitionmodel.com/api/v3/scenarios/{session_id}/curves/merit_order.csv"
-    df = pd.read_csv(url)
-
-    inputs, outputs = [], []
-    for col in df.columns:
-        if ".input" in col:
-            inputs.append(col)
-        if ".output" in col:
-            outputs.append(col)
-    # note: len(df.columns) == 173, inputs + outputs == 171.
-
-    export_grid, import_grid = [], []
-    for col in df.columns:
-        if "inter" in col and "export" in col:
-            export_grid.append(col)
-        if "inter" in col and "import" in col:
-            import_grid.append(col)
-
-    # ETM by default does not close the energy balance 100%, so we need to add it explicitly
-    default_deficit = df["deficit"]
-    demand = df[inputs].copy(deep=True)
-
-    if not allow_export:
-        demand.drop(labels=export_grid, axis=1, inplace=True)
-
-    # if all energy generation is a DoF
-    if not generation_whitelist:
-        deficit = -demand.sum(axis=1) - default_deficit
-
-    # for input analysis ('sustainable') options only
-    elif isinstance(generation_whitelist, list):
-        if allow_import:
-            production = df[[*generation_whitelist, *import_grid]].copy(deep=True)
-        else:
-            production = df[generation_whitelist].copy(deep=True)
-        # in convention; demand is negative
-        deficit = production.sum(axis=1) - demand.sum(axis=1) - default_deficit
-
-    if raw:
-        return df
-    else:
-        return deficit.values
-
-
 def _weeks():
     """
     Returns a 8760x1 array of weeknumbers per hour of the year.

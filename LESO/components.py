@@ -21,7 +21,7 @@ import LESO.feedinfunctions as feedinfunctions
 import LESO.functions as functions
 import LESO.optimizer.core as core
 from LESO.optimizer.preprocess import initializeGenericPyomoVariables
-from LESO.dataservice import get_pvgis, get_dowa
+from LESO.dataservice import get_pvgis, get_dowa, get_etm_curve
 
 
 class Component:
@@ -575,9 +575,7 @@ class ETMdemand(SourceSink):
         return "ETMdemand{number}".format(number=self.number)
 
     def calculate_time_serie(self, *args):
-        self.state.power = feedinfunctions.get_etm_curve(
-            self.scenario_id, self.generation_whitelist
-        )
+        self.state.power = get_etm_curve(self.scenario_id, self.generation_whitelist)
 
 
 class Grid(SourceSink):

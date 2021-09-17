@@ -466,9 +466,7 @@ merit_order = {
     "finalbalance": 4,
 }
 
-scenarios_gelderland = {
-    "2030Gelderland_hoog": {"id": 815715, "latlon": (52, 6)},
-    "2030Gelderland_laag": {"id": 815716, "latlon": (52, 6)},
+scenarios_res = {
     "2030RES_Achterhoek": {"id": 815753, "latlon": (52, 6.4)},
     "2030RES_ArnhemNijmegen": {"id": 815754, "latlon": (54.9, 5.9)},
     "2030RES_Cleantech": {"id": 815755, "latlon": (52.2, 6.1)},
@@ -477,43 +475,13 @@ scenarios_gelderland = {
     "2030RES_Rivierenland": {"id": 815758, "latlon": (51.9, 5.3)},
 }
 
-generation_whitelist = [
-    "buildings_solar_pv_solar_radiation.output (MW)",
-    "energy_chp_combined_cycle_network_gas.output (MW)",
-    "energy_chp_local_engine_biogas.output (MW)",
-    "energy_chp_local_engine_network_gas.output (MW)",
-    "energy_chp_local_wood_pellets.output (MW)",
-    "energy_chp_supercritical_waste_mix.output (MW)",
-    "energy_flexibility_curtailment_electricity.output (MW)",
-    "energy_flexibility_hv_opac_electricity.output (MW)",
-    "energy_flexibility_mv_batteries_electricity.output (MW)",
-    "energy_flexibility_pumped_storage_electricity.output (MW)",
-    "energy_heat_flexibility_p2h_boiler_electricity.output (MW)",
-    "energy_heat_flexibility_p2h_heatpump_electricity.output (MW)",
-    "energy_hydrogen_flexibility_p2g_electricity.output (MW)",
-    "energy_power_combined_cycle_hydrogen.output (MW)",
-    "energy_power_geothermal.output (MW)",
-    "energy_power_hydro_mountain.output (MW)",
-    "energy_power_hydro_river.output (MW)",
-    "energy_power_nuclear_gen2_uranium_oxide.output (MW)",
-    "energy_power_nuclear_gen3_uranium_oxide.output (MW)",
-    "energy_power_solar_csp_solar_radiation.output (MW)",
-    "energy_power_solar_pv_solar_radiation.output (MW)",
-    "energy_power_supercritical_waste_mix.output (MW)",
-    "energy_power_turbine_hydrogen.output (MW)",
-    "energy_power_wind_turbine_coastal.output (MW)",
-    "energy_power_wind_turbine_inland.output (MW)",
-    "energy_power_wind_turbine_offshore.output (MW)",
-    "households_flexibility_p2p_electricity.output (MW)",
-    "households_solar_pv_solar_radiation.output (MW)",
-    "industry_chemicals_other_flexibility_p2h_hydrogen_electricity.output (MW)",
-    "industry_chemicals_refineries_flexibility_p2h_hydrogen_electricity.output (MW)",
-    "industry_other_food_flexibility_p2h_hydrogen_electricity.output (MW)",
-    "industry_other_paper_flexibility_p2h_hydrogen_electricity.output (MW)",
-    "transport_car_flexibility_p2p_electricity.output (MW)",
-]
+scenarios_gelderland = {
+    "2030Gelderland_hoog": {"id": 815715, "latlon": (52, 6)},
+    "2030Gelderland_laag": {"id": 815716, "latlon": (52, 6)},
+}
 
-new_whitelist =[
+# this is used for generation of a ETM demand curve
+generation_whitelist =[
     # flex 
     'energy_flexibility_curtailment_electricity.output (MW)',
     'energy_flexibility_hv_opac_electricity.output (MW)',

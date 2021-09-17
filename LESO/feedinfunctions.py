@@ -328,14 +328,12 @@ def _prepare_wind_data(tmy, wind_instance):
 
 @lru_cache(3)
 def get_etm_curve(
-    etmDemand_instance, 
     session_id, 
+    generation_whitelist,
     allow_import=False, 
     allow_export=False,
     raw=False
 ):
-    etmd = etmDemand_instance
-    generation_whitelist = etmd.generation_whitelist
     # read file and find inputs / outputs
     url = f"https://engine.energytransitionmodel.com/api/v3/scenarios/{session_id}/curves/merit_order.csv"
     df = pd.read_csv(url)
@@ -346,6 +344,7 @@ def get_etm_curve(
             inputs.append(col)
         if ".output" in col:
             outputs.append(col)
+    # note: len(df.columns) == 173, inputs + outputs == 171. 
     
     export_grid, import_grid = [], []
     for col in df.columns:
@@ -353,7 +352,8 @@ def get_etm_curve(
             export_grid.append(col)
         if 'inter' in col and 'import' in col:
             import_grid.append(col)
-    
+
+    # ETM by default does not close the energy balance 100%, so we need to add it explicitly    
     default_deficit = df["deficit"]
     demand = df[inputs].copy(deep=True)
 
@@ -370,20 +370,18 @@ def get_etm_curve(
         else:
             production = df[generation_whitelist].copy(deep=True)
 
-        # in convention; demand is negative and in w (MW 1e6)
+        # in convention; demand is negative
         deficit = (production.sum(axis=1) - demand.sum(axis=1) - default_deficit)
-        deficit.index = etmd.state.index
 
     # if all energy generation is a DoF
     if generation_whitelist is False:
 
         deficit = ( -demand.sum(axis=1) - default_deficit)
-        deficit.index = etmd.state.index 
 
     if raw:
         return df
     else:
-        return deficit
+        return deficit.values
 
 
 def _weeks():

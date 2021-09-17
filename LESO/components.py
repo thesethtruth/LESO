@@ -446,14 +446,23 @@ class Hydrogen(Storage):
 
     @property
     def capex(self):
-        cpx = self._capex
-        cpxr = self.capex_EP_ratio
+        cpxs = self.capex_storage
+        cpxp = self.capex_power
         epr = self.EP_ratio
-        return cpx * (1 - cpxr) / epr + cpx * cpxr
+        return (cpxs * epr + cpxp) / epr
+    
+    @property
+    def opex(self):
+        try:
+            opex = self._opex
+        except AttributeError:
+            opex = self.capex_power * self.opex_ratio
+        return opex
+    
+    @opex.setter
+    def opex(self, value):
+        self._opex = value
 
-    @capex.setter
-    def capex(self, value):
-        self._capex = value
 
     def __str__(self):
         return "hydrogen{number}".format(number=self.number)

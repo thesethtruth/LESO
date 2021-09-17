@@ -1,3 +1,4 @@
+#%%
 from LESO.components import ETMdemand
 from LESO import System
 from LESO import PhotoVoltaic, Wind, Lithium, Grid, FinalBalance
@@ -76,3 +77,6 @@ remaining_inputs = [line for line in lines if 'input' in line]
 remaining_outputs = [line for line in lines if 'output' in line]
 white_listed = [line for line in remaining_outputs if not ('solar' in line or 'wind' in line)]
 # %%
+from LESO import Hydrogen
+
+hy = Hydrogen("test")

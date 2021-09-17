@@ -378,8 +378,8 @@ hydrogen = dict(
         },
     ],
     # specs
-    installed=1000e3,  # 1000 kWh installed capacity
-    EP_ratio=50,  # ratio of energy to power (influences component cost)
+    installed=1,  # 1 MWh installed capacity
+    EP_ratio=700,  # cite: Smidt2019; region of operation for seasonal storage
     startingSOC=0.1,  # Starting SOC
     discharge_rate=1,  # hourly discharge
     cycle_efficieny=0.45,  # round trip efficiency
@@ -390,10 +390,10 @@ hydrogen = dict(
     negative=True,
     upper=upper_bound,
     # financials
-    lifetime=15,
-    capex=2607e-3,  # capex at EP = 1
-    capex_EP_ratio=0.0055,  # part of component cost related to storage only at EP = 1
-    opex=8e-3,
+    lifetime=18, # cite: Schmidt2019
+    capex_storage=37e-3,  # cite: Schmidt2019 storage cost only (assumption: does not decrease over time)
+    capex_power=5417e-3,  # cite: Schmidt2019
+    opex_ratio=8.5e-3,  # cite: Schmidt2019 (only related to power component, changed the opex @property)
     variable_cost=2.8e-12,
     variable_income=2.8e-12,
 )

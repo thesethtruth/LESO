@@ -75,9 +75,4 @@ for i, line in enumerate(lines):
 remaining_inputs = [line for line in lines if 'input' in line]
 remaining_outputs = [line for line in lines if 'output' in line]
 white_listed = [line for line in remaining_outputs if not ('solar' in line or 'wind' in line)]
-
-
-
-
-
 # %%

@@ -179,6 +179,7 @@ def PVpower(PV_instance, tmy):
 
     return power
 
+
 def ninja_PVpower(PV_instance, tmy):
     """Simple wrapper for power profiles calculated with renewables.ninja"""
     PV = PV_instance
@@ -188,6 +189,7 @@ def ninja_PVpower(PV_instance, tmy):
     # reset the indices to a future year based on starting year
     power.index = PV.state.index
     return power
+
 
 def windpower(wind_instance, tmy):
     """
@@ -248,15 +250,17 @@ def windpower(wind_instance, tmy):
     power.index = wind.state.index
     return power
 
+
 def ninja_windpower(wind_instance, tmy):
     """Simple wrapper for power profiles calculated with renewables.ninja"""
     wind = wind_instance
     # Generate the power curve using renewables.ninja
     power = LESO.dataservice.api.get_renewable_ninja(wind, tmy)
-    power = power*wind.installed
+    power = power * wind.installed
     # reset the indices to a future year based on starting year
     power.index = wind.state.index
     return power
+
 
 def _calculate_poa(tmy, PV):
     """
@@ -326,13 +330,10 @@ def _prepare_wind_data(tmy, wind_instance):
 
     return wind_df
 
+
 @lru_cache(3)
 def get_etm_curve(
-    session_id, 
-    generation_whitelist,
-    allow_import=False, 
-    allow_export=False,
-    raw=False
+    session_id, generation_whitelist, allow_import=False, allow_export=False, raw=False
 ):
     # read file and find inputs / outputs
     url = f"https://engine.energytransitionmodel.com/api/v3/scenarios/{session_id}/curves/merit_order.csv"
@@ -344,39 +345,34 @@ def get_etm_curve(
             inputs.append(col)
         if ".output" in col:
             outputs.append(col)
-    # note: len(df.columns) == 173, inputs + outputs == 171. 
-    
+    # note: len(df.columns) == 173, inputs + outputs == 171.
+
     export_grid, import_grid = [], []
     for col in df.columns:
-        if 'inter' in col and 'export' in col:
+        if "inter" in col and "export" in col:
             export_grid.append(col)
-        if 'inter' in col and 'import' in col:
+        if "inter" in col and "import" in col:
             import_grid.append(col)
 
-    # ETM by default does not close the energy balance 100%, so we need to add it explicitly    
+    # ETM by default does not close the energy balance 100%, so we need to add it explicitly
     default_deficit = df["deficit"]
     demand = df[inputs].copy(deep=True)
 
     if not allow_export:
         demand.drop(labels=export_grid, axis=1, inplace=True)
 
-    # for input analysis ('sustainable') options only
-    if generation_whitelist is None:
-        
-        generation_whitelist = LESO.defaultvalues.generation_whitelist
+    # if all energy generation is a DoF
+    if not generation_whitelist:
+        deficit = -demand.sum(axis=1) - default_deficit
 
+    # for input analysis ('sustainable') options only
+    elif isinstance(generation_whitelist, list):
         if allow_import:
             production = df[[*generation_whitelist, *import_grid]].copy(deep=True)
         else:
             production = df[generation_whitelist].copy(deep=True)
-
         # in convention; demand is negative
-        deficit = (production.sum(axis=1) - demand.sum(axis=1) - default_deficit)
-
-    # if all energy generation is a DoF
-    if generation_whitelist is False:
-
-        deficit = ( -demand.sum(axis=1) - default_deficit)
+        deficit = production.sum(axis=1) - demand.sum(axis=1) - default_deficit
 
     if raw:
         return df

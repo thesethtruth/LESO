@@ -6,6 +6,7 @@ import pickle
 import json
 from datetime import datetime
 import os
+from typing import Optional
 
 # for optimizing
 import pyomo.environ as pyo
@@ -67,14 +68,6 @@ class System:
 
         # initiate financial parameters based on values provided
         set_finance_variables(self)
-
-        ### old implementation:
-        # self.merit_order_dict = defs.merit_order
-        # self.start_date = defs.start_date
-        # # financials
-        # self.lifetime = defs.system_lifetime
-        # self.interest = defs.interest
-        # self.exp_inflation_rate = defs.exp_inflation_rate
 
     def __str__(self):
         return self.name
@@ -238,6 +231,12 @@ class System:
     def pyomo_add_objective(self, objective=None):
 
         return set_objective(self, objective)
+    
+    def pyomo_add_additional_constraints(self, additional_constraints: Optional[list]=None):
+
+        if additional_constraints is not None:
+            for additional_constraint in additional_constraints:
+                additional_constraint(self)
 
     def pyomo_solve(self, solver="gurobi", noncovex=False, tee=False):
 
@@ -257,6 +256,7 @@ class System:
     def optimize(
         self,
         objective="tco",
+        additional_constraints: Optional[list] = None,
         time=None,
         store=False,
         filepath=None,
@@ -285,6 +285,8 @@ class System:
         self.pyomo_power_balance()
 
         self.pyomo_add_objective(objective=objective)
+
+        self.pyomo_add_additional_constraints(additional_constraints=additional_constraints)
 
         if solve:
             self.pyomo_solve(solver=solver, noncovex=nonconvex, tee=tee)

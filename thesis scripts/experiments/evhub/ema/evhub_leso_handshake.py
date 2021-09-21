@@ -7,7 +7,7 @@ from tinydb import TinyDB
 from copy import deepcopy as copy
 
 import LESO
-from LESO import ema_pyomo_interface
+from LESO.experiments import ema_pyomo_interface
 from LESO.finance import (
     determine_total_investment_cost,
     determine_roi,

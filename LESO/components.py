@@ -312,7 +312,7 @@ class Wind(SourceSink):
         if self.use_dowa:
             self.state.power = feedinfunctions.windpower(self, self.dowa)
         elif self.use_ninja:
-            self.state.power = feedinfunctions.ninja_windpower(self, tmy)  # TODO
+            self.state.power = feedinfunctions.ninja_windpower(self, tmy)
         else:
             self.state.power = feedinfunctions.windpower(self, tmy)
 

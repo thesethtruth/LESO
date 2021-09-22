@@ -1,19 +1,26 @@
 # extension.py
 import LESO
+from typing import Optional
+from functools import partial
 
 
 def constrain_minimal_share_of_renewables(
     share_of_re: float,
     system: LESO.System,
-    generators: list[LESO.SourceSink],
-    storages: list[LESO.Storage],
     demands: list[LESO.SourceSink],
+    generators: Optional[list[LESO.SourceSink]],
+    storages: Optional[list[LESO.Storage]],
     exclude_export_from_share=True,
 ):
     """
     Based on the minimal share of RE this contrains the energy generated
     AND used wihtin the systems context
     """
+    if generators is None:
+        generators = [LESO.PhotoVoltaic, LESO.PhotoVoltaicAdvanced, LESO.BifacialPhotoVoltaic, LESO.Wind, LESO.WindOffshore]
+    if storages is None:
+        storages = [LESO.Lithium, LESO.Hydrogen]
+    
     pyo_model = system.model
     time = pyo_model.time
     t_zero, t_final = time[0], time[-1]
@@ -66,4 +73,21 @@ def constrain_minimal_share_of_renewables(
         ) / (
             sum(demand.state.power for demand in demands)
         ) >= share_of_re
+    )
+
+
+def contexted_constraint(func, *args, **kwargs):
+    """ Allows you to wrap a contraint function with a given context, such that only the system variable remains """
+    
+    options = args + list(kwargs.values())
+
+    for opt in options:
+        try: 
+            if isinstance(opt, LESO.System):
+                raise ValueError("Constraint cannot be contexed with LESO.System!")
+        except:
+            ...
+
+    return partial(
+        func, *args, **kwargs
     )

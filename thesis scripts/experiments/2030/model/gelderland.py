@@ -37,6 +37,7 @@ wind = Wind(
 pv_s = PhotoVoltaic("PV South", azimuth=180, use_ninja=True, dof=True)
 pv_e = PhotoVoltaic("PV East", azimuth=90, use_ninja=True, dof=True)
 pv_w = PhotoVoltaic("PV West", azimuth=270, use_ninja=True, dof=True)
+
 bat_2h = Lithium("2h battery", dof=True, EP_ratio=2)
 bat_6h = Lithium("6h battery", dof=True, EP_ratio=6)
 bat_10h = Lithium("10h battery", dof=True, EP_ratio=10)

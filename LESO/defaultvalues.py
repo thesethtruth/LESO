@@ -466,65 +466,6 @@ merit_order = {
     "finalbalance": 4,
 }
 
-scenarios_2030 = {
-    "2030RES_Achterhoek": {
-        "id": 815753,
-        "latlon": (52, 6.4),
-        "target_re_share": 0.92,
-        "target_re_share_ex_export": 0.68,
-        "grid_cap": 219.3,
-    },
-    "2030RES_ArnhemNijmegen": {
-        "id": 815754,
-        "latlon": (54.9, 5.9),
-        "target_re_share": 0.43,
-        "target_re_share_ex_export": 0.38,
-        "grid_cap": 608.6,
-    },
-    "2030RES_Cleantech": {
-        "id": 815755,
-        "latlon": (52.2, 6.1),
-        "target_re_share": 0.56,
-        "target_re_share_ex_export": 0.4,
-        "grid_cap": 299.1,
-    },
-    "2030RES_Foodvalley ": {
-        "id": 815756,
-        "latlon": (52.1, 5.7),
-        "target_re_share": 0.54,
-        "target_re_share_ex_export": 0.43,
-        "grid_cap": 322.3,
-    },
-    "2030RES_NoordVeluwe": {
-        "id": 815757,
-        "latlon": (52.4, 5.8),
-        "target_re_share": 0.58,
-        "target_re_share_ex_export": 0.49,
-        "grid_cap": 146.6,
-    },
-    "2030RES_Rivierenland": {
-        "id": 815758,
-        "latlon": (51.9, 5.3),
-        "target_re_share": 0.58,
-        "target_re_share_ex_export": 0.53,
-        "grid_cap": 590.3,
-    },
-    "2030Gelderland_hoog": {
-        "id": 815715,
-        "latlon": (52.06, 5.93),
-        "target_re_share": 0.87,
-        "target_re_share_ex_export": 0.63,
-        "grid_cap": 2145.9,
-    },
-    "2030Gelderland_laag": {
-        "id": 815716,
-        "latlon": (52.06, 5.93),
-        "target_re_share": 0.65,
-        "target_re_share_ex_export": 0.51,
-        "grid_cap": 2145.9,
-    },
-}
-
 scenarios_2050 = {
     "Gelderland_2050_regional": {
         "id": 815695,

@@ -16,7 +16,11 @@ def ema_pyomo_interface(handshake):
 
     def preprocess(**kwargs):
 
-        kwargs = {key:float(value) for key,value in kwargs.items()}
+        kwargs = {
+            key:float(value) # force numerics to floats
+            if not isinstance(value, str) else value # allow strings
+            for key,value in kwargs.items()
+        }
         return kwargs
     
     def wrapper(**kwargs):

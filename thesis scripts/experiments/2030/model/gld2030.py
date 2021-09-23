@@ -36,7 +36,7 @@ for modelname, scenario in scenarios_2030.items():
 
     # demand
     demand = ETMdemand(
-        modelname,
+        "ETM residual load",
         scenario_id,
         end_year=end_year
     )
@@ -59,8 +59,8 @@ for modelname, scenario in scenarios_2030.items():
     bat_2h = Lithium("2h battery", dof=True, EP_ratio=2)
     bat_6h = Lithium("6h battery", dof=True, EP_ratio=6)
     bat_10h = Lithium("10h battery", dof=True, EP_ratio=10)
-    hydrogen = Hydrogen("H2 seasonal", dof=True, EP_ratio=700)
-    hydrogen = Hydrogen("H2 smaller", dof=True, EP_ratio=350)
+    h2_seasonal = Hydrogen("H2 seasonal", dof=True, EP_ratio=700)
+    h2_subseasonal = Hydrogen("H2 subseasonal", dof=True, EP_ratio=350)
 
     # grid and curtailment
     grid = Grid(
@@ -69,10 +69,10 @@ for modelname, scenario in scenarios_2030.items():
         variable_cost=retail_prices, 
         variable_income=retail_prices
     )
-    final = FinalBalance(name="curtailment_underload")
+    final = FinalBalance(name="Curtailment")
 
     #%% add the components to the system
-    component_list = [demand, pv_s, pv_w, pv_e, wind, bat_2h, bat_6h, bat_10h, final, grid]
+    component_list = [demand, pv_s, pv_w, pv_e, wind, bat_2h, bat_6h, bat_10h, h2_seasonal, h2_subseasonal, final, grid]
     system.add_components(component_list)
 
     #%% Pickle the model

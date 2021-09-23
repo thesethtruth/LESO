@@ -235,8 +235,13 @@ class System:
     def pyomo_add_additional_constraints(self, additional_constraints: Optional[list]=None):
 
         if additional_constraints is not None:
-            for additional_constraint in additional_constraints:
-                additional_constraint(self)
+
+            # fail safe if a single additional_constraint is given, instead of expected list/iterable
+            try:
+                for additional_constraint in additional_constraints:
+                    additional_constraint(self)
+            except TypeError:
+                additional_constraints(self)
 
     def pyomo_solve(self, solver="gurobi", noncovex=False, tee=False):
 

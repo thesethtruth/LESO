@@ -1,6 +1,14 @@
 from LESO import ETMdemand
-from LESO.defaultvalues import scenarios_res
+from LESO.defaultvalues import scenarios_2030, scenarios_2050
 import pandas as pd
+from copy import deepcopy as copy
+
+scenarios = copy(scenarios_2030)
+for key, value in scenarios_2050.items():
+
+    scenarios.update({
+        key: value
+    })
 
 gqueries = [
     "mv_hv_trafo_capacity_present",  # MW
@@ -17,7 +25,7 @@ user_values = [
 ]
 
 etm_objects = []
-for i, (name, nest) in enumerate(scenarios_res.items()):
+for i, (name, nest) in enumerate(scenarios.items()):
     etm_object = ETMdemand(name, nest["id"], end_year=2030)
     for g in gqueries:
         if g not in etm_object.api.gqueries:

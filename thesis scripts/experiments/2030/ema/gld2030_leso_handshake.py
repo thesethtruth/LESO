@@ -62,10 +62,11 @@ def Handshake(
     if target_RE_strategy: 
         STRATEGIES = {
             "no_target": (None, None),
-            "current_projection_w_export": (scenario_data['target_re_share'], False),
-            "current_projection_no_export": (scenario_data['target_re_share_ex_export'], True),
+            "current_projection_include_export": (scenario_data['target_re_share'], False),
+            "current_projection_excl_export": (scenario_data['target_re_share_ex_export'], True),
             "fixed_target_60": (.60, True),
             "fixed_target_80": (.80, True),
+            "fixed_target_100": (1, True),
         }
 
         target_share, exlude_export = STRATEGIES[target_RE_strategy]

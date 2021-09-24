@@ -1,4 +1,5 @@
 # extension.py
+import numpy as np
 import LESO
 from typing import Optional
 from functools import partial
@@ -56,14 +57,18 @@ def constrain_minimal_share_of_renewables(
             contributing_components.append(sum(curtailment[t] for t in time))
         
         # catch grid
-        if exclude_export_from_share:
-            if isinstance(component, LESO.Grid):
+        if isinstance(component, LESO.Grid):
 
-                ckey = component.__str__()
-                export = getattr(pyo_model, ckey + "_Pneg", None)
-
-                # export is negative by deffinition; so we can just add this to the sum
-                contributing_components.append(sum(export[t] for t in time))
+            ckey = component.__str__()
+            importo = getattr(pyo_model, ckey + "_Ppos", None) if exclude_export_from_share else np.zeros(len(time))
+            export = getattr(pyo_model, ckey + "_Pneg", None) if exclude_export_from_share else np.zeros(len(time))
+            
+            
+            # export is negative by deffinition; so we can just add this to the sum
+            contributing_components.append(
+                sum(export[t] for t in time)
+                - sum(importo[t] for t in time)
+                )
 
     contraintlist = getattr(pyo_model, pyo_model.constraint_ID)
 
@@ -71,7 +76,7 @@ def constrain_minimal_share_of_renewables(
         sum(
             component for component in contributing_components
         ) / (
-            sum(demand.state.power.sum() for demand in demands)
+           - sum(demand.state.power.sum() for demand in demands)
         ) >= share_of_re
     )
 

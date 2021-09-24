@@ -29,14 +29,15 @@ if __name__ == "__main__":
             "target_RE_strategy", 
             [
                 "no_target",
-                "current_projection_w_export",
-                "current_projection_no_export",
+                "current_projection_include_export",
+                "current_projection_excl_export",
                 "fixed_target_60",
                 "fixed_target_80",
+                "fixed_target_100",
             ],
-        ),  # 5 options
+        ),  # 6 options
     ]
-    # --> 5 policies
+    # --> 6 policies
 
 
     # uncertainties / scenarios
@@ -55,13 +56,13 @@ if __name__ == "__main__":
 
     # run experiments
     with MultiprocessingEvaluator(model) as evaluator:
-        results = evaluator.perform_experiments(scenarios=1, policies=5)
+        results = evaluator.perform_experiments(scenarios=1, policies=6)
     
     # with SequentialEvaluator(model) as evaluator:
         # results = evaluator.perform_experiments(scenarios=1, policies=5)
 
     # save results
     RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
-    results_file_name = RESULTS_FOLDER / f"gld2030_ema_results_{run_ID}.tar.gz"
+    results_file_name = RESULTS_FOLDER / f"gld2030_res_ema_results_{run_ID}.tar.gz"
     save_results(results, file_name=results_file_name)
 

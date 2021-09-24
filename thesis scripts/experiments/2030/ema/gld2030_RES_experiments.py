@@ -22,13 +22,14 @@ model.levers = [
     CategoricalParameter("scenario", RES_SCENARIOS), # 6 options
     CategoricalParameter(
         "target_RE_strategy",
-        [
-            "no_target",
-            "current_projection_w_export",
-            "current_projection_no_export"
-            "fixed_target_60"
-            "fixed_target_80",
-        ],
+            [
+                "no_target",
+                "current_projection_include_export",
+                "current_projection_excl_export",
+                "fixed_target_60",
+                "fixed_target_80",
+                "fixed_target_100",
+            ],
     ),  # 5 options
 ]
 # --> 30 policies

@@ -48,7 +48,7 @@ def Handshake(
                 battery_cost_factor
             )
         if isinstance(component, LESO.Hydrogen):
-            component.capex = component.capex * hydrogen_cost_factor
+            component.capex_power = component.capex_power * hydrogen_cost_factor
     
         # grab the ETM demand component
         if isinstance(component, LESO.ETMdemand):
@@ -80,11 +80,13 @@ def Handshake(
             demands=[demand],
             exclude_export_from_share=exlude_export
         )
+    else: 
+        re_share_constraint = None
 
     ## SOLVE
     system.optimize(
         objective="osc",  # overnight system cost
-        additional_constraints= [re_share_constraint],
+        additional_constraints= re_share_constraint,
         time=None,  # resorts to default; year 8760h
         store=True,  # write-out to json
         filepath=filepath,  # resorts to default: modelname+timestamp

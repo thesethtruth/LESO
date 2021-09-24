@@ -5,11 +5,11 @@ from functools import partial
 
 
 def constrain_minimal_share_of_renewables(
-    share_of_re: float,
     system: LESO.System,
     demands: list[LESO.SourceSink],
-    generators: Optional[list[LESO.SourceSink]],
-    storages: Optional[list[LESO.Storage]],
+    share_of_re: float = 0,
+    generators: Optional[list[LESO.SourceSink]] = None,
+    storages: Optional[list[LESO.Storage]] = None,
     exclude_export_from_share=True,
 ):
     """
@@ -71,7 +71,7 @@ def constrain_minimal_share_of_renewables(
         sum(
             component for component in contributing_components
         ) / (
-            sum(demand.state.power for demand in demands)
+            sum(demand.state.power.sum() for demand in demands)
         ) >= share_of_re
     )
 
@@ -79,7 +79,7 @@ def constrain_minimal_share_of_renewables(
 def contexted_constraint(func, *args, **kwargs):
     """ Allows you to wrap a contraint function with a given context, such that only the system variable remains """
     
-    options = args + list(kwargs.values())
+    options = [*args, *list(kwargs.values())]
 
     for opt in options:
         try: 

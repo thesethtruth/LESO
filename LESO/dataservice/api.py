@@ -233,8 +233,9 @@ def get_renewable_ninja(instance, tmy):
         }
     elif hasattr(instance, 'hub_height'):
         name = 'wind'
-        turbinetype = instance.turbine_type.lower().replace("", "_")
-        filestring = f"cache\\ninja_{name}_lat_{str(lat)}_lon_{str(lon)}_{turbinetype}.pkl"
+        turbinetype = instance.turbine_type.lower().replace(" ", "_")
+        hubheight = str(instance.hub_height)
+        filestring = f"cache\\ninja_{name}_lat_{str(lat)}_lon_{str(lon)}_h_{hubheight}_{turbinetype}.pkl"
         kwargs = {
             'height': instance.hub_height,
             'turbine': instance.turbine_type,

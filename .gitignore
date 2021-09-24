@@ -3,3 +3,4 @@ __pycache__
 LESO.egg-info
 **/experiments/cablepool/results
 **/experiments/evhub/results
+**/experiments/2030/results

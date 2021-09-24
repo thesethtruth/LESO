@@ -33,7 +33,7 @@ def battery_control_constraints(model, component):
     # Charging battery
     for t in time:
         if t == time[-1]:
-            pass
+            contraintlist.add( E[0] == E[t] )
         else:
             contraintlist.add(
                 E[t+1] == E[t]*component.discharge_rate\

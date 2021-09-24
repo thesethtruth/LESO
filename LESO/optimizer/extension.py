@@ -37,14 +37,14 @@ def constrain_minimal_share_of_renewables(
             contributing_components.append(sum(component.state.power) * component.pyoVar)
 
         # catch storages
-        is_storage = any(isinstance(component, storage) for storage in storages)
-        if is_storage:
-            ckey = component.__str__()
-            energy = getattr(pyo_model, ckey + "_E", None)
+        # is_storage = any(isinstance(component, storage) for storage in storages)
+        # if is_storage:
+        #     ckey = component.__str__()
+        #     energy = getattr(pyo_model, ckey + "_E", None)
 
-            # if energy is buffered at the end of the year it does not contribute towards the goals; 
-            # so it should be substracted from initial state of charge
-            contributing_components.append(energy[t_zero] - energy[t_final])
+        #     # if energy is buffered at the end of the year it does not contribute towards the goals; 
+        #     # so it should be substracted from initial state of charge
+        #     contributing_components.append(energy[t_zero] - energy[t_final])
 
         
         # cath final balance

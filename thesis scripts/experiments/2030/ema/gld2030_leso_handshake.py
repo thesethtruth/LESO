@@ -1,8 +1,11 @@
 import uuid
+from copy import deepcopy as copy
+from time import sleep
+
 import pyomo.environ as pyo
 import numpy as np
 from tinydb import TinyDB
-from copy import deepcopy as copy
+
 
 import LESO
 from LESO.experiments import ema_pyomo_interface
@@ -73,10 +76,11 @@ def Handshake(
     filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1]) + ".json"
     filepath = RESULTS_FOLDER / filename_export
 
+    # set the correct context and share
     if target_share:
         re_share_constraint = contexted_constraint(
             constrain_minimal_share_of_renewables,
-            target_share,
+            share_of_re=target_share,
             demands=[demand],
             exclude_export_from_share=exlude_export
         )
@@ -202,9 +206,17 @@ def GLD2030(
     db_entry.update(meta_data)  # metadata
 
     # write to db
-    db_filename = f"{DB_NAMETAG.stem}_db{run_ID}.json"
+    db_filename = f"{DB_NAMETAG}_db{run_ID}.json"
     db_path = RESULTS_FOLDER / db_filename
-    with TinyDB(db_path) as db:
-        db.insert(db_entry)
+    
+    # TODO: unsure whether this is needed for parallization due to possible write errors (unknown what error this would throw)
+    not_written = True
+    while not_written:
+        try:
+            with TinyDB(db_path) as db:
+                db.insert(db_entry)
+            not_written = False
+        except:
+            sleep(0.2)
 
     return results

@@ -69,13 +69,7 @@ MODELS = {
     modelname:MODEL_FOLDER / (modelname.lower() + ".pkl") for modelname in scenarios_2030.keys()
 }
 
-if True:  # use this to easily generate the metrics for installed capacity
-    ref_system = LESO.System.read_pickle(list(MODELS.values())[0])
-    m = []
-    for c in ref_system.components:
-        if not isinstance(c, (LESO.FinalBalance, LESO.ETMdemand)):
-            out = c.name + " installed capacity"
-            m.append(out)
+
 
 METRICS = [
     # components
@@ -111,3 +105,13 @@ def lithium_storage_linear_map(
     m_value = frac * (map_max - map_min) + map_min
 
     return m_value
+
+if __name__ == "__main__":
+    # use this to easily generate the metrics for installed capacity
+    if True:  
+        ref_system = LESO.System.read_pickle(list(MODELS.values())[0])
+        m = []
+        for c in ref_system.components:
+            if not isinstance(c, (LESO.FinalBalance, LESO.ETMdemand)):
+                out = c.name + " installed capacity"
+                m.append(out)

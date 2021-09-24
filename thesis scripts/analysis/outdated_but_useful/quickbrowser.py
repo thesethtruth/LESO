@@ -20,10 +20,10 @@ app = dash.Dash(
     __name__, external_stylesheets=external_stylesheets, title="LESO results browser"
 )
 
-FOLDER = Path(r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\evhub\results")
+FOLDER = Path(r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\2030\results")
 *_, df = load_ema_leso_results(
-    run_id=210907, 
-    exp_prefix='evhub',
+    run_id=210924, 
+    exp_prefix='gld2030',
     results_folder=FOLDER)
 
 app.layout = html.Div(
@@ -192,7 +192,7 @@ def filter_figure(x_col, y_col, x_range, y_range):
     fig.update_xaxes(range=(df[x_col].min()*1.05, df[x_col].max()*1.05))
     fig.update_yaxes(range=(df[y_col].min()*1.05, df[y_col].max()*1.05))
 
-    data = sliced_df.to_json()
+    data = df.to_json()
     return fig, data
 
 ## populate dropdown based on selection

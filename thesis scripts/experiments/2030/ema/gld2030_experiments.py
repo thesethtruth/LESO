@@ -63,6 +63,6 @@ if __name__ == "__main__":
 
     # save results
     RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
-    results_file_name = RESULTS_FOLDER / f"gld2030_res_ema_results_{run_ID}.tar.gz"
+    results_file_name = RESULTS_FOLDER / f"gld2030_ema_results_{run_ID}.tar.gz"
     save_results(results, file_name=results_file_name)
 

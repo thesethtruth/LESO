@@ -10,7 +10,7 @@ from ema_workbench import (
 from LESO.defaultvalues import scenarios_2030
 from gld2030_leso_handshake import METRICS, RESULTS_FOLDER, GLD2030
 
-
+SCENARIO = "2030Gelderland_laag"
 # initiate model
 run_ID = input("Please enter the run ID:")
 GLD2030_w_runID = partial(GLD2030, run_ID=run_ID)
@@ -19,9 +19,9 @@ model = Model(name="gld2030", function=GLD2030_w_runID)
 
 # levers / policies
 model.levers = [
-    CategoricalParameter("scenario", list(scenarios_2030.keys())), # 8 options
+    CategoricalParameter("scenario", [SCENARIO]), # 1 options
     CategoricalParameter(
-        "target_RE_strategy",
+        "target_RE_strategy", 
         [
             "no_target",
             "current_projection_w_export",

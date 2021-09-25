@@ -17,7 +17,7 @@ from gld2030_leso_handshake import METRICS, RESULTS_FOLDER, GLD2030, scenarios_2
 if __name__ == "__main__":
     
     ema_logging.log_to_stderr(ema_logging.INFO)
-    RES_SCENARIOS = [key for key in scenarios_2030.keys() if "RES" in key]
+    RES_SCENARIOS = [key for key in scenarios_2030.keys() if "RES" in key][-3:]
     # initiate model
     run_ID = input("Please enter the run ID:")
     GLD2030_w_runID = partial(GLD2030, run_ID=run_ID)
@@ -30,16 +30,16 @@ if __name__ == "__main__":
         CategoricalParameter(
             "target_RE_strategy",
                 [
-                    "no_target",
+                    # "no_target",
                     "current_projection_include_export",
                     "current_projection_excl_export",
                     "fixed_target_60",
                     "fixed_target_80",
-                    "fixed_target_100",
+                    # "fixed_target_100",
                 ],
-        ),  # 6 options
+        ),  # 4 options
     ]
-    # --> 36 policies
+    # --> 24 policies
 
 
     # uncertainties / scenarios
@@ -54,8 +54,8 @@ if __name__ == "__main__":
     model.outcomes = [ScalarOutcome(metric) for metric in METRICS]
 
     # run experiments
-    with MultiprocessingEvaluator(model) as evaluator:
-        results = evaluator.perform_experiments(scenarios=1, policies=3)
+    with MultiprocessingEvaluator(model, n_processes=10) as evaluator:
+        results = evaluator.perform_experiments(scenarios=50, policies=24)
     
     # with SequentialEvaluator(model) as evaluator:
         # results = evaluator.perform_experiments(scenarios=1, policies=5)

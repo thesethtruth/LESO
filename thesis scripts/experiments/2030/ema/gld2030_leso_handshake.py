@@ -1,3 +1,4 @@
+from LESO.experiments.database import send_ema_exp_to_mongo
 import uuid
 from copy import deepcopy as copy
 from time import sleep
@@ -25,7 +26,7 @@ from gld2030_definitions import (
 )
 
 OUTPUT_PREFIX = "gld2030_exp_"
-DB_NAMETAG = "gld2030"
+DB_NAMETAG = COLLECTION = "gld2030"
 
 def Handshake(
     pv_cost_factor=None,
@@ -205,19 +206,27 @@ def GLD2030(
         }
     )
     db_entry.update(meta_data)  # metadata
+    db_entry.update({"run_id": run_ID})
+
+    send_ema_exp_to_mongo(COLLECTION, db_entry)
 
     # write to db
-    db_filename = f"{DB_NAMETAG}_db{run_ID}.json"
-    db_path = RESULTS_FOLDER / db_filename
+    # db_filename = f"{DB_NAMETAG}_db{run_ID}.json"
+    # db_path = RESULTS_FOLDER / db_filename
     
-    # TODO: unsure whether this is needed for parallization due to possible write errors (unknown what error this would throw)
-    not_written = True
-    while not_written:
-        try:
-            with TinyDB(db_path) as db:
-                db.insert(db_entry)
-            not_written = False
-        except:
-            sleep(0.2)
+    # # TODO: unsure whether this is needed for parallization due to possible write errors (unknown what error this would throw)
+    # not_written = True
+    # tries = 0
+    # while not_written:
+    #     try:
+    #         with TinyDB(db_path) as db:
+    #             db.insert(db_entry)
+    #         not_written = False
+    #         tries += 1
+    #         if tries>4:
+    #              db_filename = f"{DB_NAMETAG}_db{run_ID}_alt.json"
+    #              db_path = RESULTS_FOLDER / db_filename
+    #     except:
+    #         sleep(0.2)
 
     return results

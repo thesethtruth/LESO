@@ -11,16 +11,17 @@ from functools import lru_cache
 import warnings
 from .api_static import renewable_ninja_turbines
 
+
 @lru_cache(10)
 def get_pvgis(lat, lon):
     """
     Returns:
-        TMY as dataframe with information appended as class items. 
+        TMY as dataframe with information appended as class items.
     Inputs:
         Lattitude
-        Longtiude 
+        Longtiude
     ---
-    Checks the cache for a match (stored offline) to save the time of getting 
+    Checks the cache for a match (stored offline) to save the time of getting
     data from PV GIS
     """
     filestring = f"cache\\pvgis_lat_{str(lat)}_lon_{str(lon)}.pkl"
@@ -29,119 +30,120 @@ def get_pvgis(lat, lon):
     filepath = os.path.join(dataservice_folder, filestring)
 
     if os.path.isfile(filepath):
-        
+
         # read last API call
         tmy = pd.read_pickle(filepath)
-        
-        if not (tmy['lat'][1] == lat and tmy['lon'][1] == lon):
-            
+
+        if not (tmy["lat"][1] == lat and tmy["lon"][1] == lon):
+
             # get new data true API
-            print('Fetching data through API...')
+            print("Fetching data through API...")
             tmy = _getPVGIS(lat, lon)
-            print('Code 200: Succes!')
+            print("Code 200: Succes!")
             tmy.to_pickle(filepath)
-            
-        else: 
-                
-            print('API call matches last call, using stored data')
+
+        else:
+
+            print("API call matches last call, using stored data")
     else:
-        
+
         # data does not exist locally
-        
-        print('Fetching data through API...')
+
+        print("Fetching data through API...")
         tmy = _getPVGIS(lat, lon)
-        print('Code 200: Succes!')
+        print("Code 200: Succes!")
         tmy.to_pickle(filepath)
-    
-    
+
     # set relevant parameters needed for further processing based on PVgis
-    tmy.wind_height = 10            # height of wind speed data[m]
-    tmy.temperature_height = 2      # height of temp data[m]
-    tmy.pressure_height = 10        # height of pressure data[m] 
-    tmy.lat = lat                   # lattitude of requested data [deg]
-    tmy.lon = lon                   # longitude of requested data [deg]
+    tmy.wind_height = 10  # height of wind speed data[m]
+    tmy.temperature_height = 2  # height of temp data[m]
+    tmy.pressure_height = 10  # height of pressure data[m]
+    tmy.lat = lat  # lattitude of requested data [deg]
+    tmy.lon = lon  # longitude of requested data [deg]
     # overly complicated way to extract 'UTC' from index header
-    tmy.tz = tmy.index.name.split('(')[1].split(')')[0]
+    tmy.tz = tmy.index.name.split("(")[1].split(")")[0]
     return tmy
+
 
 def _getPVGIS(lat, lon):
     """
-    This function uses the non-interactive version of PVGIS to extract a 
-    tmy dataset to be used to predict VRE yields for future periods. 
-    
-    ------ inputs ------    
+    This function uses the non-interactive version of PVGIS to extract a
+    tmy dataset to be used to predict VRE yields for future periods.
+
+    ------ inputs ------
     Latitude, in decimal degrees, south is negative.
     Longitude, in decimal degrees, west is negative.
     ------- returns -------
     tmy as dataframe with datetime as index, containing 9 timeseries
-    Temperature, humidity, global horizontal, beam normal, diffuse horizontal, 
-    infrared horizontal, wind speed, wind direction and pressure.  
-    
+    Temperature, humidity, global horizontal, beam normal, diffuse horizontal,
+    infrared horizontal, wind speed, wind direction and pressure.
+
     From PVGIS [https://ec.europa.eu/jrc/en/PVGIS/tools/tmy]
-    "A typical meteorological year (TMY) is a set of meteorological data with 
-    data values for every hour in a year for a given geographical location. 
-    The data are selected from hourly data in a longer time period (normally 
+    "A typical meteorological year (TMY) is a set of meteorological data with
+    data values for every hour in a year for a given geographical location.
+    The data are selected from hourly data in a longer time period (normally
     10 years or more). The TMY is generated in PVGIS following the procedure
     described in ISO 15927-4.
-    
-    The solar radiation database (DB) used is the default DB for the given 
-    location, either PVGIS-SARAH, PVGIS-NSRDB or PVGIS-ERA5. The other 
+
+    The solar radiation database (DB) used is the default DB for the given
+    location, either PVGIS-SARAH, PVGIS-NSRDB or PVGIS-ERA5. The other
     meteorogical variables are obtained from the ERA-Inteirm reanalysis."
     """
     outputformat = "json"
-    
+
     request_url = f"https://re.jrc.ec.europa.eu/api/tmy?lat={lat}&lon={lon}&outputformat={outputformat}"
     response = requests.get(request_url)
 
     if not response.status_code == 200:
         raise ValueError("API get request not succesfull, check your input")
-        
+
     # store to private df
-    df = pd.DataFrame(response.json()['outputs']['tmy_hourly'])
+    df = pd.DataFrame(response.json()["outputs"]["tmy_hourly"])
     # send to private function to set the date column as index with parser
     tmy = _tmy_dateparser(df)
-    
-    # for dataframe off-line / in-session storage 
-    tmy['lat']  = lat 
-    tmy['lon']  = lon 
-    tmy.columns = ['T', *tmy.columns[1:6].values, 'WS', 'WD', 'SP', 'lat', 'lon']
+
+    # for dataframe off-line / in-session storage
+    tmy["lat"] = lat
+    tmy["lon"] = lon
+    tmy.columns = ["T", *tmy.columns[1:6].values, "WS", "WD", "SP", "lat", "lon"]
 
     return tmy
 
+
 def _tmy_dateparser(df):
-    
-    dateparse = lambda x: datetime.strptime(x, '%Y%m%d:%H%M%S')
-    for i in df['time(UTC)'].index:
-        df.loc[i, 'time(UTC)']= dateparse(df['time(UTC)'][i]) 
-        
-    return df.set_index('time(UTC)')
+
+    dateparse = lambda x: datetime.strptime(x, "%Y%m%d:%H%M%S")
+    for i in df["time(UTC)"].index:
+        df.loc[i, "time(UTC)"] = dateparse(df["time(UTC)"][i])
+
+    return df.set_index("time(UTC)")
+
 
 def get_dowa(lat, lon, height=100):
 
-
     filestring = f"LESO/dataservice/cache/DOWA_{lat}_{lon}_{height}.pkl"
-    
+
     if os.path.isfile(filestring):
-        
+
         # read last API call
         dowa = pd.read_pickle(filestring)
-        
+
     else:
-        
+
         # data does not exist locally
-        
-        print('Fetching data through API...')
+
+        print("Fetching data through API...")
         dowa = _getDOWA(lat, lon, height)
-        print('Code 200: Succes!')
+        print("Code 200: Succes!")
         dowa.to_pickle(filestring)
 
     # set height of data points in same way as PVGIS api
-    dowa.temperature_height = height     
-    dowa.pressure_height = height       
+    dowa.temperature_height = height
+    dowa.pressure_height = height
     dowa.wind_height = height
-    
-    
+
     return dowa
+
 
 def _getDOWA(lat, lon, height=100):
     """
@@ -152,108 +154,111 @@ def _getDOWA(lat, lon, height=100):
     # check bounds based on data set meta data
     east_bound, west_bound, north_bound, south_bound = 8.2222, 1.3114, 54.7358, 50.1823
     if lat > north_bound or lat < south_bound:
-        raise ValueError('Supplied lattitude out of range!')
+        raise ValueError("Supplied lattitude out of range!")
     if lon > east_bound or lat < west_bound:
-        raise ValueError('Supplied longitude out of range!')
+        raise ValueError("Supplied longitude out of range!")
 
     # map to indices as given in DOWA using projection
     grid_scale = 2500
-    project = pyproj.Proj("+proj=lcc +lat_1=52.500000 +lat_2=52.500000 +lat_0=52.500000 +lon_0=.000000 +k_0=1.0 +x_0=-92963.487426 +y_0=230383.739533 +a=6371220.000000 +b=6371220.000000")
+    project = pyproj.Proj(
+        "+proj=lcc +lat_1=52.500000 +lat_2=52.500000 +lat_0=52.500000 +lon_0=.000000 +k_0=1.0 +x_0=-92963.487426 +y_0=230383.739533 +a=6371220.000000 +b=6371220.000000"
+    )
     ix, iy = project(lon, lat)
-    ix = int(round(ix/grid_scale))
-    iy = int(round(iy/grid_scale))
-    
+    ix = int(round(ix / grid_scale))
+    iy = int(round(iy / grid_scale))
+
     # create file request
     dataset_name = "dowa_netcdf_ts_singlepoint_upd"
     version = 1
-    file = f'DOWA_40h12tg2_fERA5_NETHERLANDS.NL_ix{ix:03}_iy{iy:03}_2018010100-2019010100_v1.0.nc'
+    file = f"DOWA_40h12tg2_fERA5_NETHERLANDS.NL_ix{ix:03}_iy{iy:03}_2018010100-2019010100_v1.0.nc"
     api_key = "eyJvcmciOiI1ZTU1NGUxOTI3NGE5NjAwMDEyYTNlYjEiLCJpZCI6IjVjOTBhZWYwODJjYjQ5NmI4NzNmMmRiYWE0NWI0YTRmIiwiaCI6Im11cm11cjEyOCJ9"
 
     # request download url
     request_url = f"https://api.dataplatform.knmi.nl/open-data//v1/datasets/{dataset_name}/versions/{version}/files/{file}/url"
     r = requests.get(
-        request_url, 
+        request_url,
         headers={"Authorization": api_key},
     )
 
     # either raise error or continue with a correct download url
     if r.status_code != 200:
-        raise KeyError(f'Download URL request did not succeed, {r.status_code}: {r.json().get("message")}')
+        raise KeyError(
+            f'Download URL request did not succeed, {r.status_code}: {r.json().get("message")}'
+        )
     else:
-        download_url = r.json().get('temporaryDownloadUrl')
-    
+        download_url = r.json().get("temporaryDownloadUrl")
+
     # request download and if success then continue to writeout
-    d = requests.get(
-        download_url
-    )
+    d = requests.get(download_url)
 
     if d.status_code != 200:
-        raise KeyError(f'Download URL request did not succeed, {d.status_code}: {d.json().get("message")}')
+        raise KeyError(
+            f'Download URL request did not succeed, {d.status_code}: {d.json().get("message")}'
+        )
 
     # write out
-    temp_writeout_file = f'LESO/dataservice/DOWA_{lat}_{lon}_{height}.nc'
-    p = Path(
-        temp_writeout_file
-    )
+    temp_writeout_file = f"LESO/dataservice/DOWA_{lat}_{lon}_{height}.nc"
+    p = Path(temp_writeout_file)
     p.write_bytes(d.content)
 
     # open nc to xarray for processing
     db = xr.open_dataset(temp_writeout_file)
-    dowa = db.sel(height=height)[['ta', 'wspeed', 'wdir', 'p']].to_dataframe()
-    
+    dowa = db.sel(height=height)[["ta", "wspeed", "wdir", "p"]].to_dataframe()
+
     # drop x and y index
-    dowa.index = dowa.index.droplevel(level=[1,2])
-    
+    dowa.index = dowa.index.droplevel(level=[1, 2])
+
     # convert to celsius for consistency with PVGIS
     dowa.ta = dowa.ta - 275.15
     # drop 8761th point for consistency
     dowa.drop(dowa.index[-1], inplace=True)
-    dowa.drop('height', axis=1, inplace=True)
-    dowa.columns = ['T', 'WS', 'WD', 'SP', 'lon', 'lat']
+    dowa.drop("height", axis=1, inplace=True)
+    dowa.columns = ["T", "WS", "WD", "SP", "lon", "lat"]
 
     # close connection and delete temp file
     db.close()
     os.remove(temp_writeout_file)
     return dowa
 
+
 def get_renewable_ninja(instance, tmy):
-    
+
     lat = tmy.lat[0]
     lon = tmy.lon[0]
 
-    if hasattr(instance, 'tilt'):
-        name = 'pv'
+    if hasattr(instance, "tilt"):
+        name = "pv"
         t = instance.tilt
         a = instance.azimuth
         filestring = f"cache\\ninja_{name}_lat_{str(lat)}_lon_{str(lon)}_a_{a}_t{t}.pkl"
         kwargs = {
-            'tilt': instance.tilt,
-            'azim': instance.azimuth,
-            'system_loss': instance.efficiency
+            "tilt": instance.tilt,
+            "azim": instance.azimuth,
+            "system_loss": instance.efficiency,
         }
-    elif hasattr(instance, 'hub_height'):
-        name = 'wind'
+    elif hasattr(instance, "hub_height"):
+        name = "wind"
         turbinetype = instance.turbine_type.lower().replace(" ", "_")
         hubheight = str(instance.hub_height)
         filestring = f"cache\\ninja_{name}_lat_{str(lat)}_lon_{str(lon)}_h_{hubheight}_{turbinetype}.pkl"
         kwargs = {
-            'height': instance.hub_height,
-            'turbine': instance.turbine_type,
+            "height": instance.hub_height,
+            "turbine": instance.turbine_type,
         }
-    
+
     dataservice_folder = os.path.dirname(__file__)
     filepath = os.path.join(dataservice_folder, filestring)
 
     if os.path.isfile(filepath):
-        
+
         # read last API call
         data = pd.read_pickle(filepath)
-        print('API call matches last call, using stored data')
+        print("API call matches last call, using stored data")
 
     else:
-        
+
         # data does not exist locally
-        print('Fetching data through API...')
+        print("Fetching data through API...")
         data = _get_renewable_ninja(
             name=name,
             date_from=instance.date_from,
@@ -261,86 +266,140 @@ def get_renewable_ninja(instance, tmy):
             dataset=instance.dataset,
             lat=lat,
             lon=lon,
-            **kwargs
+            **kwargs,
         )
-        print('Code 200: Succes!')
+        print("Code 200: Succes!")
         data.to_pickle(filepath)
-    
+
     return data
+
 
 def _get_renewable_ninja(
     name: str,
-    date_from: str, 
-    date_to: str, 
-    dataset: str, 
-    lat: float, 
-    lon: float, 
-    **kwargs) -> pd.DataFrame:
-    """" API handler for renewables.ninja """
-    
-    token = 'ce0b2b82994ce55769edbf208b1d800be38b1085'
-    api_base = 'https://www.renewables.ninja/api/'
+    date_from: str,
+    date_to: str,
+    dataset: str,
+    lat: float,
+    lon: float,
+    **kwargs,
+) -> pd.DataFrame:
+    """ " API handler for renewables.ninja"""
+
+    token = "ce0b2b82994ce55769edbf208b1d800be38b1085"
+    api_base = "https://www.renewables.ninja/api/"
 
     s = requests.session()
     # Send token header with each request
-    s.headers = {'Authorization': 'Token ' + token}
+    s.headers = {"Authorization": "Token " + token}
 
     ## General
-    args ={
-        'lat': lat,
-        'lon': lon,
-        'date_from': date_from,
-        'date_to': date_to,
-        'dataset': dataset,
-        'format': 'json'
-    }         
-        
+    args = {
+        "lat": lat,
+        "lon": lon,
+        "date_from": date_from,
+        "date_to": date_to,
+        "dataset": dataset,
+        "format": "json",
+    }
+
     ## PV
-    if name == 'pv':
+    if name == "pv":
 
-        api_end = 'data/pv'
+        api_end = "data/pv"
 
-        args.update({
-        'capacity': 1, # force to one to never exceed ninjas capacity limit 
-        'system_loss': kwargs.get('system_loss'),
-        'tracking': 0,
-        'tilt': kwargs.get('tilt'),
-        'azim': kwargs.get('azim'),
-        })
+        args.update(
+            {
+                "capacity": 1,  # force to one to never exceed ninjas capacity limit
+                "system_loss": kwargs.get("system_loss"),
+                "tracking": 0,
+                "tilt": kwargs.get("tilt"),
+                "azim": kwargs.get("azim"),
+            }
+        )
 
     ## Wind
-    if name == 'wind':
+    if name == "wind":
 
-        api_end = 'data/wind'
-        turbine_type = kwargs.get('turbine')
-        
+        api_end = "data/wind"
+        turbine_type = kwargs.get("turbine")
+
         if turbine_type not in renewable_ninja_turbines:
             turbine_type_d = "Vestas V90 2000"
             msg = f"{turbine_type} not found in renwable.ninja, resorting to default ({turbine_type_d})."
             warnings.warn(msg)
             turbine_type = turbine_type_d
 
-        args.update({
-            'capacity': 1, # force to one to never exceed ninjas capacity limit 
-            'height': kwargs.get('height'),
-            'turbine': turbine_type,
-        })
-    
+        args.update(
+            {
+                "capacity": 1,  # force to one to never exceed ninjas capacity limit
+                "height": kwargs.get("height"),
+                "turbine": turbine_type,
+            }
+        )
+
     url = api_base + api_end
     r = s.get(url, params=args)
     if r.status_code != 200:
-        raise ConnectionError(f"Renewables.ninja did not return succesfully: {r.reason}")
-    
+        raise ConnectionError(
+            f"Renewables.ninja did not return succesfully: {r.reason}"
+        )
+
     # Parse JSON to get a pandas.DataFrame of data and dict of metadata
     parsed_response = json.loads(r.text)
 
-    data = pd.read_json(json.dumps(parsed_response['data']), orient='index')
+    data = pd.read_json(json.dumps(parsed_response["data"]), orient="index")
 
     return data
 
 
-@lru_cache(3)
 def get_etm_curve(
+    session_id: int,
+    generation_whitelist: list,
+    allow_import=False,
+    allow_export=False,
+    raw=False,
+) -> pd.DataFrame:
+
+    if raw:
+        array = _get_etm_curve(
+            session_id=session_id,
+            generation_whitelist=generation_whitelist,
+            allow_import=allow_import,
+            allow_export=allow_export,
+            raw=True
+        )
+        return array
+    else:
+        timetag = datetime.now().strftime("%y%m%d")
+        filestring = f"ETM_curves_{session_id}_{timetag}_i{int(allow_export)}_e{int(allow_export)}.pkl"
+        dataservice_folder = os.path.dirname(__file__)
+        filepath = os.path.join(dataservice_folder, filestring)
+
+        if os.path.isfile(filepath):
+
+            # read last API call
+            df = pd.read_pickle(filepath)
+            print("API call matches last call, using stored data")
+
+        else:
+
+            # data does not exist locally
+            print("Fetching data through API...")
+            df = _get_etm_curve(
+                session_id=session_id,
+                generation_whitelist=generation_whitelist,
+                allow_import=allow_import,
+                allow_export=allow_export,
+                raw=False
+            )
+            print("Code 200: Succes!")
+            df.to_pickle(filepath)
+
+        return df
+
+
+@lru_cache(3)
+def _get_etm_curve(
     session_id, generation_whitelist, allow_import=False, allow_export=False, raw=False
 ):
     # read file and find inputs / outputs

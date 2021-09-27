@@ -1,14 +1,14 @@
 import requests
+import os
+import warnings
+import json
+import pickle
+
+from functools import lru_cache
+from pathlib import Path
 from datetime import datetime
 import pandas as pd
-import os.path
-import os
-from pathlib import Path
-import xarray as xr
-import pyproj
-import json
-from functools import lru_cache
-import warnings
+
 from .api_static import renewable_ninja_turbines
 
 
@@ -149,6 +149,8 @@ def _getDOWA(lat, lon, height=100):
     """
     This function does the actual hard work of api's: requesting and processing the response.
     """
+    import xarray as xr
+    import pyproj
     api_key = "eyJvcmciOiI1ZTU1NGUxOTI3NGE5NjAwMDEyYTNlYjEiLCJpZCI6IjVjOTBhZWYwODJjYjQ5NmI4NzNmMmRiYWE0NWI0YTRmIiwiaCI6Im11cm11cjEyOCJ9"
 
     # check bounds based on data set meta data
@@ -361,14 +363,14 @@ def get_etm_curve(
 ) -> pd.DataFrame:
 
     if raw:
-        array = _get_etm_curve(
+        df = _get_etm_curve(
             session_id=session_id,
             generation_whitelist=generation_whitelist,
             allow_import=allow_import,
             allow_export=allow_export,
             raw=True
         )
-        return array
+        return df
     else:
         timetag = datetime.now().strftime("%y%m%d")
         filestring = f"ETM_curves_{session_id}_{timetag}_i{int(allow_export)}_e{int(allow_export)}.pkl"
@@ -378,30 +380,38 @@ def get_etm_curve(
         if os.path.isfile(filepath):
 
             # read last API call
-            df = pd.read_pickle(filepath)
-            print("API call matches last call, using stored data")
+            with open(filepath, 'rb') as infile:
+                array = pickle.load(infile)
+
+            print("Call matches last call, using stored data")
 
         else:
 
             # data does not exist locally
-            print("Fetching data through API...")
-            df = _get_etm_curve(
+            print("Downloading ETM curve...")
+            array = _get_etm_curve(
                 session_id=session_id,
                 generation_whitelist=generation_whitelist,
                 allow_import=allow_import,
                 allow_export=allow_export,
                 raw=False
             )
-            print("Code 200: Succes!")
-            df.to_pickle(filepath)
+            print("Success... Probably.")
 
-        return df
+            with open(filepath, 'wb') as outfile:
+                pickle.dump(array, outfile)
+
+        return array
 
 
 @lru_cache(3)
 def _get_etm_curve(
-    session_id, generation_whitelist, allow_import=False, allow_export=False, raw=False
-):
+    session_id: int,
+    generation_whitelist: list,
+    allow_import: bool = False,
+    allow_export: bool = False,
+    raw: bool = False,
+)-> pd.DataFrame:
     # read file and find inputs / outputs
     url = f"https://engine.energytransitionmodel.com/api/v3/scenarios/{session_id}/curves/merit_order.csv"
     df = pd.read_csv(url)

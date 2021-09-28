@@ -410,7 +410,7 @@ fastcharger = dict(
     carsperhour=4,  # maximum amount of cars assumed to charge in 1 hour at peaks
     efficiency=0.85,  # DC fast charging reference
     # related to EV (traffic)
-    EV_charge_amount=0.024,  # MWh TODO: this is problematic since it doesn't scale with other units
+    EV_charge_amount=0.025,  # MWh TODO: this is problematic since it doesn't scale with other units
     EV_share=0.05,  # share of EVs in traffic that would consider charging
     EV_min_soc=0.4,  # miniumum state of charge to consider charging
     weekendday_traffic_file="data/weekendday_deventer.csv",

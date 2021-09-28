@@ -22,3 +22,4 @@ from .dataservice import *
 from . import feedinfunctions
 from . import finance
 from .attrdict import AttrDict
+from .plotting import default_matplotlib_style

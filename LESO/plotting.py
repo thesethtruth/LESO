@@ -1,0 +1,49 @@
+import matplotlib.pyplot as plt
+
+PAD = 0.3
+
+def default_matplotlib_style(
+    fig: plt.figure,
+    ax: plt.axes,
+    font_size=10,
+    height=None,
+    disable_box=True,
+    subplots=None,
+)-> plt.figure:
+    """ Convience method for styling figures to meet default styling"""
+    ratio=2
+
+    plt.tight_layout(pad=PAD)
+
+    rc = {
+        'font.family':'Open Sans',
+        'font.size' : font_size,
+        'legend.fontsize' : font_size-2
+        }
+
+    plt.rcParams.update(rc)
+    if disable_box:
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+    if subplots is None or subplots == 1:
+        width = 6
+        if height is None:
+            height = width/ratio
+        
+        fig.set_size_inches(width, height)
+    elif subplots == 2:
+        width = 3
+        if height is None:
+            height = width/ratio
+
+        fig.set_size_inches(width, height)
+
+    
+    
+    return fig, ax
+
+def default_matplotlib_save(fig: plt.figure, filename: str, dpi=300):
+    plt.tight_layout(pad=PAD)
+    plt.savefig(filename, dpi=dpi)
+

@@ -1,29 +1,54 @@
-from LESO.plotly_extension import lighten_color
+from learning_rate_plotting import add_range, add_single_line
 import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
+from pathlib import Path
+import matplotlib.pyplot as plt
+from LESO.plotting import default_matplotlib_save, default_matplotlib_style
+
+pickle_folder = Path(__file__).parent / "pickles"
+
 
 ## NP REL ATB
 # storage cost
-ref_2020_s = 277 # $/kWh
-storage_projection = np.array([
-    [1.0, 1.0, 1.0], 
-    [0.61, 0.69, 0.85], 
-    [0.41, 0.53, 0.7], 
-    [0.25, 0.37, 0.7]
-]) # kWh from ATB sheet
+ref_2014 = 1350 # €/kWp
+etri14_factors = pd.read_pickle(pickle_folder/"wind_etri2014")
+etri14_factors.index = [int(i) for i in etri14_factors.index]
+etri14_values = etri14_factors*ref_2014
 
-ref_2020_p = 257 # $/kW
-power_projection = np.array([
-    [1.0, 1.0, 1.0], 
-    [0.62, 0.77, 0.87], 
-    [0.42, 0.77, 0.81], 
-    [0.25, 0.71, 0.81]
-]) # kW from ATB sheet
+ref_2017 = 1350 # €/kWp
+etri17_factors = pd.read_pickle(pickle_folder/"wind_etri2017")
+etri17_factors.index = [int(i) for i in etri17_factors.index]
+etri17_values = etri17_factors*ref_2017
 
-years = [2020, 2025, 2030, 2050]
-scenarios = ["Advanced", "Moderate", "Conservative"]
-atb_storage = pd.DataFrame(storage_projection, index=years, columns=scenarios)
-atb_power = pd.DataFrame(power_projection, index=years, columns=scenarios)
-print(atb_storage)
-print(atb_power)
+## cost factor
+all = [etri14_factors, etri17_factors]
+fig, ax = plt.subplots()
+fig, ax = default_matplotlib_style(fig, ax)
+
+add_range(ax, etri17_factors, "min", "max", "olivedrab", label="ETRI2017 capacity cost range")
+add_range(ax, etri14_factors, "low", "high", "steelblue", label="ETRI2014 capacity cost range")
+
+add_single_line(ax, etri17_factors, "baseline", "olivedrab", label="ETRI2017 baseline scenario", dash=True)
+add_single_line(ax, etri14_factors, "ref", "steelblue", label="ETRI2014 ref. scenario", dash=True)
+ax.set_ylabel("projected cost factor (-)")
+plt.locator_params(axis="x", integer=True)
+
+default_matplotlib_save(fig, "cost_wind_factor.png")
+
+## absolute
+all = [etri14_values, etri17_values]
+fig, ax = plt.subplots()
+fig, ax = default_matplotlib_style(fig, ax)
+
+add_range(ax, etri17_values, "min", "max", "olivedrab", label="ETRI2017 capacity cost range")
+add_range(ax, etri14_values, "low", "high", "olivedrab", label="ETRI2014 capacity cost range")
+
+add_single_line(ax, etri17_values, "baseline", "olivedrab", label="ETRI2017 baseline scenario", dash=True)
+add_single_line(ax, etri14_values, "ref", "olivedrab", label="ETRI2014 ref. scenario", dash=True)
+ax.set_ylabel("projected capacity cost (€/kW)")
+plt.locator_params(axis="x", integer=True)
+
+default_matplotlib_save(fig, "cost_wind_absolute.png")
+
+#%%
+# pd.read_clipboard().T.to_pickle("wind_etri2014")
+# %%

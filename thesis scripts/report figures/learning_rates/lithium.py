@@ -83,7 +83,7 @@ add_single_line(atb_power, "moderate", "olivedrab", label="ATB power moderate sc
 add_range(atb_storage, "conservative", "advanced", "steelblue", label="ATB storage capacity cost range")
 add_single_line(atb_storage, "moderate", "steelblue", label="ATB storage moderate scenario", dash=True)
 ax.set_ylim([0, atb_power.max().max()*1.05])
-ax.set_ylabel("capacity cost (€/MW(h))")
+ax.set_ylabel("projected capacity cost (€/kW(h))")
 
 default_matplotlib_save(fig, "cost_lithium_absolute.png")
 

@@ -1,29 +1,57 @@
-from LESO.plotly_extension import lighten_color
+from learning_rate_plotting import add_range, add_single_line
 import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
+from pathlib import Path
+import matplotlib.pyplot as plt
+from LESO.plotting import default_matplotlib_save, default_matplotlib_style
 
-## NP REL ATB
-# storage cost
-ref_2020_s = 277 # $/kWh
-storage_projection = np.array([
-    [1.0, 1.0, 1.0], 
-    [0.61, 0.69, 0.85], 
-    [0.41, 0.53, 0.7], 
-    [0.25, 0.37, 0.7]
-]) # kWh from ATB sheet
+pickle_folder = Path(__file__).parent / "pickles"
 
-ref_2020_p = 257 # $/kW
-power_projection = np.array([
-    [1.0, 1.0, 1.0], 
-    [0.62, 0.77, 0.87], 
-    [0.42, 0.77, 0.81], 
-    [0.25, 0.71, 0.81]
-]) # kW from ATB sheet
 
-years = [2020, 2025, 2030, 2050]
-scenarios = ["Advanced", "Moderate", "Conservative"]
-atb_storage = pd.DataFrame(storage_projection, index=years, columns=scenarios)
-atb_power = pd.DataFrame(power_projection, index=years, columns=scenarios)
-print(atb_storage)
-print(atb_power)
+## Schmidt et. al.
+
+# factors
+hydrogen_factors = pd.read_pickle(pickle_folder/"hydrogen_factors")
+hydrogen_factors.index = [int(i) for i in hydrogen_factors.index]
+
+# seasonal
+ref700 = 27117.0 # €/kWp
+h700_values = pd.read_pickle(pickle_folder/"hydrogen_700")
+h700_values.index = [int(i) for i in h700_values.index]
+
+# subseasonal
+ref350 = 16267.0 # €/kWp
+h350_values = pd.read_pickle(pickle_folder/"hydrogen_350")
+h350_values.index = [int(i) for i in h350_values.index]
+
+## cost factor
+fig, ax = plt.subplots()
+fig, ax = default_matplotlib_style(fig, ax)
+
+add_range(ax, hydrogen_factors, "lower", "upper", "steelblue", label="Schmidt et. al. capacity cost uncertainty range")
+add_single_line(ax, hydrogen_factors, "center", "steelblue", label="Schmidt et. al. capacity cost center", dash=True)
+
+ax.set_ylabel("projected cost factor (-)")
+plt.locator_params(axis="x", integer=True)
+
+default_matplotlib_save(fig, "cost_hydrogen_factor.png")
+
+## absolute
+fig, ax = plt.subplots()
+fig, ax = default_matplotlib_style(fig, ax)
+
+add_range(ax, h700_values, "lower", "upper", "steelblue", label="Seasonal H2 capacity cost uncertainty range")
+add_range(ax, h350_values, "lower", "upper", "olivedrab", label="Sub-seasonal H2 capacity cost uncertainty range")
+add_single_line(ax, h700_values, "center", "steelblue", label="Seasonal H2 capacity cost center", dash=True)
+add_single_line(ax, h350_values, "center", "olivedrab", label="Sub-seasonal H2 capacity cost center", dash=True)
+
+ax.set_ylim([0, 28000])
+ax.set_ylabel("projected capacity cost (€/kW)")
+plt.locator_params(axis="x", integer=True)
+
+default_matplotlib_save(fig, "cost_hydrogen_absolute.png")
+
+#%%
+# pd.read_clipboard().T.to_pickle(pickle_folder / "hydrogen_factors")
+# pd.read_clipboard().T.to_pickle(pickle_folder / "hydrogen_350")
+# pd.read_clipboard().T.to_pickle(pickle_folder / "hydrogen_700")
+# %%

@@ -1,4 +1,3 @@
-from LESO.plotly_extension import lighten_color
 from LESO.plotting import default_matplotlib_save, default_matplotlib_style
 import pandas as pd
 import numpy as np
@@ -28,16 +27,17 @@ scenarios = ["advanced", "moderate", "conservative"]
 atb_storage = pd.DataFrame(storage_projection, index=years, columns=scenarios)
 atb_power = pd.DataFrame(power_projection, index=years, columns=scenarios)
 
-def add_single_line(df, column, color, label=None, dash=False):
+def add_single_line(df, column, color, label=None, dash=False, marker='o', alpha=1):
+
     ax.plot(
         column,
         data=df,
-        marker='o',
+        marker=marker,
         linestyle= '-' if not dash else '--',
         mfc=color,
         color=color,
         label=label if label != None else "_d",
-        alpha=1,
+        alpha=alpha,
     )
     ax.legend(loc="best", frameon=False)
 
@@ -52,8 +52,8 @@ def add_range(df, lower_col, upper_col, color, label):
         label=label,
         alpha=0.2,
     )    
-    add_single_line(df, lower_col, color)
-    add_single_line(df, upper_col, color)
+    add_single_line(df, lower_col, color, alpha=0.5, marker=None)
+    add_single_line(df, upper_col, color, alpha=0.5, marker=None)
     
     ax.set_xlim([df.index[0]-1, df.index[-1]+1])
     ax.set_ylim([0, df.max().max()*1.05])

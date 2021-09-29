@@ -61,16 +61,17 @@ etri17_values.sort_index(inplace=True)
 etri17_factors = etri17_values/ref_2017_e
 
 
-def add_single_line(df, column, color, label=None, dash=False):
+def add_single_line(df, column, color, label=None, dash=False, marker='o', alpha=1):
+
     ax.plot(
         column,
         data=df,
-        marker='o',
+        marker=marker,
         linestyle= '-' if not dash else '--',
         mfc=color,
         color=color,
         label=label if label != None else "_d",
-        alpha=1,
+        alpha=alpha,
     )
     ax.legend(loc="best", frameon=False)
 
@@ -85,11 +86,12 @@ def add_range(df, lower_col, upper_col, color, label):
         label=label,
         alpha=0.2,
     )    
-    add_single_line(df, lower_col, color)
-    add_single_line(df, upper_col, color)
+    add_single_line(df, lower_col, color, alpha=0.5, marker=None)
+    add_single_line(df, upper_col, color, alpha=0.5, marker=None)
     
-    ax.set_ylim([0, 1.05])
-    ax.set_xlim([2014, 2051])
+    ax.set_xlim([df.index[0]-1, df.index[-1]+1])
+    ax.set_ylim([0, df.max().max()*1.05])
+    
     
     ax.legend(loc="best", frameon=False)
 
@@ -100,11 +102,11 @@ fig, ax = default_matplotlib_style(fig, ax)
 
 add_range(etri17_factors, "min", "max", "olivedrab", label="ETRI2017 power capacity cost range")
 add_range(etri14_factors, "min", "max", "steelblue", label="ETRI2014 capacity cost range")
-add_range(fraunhofer_factors, "min", "max", "lightcoral", label="Fraunhofer capacity cost range")
+add_range(fraunhofer_factors, "min", "max", "firebrick", label="Fraunhofer capacity cost range")
 
 add_single_line(etri17_factors, "baseline", "olivedrab", label="ETRI2017 baseline scenario", dash=True)
 add_single_line(etri14_factors, "ref", "steelblue", label="ETRI2014 ref. scenario", dash=True)
-add_single_line(fraunhofer_factors, "ref", "lightcoral", label="Fraunhofer mean scenario", dash=True)
+add_single_line(fraunhofer_factors, "ref", "firebrick", label="Fraunhofer mean scenario", dash=True)
 ax.set_ylabel("projected cost factor (-)")
 plt.locator_params(axis="x", integer=True)
 
@@ -116,11 +118,11 @@ fig, ax = default_matplotlib_style(fig, ax)
 
 add_range(etri17_values, "min", "max", "olivedrab", label="ETRI2017 power capacity cost range")
 add_range(etri14_values, "min", "max", "steelblue", label="ETRI2014 capacity cost range")
-add_range(fraunhofer_values, "min", "max", "lightcoral", label="Fraunhofer capacity cost range")
+add_range(fraunhofer_values, "min", "max", "firebrick", label="Fraunhofer capacity cost range")
 
 add_single_line(etri17_values, "baseline", "olivedrab", label="ETRI2017 baseline scenario", dash=True)
 add_single_line(etri14_values, "ref", "steelblue", label="ETRI2014 ref. scenario", dash=True)
-add_single_line(fraunhofer_values, "ref", "lightcoral", label="Fraunhofer mean scenario", dash=True)
+add_single_line(fraunhofer_values, "ref", "firebrick", label="Fraunhofer mean scenario", dash=True)
 ax.set_ylabel("projected capacity cost (€/kWp)")
 ax.set_ylim([0, 1050])
 plt.locator_params(axis="x", integer=True)

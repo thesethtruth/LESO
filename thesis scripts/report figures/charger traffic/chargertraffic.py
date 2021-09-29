@@ -113,12 +113,12 @@ weekendday_EV_charging = weekendday_EV.apply(
     soc_trunc_filter,
     args=[minimal_charge],
 )
-weekday_EV -= weekday_EV_charging
-weekendday_EV -= weekendday_EV_charging
+weekday_EV_s = weekday_EV - weekday_EV_charging
+weekendday_EV_s = weekendday_EV - weekendday_EV_charging
 ##  weekendday EV shares
 fig, ax = make_traffic_plot(
-    x=weekday_EV.index,
-    y=[weekday_EV.values, weekday_EV_charging.values],
+    x=weekday_EV_s.index,
+    y=[weekday_EV_s.values, weekday_EV_charging.values],
     labels=["EVs moving past", "EVs charging"],
     colors=["coral", "firebrick"],
     show_legend=True,
@@ -129,9 +129,28 @@ fig, ax = default_matplotlib_style(fig=fig, ax=ax, subplots=2)
 default_matplotlib_save(fig, filename="weekday_charging")
 
 # %%
+weekday_EV_charging_l = []
+for i in range(5):
+    day = weekday_EV.apply(
+            soc_trunc_filter,
+            args=[minimal_charge],
+        )
+    weekday_EV_charging_l.append(
+        day
+    )
+weekendday_EV_charging_l = []
+for i in range(2):
+    day = weekendday_EV.apply(
+            soc_trunc_filter,
+            args=[minimal_charge],
+        )
+    weekendday_EV_charging_l.append(
+        day
+    )
+
 
 weekcharge = pd.DataFrame(
-    data=np.hstack([*[weekday_EV_charging.values] * 5, *[weekendday_EV_charging.values] * 2]),
+    data=np.hstack([*[df.values for df in weekday_EV_charging_l], *[df.values for df in weekendday_EV_charging_l]]),
     index=pd.date_range(
         start="27/09/2021", periods=24*7, freq='h'
     )

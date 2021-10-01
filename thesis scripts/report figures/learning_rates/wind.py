@@ -40,10 +40,10 @@ fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
 
 add_range(ax, etri17_values, "min", "max", "olivedrab", label="ETRI2017 capacity cost range")
-add_range(ax, etri14_values, "low", "high", "olivedrab", label="ETRI2014 capacity cost range")
+add_range(ax, etri14_values, "low", "high", "steelblue", label="ETRI2014 capacity cost range")
 
 add_single_line(ax, etri17_values, "baseline", "olivedrab", label="ETRI2017 baseline scenario", dash=True)
-add_single_line(ax, etri14_values, "ref", "olivedrab", label="ETRI2014 ref. scenario", dash=True)
+add_single_line(ax, etri14_values, "ref", "steelblue", label="ETRI2014 ref. scenario", dash=True)
 ax.set_ylabel("projected capacity cost (€/kW)")
 plt.locator_params(axis="x", integer=True)
 

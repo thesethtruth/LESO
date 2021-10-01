@@ -1,8 +1,10 @@
 # extension.py
+from __future__ import annotations
 import numpy as np
 import LESO
 from typing import Optional
 from functools import partial
+
 
 
 def constrain_minimal_share_of_renewables(

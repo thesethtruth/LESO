@@ -55,14 +55,14 @@ if __name__ == "__main__":
     model.outcomes = [ScalarOutcome(metric) for metric in METRICS]
 
     # run experiments
-    with MultiprocessingEvaluator(model) as evaluator:
-        results = evaluator.perform_experiments(scenarios=1, policies=6)
+    with MultiprocessingEvaluator(model, n_processes=7) as evaluator:
+        results = evaluator.perform_experiments(scenarios=150, policies=6)
     
     # with SequentialEvaluator(model) as evaluator:
         # results = evaluator.perform_experiments(scenarios=1, policies=5)
 
     # save results
     RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
-    results_file_name = RESULTS_FOLDER / f"gld2030_res_ema_results_{run_ID}.tar.gz"
+    results_file_name = RESULTS_FOLDER / f"gld2030_ema_results_{run_ID}.tar.gz"
     save_results(results, file_name=results_file_name)
 

@@ -404,8 +404,6 @@ def get_etm_curve(
 
         return array
 
-
-@lru_cache(3)
 def _get_etm_curve(
     session_id: int,
     generation_whitelist: list,
@@ -436,16 +434,17 @@ def _get_etm_curve(
     default_deficit = df["deficit"]
     demand = df[inputs].copy(deep=True)
 
-    if not allow_export:
+    if allow_export is False:
         demand.drop(labels=export_grid, axis=1, inplace=True)
 
-    # if all energy generation is a DoF
-    if not generation_whitelist:
+    # if no generation_whitelist is supplied, none of the ETM generation is allowed and thus
+    # will the total residual curve be exactly the same as the sum of all demand. 
+    if generation_whitelist is None or generation_whitelist is False:
         deficit = -demand.sum(axis=1) - default_deficit
 
     # for input analysis ('sustainable') options only
     elif isinstance(generation_whitelist, list):
-        if allow_import:
+        if allow_import is True:
             production = df[[*generation_whitelist, *import_grid]].copy(deep=True)
         else:
             production = df[generation_whitelist].copy(deep=True)

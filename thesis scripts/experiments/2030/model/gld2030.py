@@ -35,10 +35,12 @@ for modelname, scenario in scenarios_2030.items():
     #%% initiate and define components
 
     # demand
+    from LESO.defaultvalues import generation_whitelist #TODO check this!
     demand = ETMdemand(
         "ETM residual load",
         scenario_id,
-        end_year=end_year
+        end_year=end_year,
+        generation_whitelist=generation_whitelist,
     )
 
     # wind

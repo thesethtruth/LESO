@@ -180,14 +180,20 @@ def PVpower(PV_instance, tmy):
     return power
 
 
-def ninja_PVpower(PV_instance, tmy):
+def ninja_PVpower(PV_instance, tmy, **kwargs):
     """Simple wrapper for power profiles calculated with renewables.ninja"""
     PV = PV_instance
     # Generate the power curve using renewables.ninja
-    power = LESO.dataservice.api.get_renewable_ninja(PV, tmy)
+    ignore_cache = kwargs.get("ignore_cache", None)
+    if ignore_cache is True:
+        power = LESO.dataservice.api.get_renewable_ninja(PV, tmy, ignore_cache=True)
+    else:
+        power = LESO.dataservice.api.get_renewable_ninja(PV, tmy)
+    # scale the curve to desired installed capacity
     power = power * PV.installed
     # reset the indices to a future year based on starting year
-    power.index = PV.state.index
+    if len(power.index) == len(PV.state.index):
+        power.index = PV.state.index
     return power
 
 

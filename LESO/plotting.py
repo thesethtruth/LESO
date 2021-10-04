@@ -47,3 +47,12 @@ def default_matplotlib_save(fig: plt.figure, filename: str, dpi=300):
     plt.tight_layout(pad=PAD)
     plt.savefig(filename, dpi=dpi)
 
+
+olivedrab_02 = "#e1e8d3"
+olivedrab_05 = '#b4c690'
+
+steelblue_02 = '#dae6f0'
+steelblue_05 = '#a2c0d9'
+
+firebrick_02='#efd2d2'
+firebrick_05='#c96767'

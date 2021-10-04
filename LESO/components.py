@@ -173,10 +173,10 @@ class PhotoVoltaic(SourceSink):
     def __str__(self):
         return "pv{number}".format(number=self.number)
 
-    def calculate_time_serie(self, tmy):
+    def calculate_time_serie(self, tmy, **kwargs):
 
         if self.use_ninja:
-            self.state.power = feedinfunctions.ninja_PVpower(self, tmy)  # TODO
+            self.state.power = feedinfunctions.ninja_PVpower(self, tmy, **kwargs)  
         else:
             self.state.power = feedinfunctions.PVpower(self, tmy)
 

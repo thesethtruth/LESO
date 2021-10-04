@@ -223,7 +223,7 @@ def _getDOWA(lat, lon, height=100):
     return dowa
 
 
-def get_renewable_ninja(instance, tmy):
+def get_renewable_ninja(instance, tmy, ignore_cache=False):
 
     lat = tmy.lat[0]
     lon = tmy.lon[0]
@@ -251,7 +251,7 @@ def get_renewable_ninja(instance, tmy):
     dataservice_folder = os.path.dirname(__file__)
     filepath = os.path.join(dataservice_folder, filestring)
 
-    if os.path.isfile(filepath):
+    if os.path.isfile(filepath) and not ignore_cache:
 
         # read last API call
         data = pd.read_pickle(filepath)
@@ -271,7 +271,8 @@ def get_renewable_ninja(instance, tmy):
             **kwargs,
         )
         print("Code 200: Succes!")
-        data.to_pickle(filepath)
+        if not ignore_cache:
+            data.to_pickle(filepath)
 
     return data
 

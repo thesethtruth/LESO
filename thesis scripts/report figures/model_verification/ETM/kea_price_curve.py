@@ -65,7 +65,6 @@ xtick = {
 }
 ax.set_xticks(list(xtick.keys()))
 ax.set_xticklabels(list(xtick.values()))
-ax.xaxis.ticklabels.set_visible(False)
 ax.set_xlim([0, duration*24-1])
 
 
@@ -79,8 +78,8 @@ default_matplotlib_save(fig, "etm_pricecurve_year.png")
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
 fig.set_size_inches(3,2.2)
-start = 300
-duration = 7
+start = 348
+duration = 5
 subset = edf.iloc[start:start+duration*24,:]
 subset.plot(
     color=['steelblue', 'firebrick'],
@@ -92,7 +91,7 @@ subset.plot(
 plt.axhline(0, color='darkgrey')
 ax.set_ylim([-10,120])
 ax.set_ylabel("Energy price (€/MWh)")
-ax.legend(frameon=False)
+ax.legend(loc= 'upper center', frameon=False)
 
 default_matplotlib_save(fig, "etm_pricecurve_detail.png")
 

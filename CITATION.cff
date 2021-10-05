@@ -1,10 +1,14 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-  - family-names: Druskat
-    given-names: Stephan
-    orcid: https://orcid.org/0000-0003-4925-7248
-title: "My Research Software"
-version: 2.0.4
-doi: 10.5281/zenodo.1234
-date-released: 2021-08-11
+  - affiliation: University of Twente
+    family-names: van Wieringen
+    given-names: S. W. P.
+    orcid: https://orcid.org/0000-0002-3547-1975
+title: "Local Energy System Optimization (LESO) framework"
+version: 0.1.0
+date-released: 2021-10-05
+identifiers:
+  - type: url
+    value: https://github.com/thesethtruth/LESO
+    description: URL to the GitHub repository for LESO

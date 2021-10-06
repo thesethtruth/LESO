@@ -119,12 +119,7 @@ class Storage(Component):
 
     pass
 
-
-class Collector(Component):
-    pass
-
-
-class Transformer(Component):
+class Converter(Component):
     pass
 
 

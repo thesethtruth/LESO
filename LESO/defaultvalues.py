@@ -87,9 +87,7 @@ pv = dict(
     installed=5000,  # [..W] total installed capacity
     azimuth=180,  # [degree] Module orientation
     tilt=37,  # [degree] Tilt of plane relative to horizontal
-    efficiency=0.185,  # [-] Total system efficiency to reach realistic values
-    module_power=350,  # [w] output power under STC
-    module_area=1.6,  # [m2] module area
+    efficiency=0.296,  # [-] Total system efficiency to reach realistic values
     # unused
     t_coeff=-0.37,  # [%/K]
     voc=52,  # [V]

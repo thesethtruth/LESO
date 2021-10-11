@@ -159,7 +159,6 @@ def PVpower(PV_instance, tmy):
     """
     Input:      tmy['POA'] -- plane of array
                 PV.efficiency
-                PV.area
     Output:     PV.power
 
     This function could be updated to a more sophisticated power model!
@@ -172,7 +171,7 @@ def PVpower(PV_instance, tmy):
         _calculate_poa(tmy, PV)
 
     # Generate the power
-    power = PV.poa * PV.efficiency * PV.area
+    power = PV.poa * PV.efficiency 
 
     # reset the indices to a future year based on starting year
     power.index = PV.state.index

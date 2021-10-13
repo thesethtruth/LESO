@@ -1,7 +1,10 @@
+from sys import path
 from LESO import System
 from LESO import PhotoVoltaic, Wind, Lithium, Grid, FinalBalance
-import os
 import pandas as pd
+from pathlib import Path
+
+FOLDER = Path(__file__).parent
 
 #%% Define system and components
 modelname = "cablepool"
@@ -11,11 +14,11 @@ equity_share = 0.5 # cite: ATB, to bump the roi up to about 7.5%
 correct_SDE = True
 
 price_filename = "etm_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl"
-price_filepath = os.path.join(os.path.dirname(__file__), price_filename)
-retail_prices = pd.read_pickle(price_filepath)
+retail_prices = pd.read_pickle(FOLDER / price_filename)
+
 if correct_SDE:
     profile_factor = 0.65 # CE Delft, pag 22-  Scenario’s zon op grote daken
-    basis_price = 55 # Arbitrary
+    basis_price = 55 # Arbitrary, loosely based on projected SDE for 2022
     correction_price = lambda retail_prices, profile_factor: retail_prices.mean() * profile_factor
     SDE_price = basis_price - correction_price(retail_prices, profile_factor)
 
@@ -66,6 +69,5 @@ if __name__ == "__main__":
         )
     ## Or write to pickle
     else: 
-        name = modelname.lower()+".pkl"
-        filepath = os.path.join(os.path.dirname(__file__), name)
-        system.to_pickle(filepath=filepath)
+        filename = modelname.lower()+".pkl"
+        system.to_pickle(FOLDER / filename)

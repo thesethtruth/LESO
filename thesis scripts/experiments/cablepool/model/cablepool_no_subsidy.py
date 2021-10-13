@@ -2,31 +2,27 @@
 from LESO import System
 from LESO import Grid, Wind
 import pandas as pd
-import os
+from pathlib import Path
+
+FOLDER = Path(__file__).parent
 
 #%% read system definition from regular cable pool
-modelname = "cablepool_greenfield"
-system = System.read_pickle(os.path.join(os.path.dirname(__file__), "cablepool.pkl"))
+modelname = "cablepool_no_subsidy"
+system = System.read_pickle(FOLDER / "cablepool.pkl")
 system.name = modelname
-# extract grid component
+# grab grid component
 for component in system.components:
      if isinstance(component, Grid):
          grid = component
-# extract wind component
-for component in system.components:
-     if isinstance(component, Wind):
-         wind = component
 
 #%% dynamic part
 # read .pkl from dynamic_price_analysis
-price_filename = "etm_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl"
-mwh_prices = pd.read_pickle(os.path.join(os.path.dirname(__file__), price_filename))
+price_filename = "etm_dynamic_savgol_filtered_etmprice_40ch4_85co2.pkl"
+mwh_prices = pd.read_pickle(FOLDER / price_filename)
 energy_market_price = mwh_prices.values / 1e6 # convert from [eu / MWh] to [Meu / MWh]
 
 # set the dynamic pricing to the grid component
 grid.variable_income = list(energy_market_price)
-# set the wind component to a DOF
-wind.dof = True
 
 ## Solve
 if False:
@@ -41,5 +37,4 @@ if False:
 ## Or write to pickle
 else: 
     filename = modelname.lower()+".pkl"
-    filepath = os.path.join(os.path.dirname(__file__), filename)
-    system.to_pickle(filepath=filepath)
+    system.to_pickle(FOLDER / filename)

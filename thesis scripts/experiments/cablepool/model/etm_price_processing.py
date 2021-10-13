@@ -21,7 +21,7 @@ def postprocess_etm_curve(
     #%% plot the energy price
     edf = pd.DataFrame(
         index = pd.date_range(start="01/01/2021", periods=8760, freq='h'),
-        data = [price*1e6 for price in energy_market_price],
+        data = [price for price in energy_market_price],
         columns= ['energy_price']
     )
     edf['smoother_energy_price'] = savgol_filter(edf.energy_price, savgol_window, savgol_order)

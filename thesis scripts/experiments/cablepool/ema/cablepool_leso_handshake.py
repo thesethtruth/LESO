@@ -49,7 +49,16 @@ METRICS.extend(
 OUTPUT_PREFIX = "cablepooling_exp_"
 
 # this is needed due to the dependent but double variant uncertainty ranges given by ATB
-def linear_map(value, ):
+def linear_map_2030(value):
+    min, max = 0.41, 0.70 # @@
+    map_min, map_max = 0.42, 0.81 # @@
+
+    frac = (value - min) / (max-min)
+    m_value = frac * (map_max-map_min) + map_min
+
+    return m_value
+
+def linear_map_2050(value):
     min, max = 0.41, 0.70 # @@
     map_min, map_max = 0.42, 0.81 # @@
 

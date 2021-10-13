@@ -150,9 +150,14 @@ def CablePooling(
     })
     db_entry.update(meta_data)  # metadata
     db_entry.update({"run_id": run_ID})
-
-    send_ema_exp_to_mongo(COLLECTION, db_entry)
-
+    
+    # Just keep trying untill the internet gets going again?
+    succesful = False
+    while not succesful:
+        try:
+            send_ema_exp_to_mongo(COLLECTION, db_entry)
+            succesful = True
+        except:
+            pass
     
     return results
-

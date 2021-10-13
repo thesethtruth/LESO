@@ -54,7 +54,7 @@ default_matplotlib_save(fig, "report_cablepool_no_sub_pv_deployment_vs_cost.png"
 #%% relative curtailment
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
-fig.set_size_inches(3, 3.5)
+fig.set_size_inches(3, 3)
 
 sns.scatterplot(
     x="total_installed_capacity",
@@ -74,7 +74,7 @@ ax.set_ylabel("relative curtailment (%)")
 ax.set_ylim([20, 23])
 
 ax.legend(
-    bbox_to_anchor=(0.5, -0.4),
+    bbox_to_anchor=(0.5, -0.3),
     loc=9,
     frameon=True,
     title="Ratio solar-to-wind",
@@ -107,7 +107,7 @@ ax.set_ylabel("curtailment (MWh)")
 ax.set_ylim([6500, 11000])
 
 ax.legend(
-    bbox_to_anchor=(0.5, -0.4),
+    bbox_to_anchor=(0.5, -0.3),
     loc=9,
     frameon=True,
     title="Ratio solar-to-wind",
@@ -117,6 +117,9 @@ ax.legend(
 default_matplotlib_save(
     fig, "report_cablepool_no_sub_abs_curtailment_vs_deployment.png"
 )
+
+# plt.tight_layout(pad=0.3)
+# plt.savefig("report_cablepool_no_sub_abs_curtailment_vs_deployment_alt.png", dpi=300, bbox_inches='tight', pad_inches=0)
 
 # %% whole lotta stuff to get the original cable pooling results
 from pathlib import Path

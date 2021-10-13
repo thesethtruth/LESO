@@ -151,7 +151,7 @@ sns.scatterplot(
     size=pv_col,
     hue=pv_col,
     data=df,
-    palette="dark:#5b8eb5",
+    palette="Reds",
     sizes=(10, 40),
     ax=ax,
     edgecolor="black"

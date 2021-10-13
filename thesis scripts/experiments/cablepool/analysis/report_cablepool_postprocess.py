@@ -26,7 +26,7 @@ experiments, outcomes, df = load_ema_leso_results(
     results_folder=RESULT_FOLDER)
 
 #%% data selection
-greenfield = df.query("subsidy_scheme == 'brownfield'").copy(deep=True)
+df = df.query("subsidy_scheme == 'brownfield'").copy(deep=True)
 exp = open_leso_experiment_file(RESULT_FOLDER / df.filename_export.iat[189])
 
 spec_yield_pv = (
@@ -37,11 +37,11 @@ tot_yield_wind = sum(exp.components.wind1.state['power [+]'])
 
 ## change / add some data
 pv_col = "PV South installed capacity"
-greenfield['pv_cost_absolute'] = greenfield.pv_cost_factor * 1020
-greenfield['curtailment'] = -greenfield['curtailment']
-greenfield['total_generation'] = (greenfield[pv_col] * spec_yield_pv + tot_yield_wind)
-greenfield['relative_curtailment'] = greenfield['curtailment'] / greenfield['total_generation'] *100
-greenfield['total_installed_capacity'] = greenfield[pv_col] + 10
+df['pv_cost_absolute'] = df.pv_cost_factor * 1020
+df['curtailment'] = -df['curtailment']
+df['total_generation'] = (df[pv_col] * spec_yield_pv + tot_yield_wind)
+df['relative_curtailment'] = df['curtailment'] / df['total_generation'] *100
+df['total_installed_capacity'] = df[pv_col] + 10
 
 
 
@@ -55,7 +55,7 @@ sns.scatterplot(
     y=pv_col,
     size='curtailment',
     hue='curtailment',
-    data=greenfield,
+    data=df,
     palette="Reds",
     ax=ax,
     edgecolor="black"
@@ -81,7 +81,7 @@ sns.lineplot(
     y="relative_curtailment",
     # size='curtailment',
     # hue='curtailment',
-    data=greenfield,
+    data=df,
     color="firebrick",
     ax=ax,
     # edgecolor="black"
@@ -105,7 +105,7 @@ sns.lineplot(
     y="curtailment",
     # size='curtailment',
     # hue='curtailment',
-    data=greenfield,
+    data=df,
     color='steelblue',
     ax=ax,
     # edgecolor="black"
@@ -133,9 +133,9 @@ def linear_map(value, ):
 power_ref = 257
 storage_ref = 277
 
-greenfield["battery_cost_absolute_2h"] = [
+df["battery_cost_absolute_2h"] = [
     (bcf * storage_ref *2 + linear_map(bcf)*power_ref)/2
-    for bcf in greenfield["battery_cost_factor"].values
+    for bcf in df["battery_cost_factor"].values
 ]
 
 
@@ -150,7 +150,7 @@ sns.scatterplot(
     y="battery_cost_absolute_2h",
     size=pv_col,
     hue=pv_col,
-    data=greenfield,
+    data=df,
     palette="dark:#5b8eb5",
     sizes=(10, 40),
     ax=ax,

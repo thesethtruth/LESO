@@ -41,7 +41,7 @@ sns.scatterplot(
 )
 
 ax.set_ylabel("deployed PV capacity (MW)")
-ax.set_ylim([-1, 35])
+ax.set_ylim([-1, 20])
 
 ax.set_xlabel("PV capacity cost (€/kWp)")
 ax.set_xlim([380, 870])
@@ -144,36 +144,32 @@ df2["pv_cost_absolute"] = df2.pv_cost_factor * 1020
 #%%
 from LESO.plotting import steelblue_05, firebrick_02, firebrick_05
 
-df.sort_values("pv_cost_absolute", inplace=True)
-df2.sort_values("pv_cost_absolute", inplace=True)
-
-
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
 fig.set_size_inches(6, 2.2)
 ax.plot(
     df["pv_cost_absolute"],
     df[pv_col],
-    '-o',
-    markersize=2,
-    color=steelblue_05,
-    markerfacecolor="steelblue",
-    markeredgecolor="steelblue",
+    'o',
+    markersize=6,
+    markerfacecolor=steelblue_05,
+    markeredgecolor="black",
+    markeredgewidth=0.5,
     label='No subsidy'
 )
 ax.plot(
     df2["pv_cost_absolute"],
     df2[pv_col],
-    '-o',
-    markersize=2,
-    color=firebrick_02,
+    'o',
+    markersize=6,
     markerfacecolor=firebrick_05,
-    markeredgecolor=firebrick_05,
+    markeredgecolor="black",
+    markeredgewidth=0.5,
     label='Fixed-support subsidy'
 )
 
 ax.set_ylabel("deployed PV capacity (MW)")
-ax.set_ylim([-1, 25])
+ax.set_ylim([-1, 20])
 
 ax.set_xlabel("PV capacity cost (€/kWp)")
 ax.set_xlim([380, 870])

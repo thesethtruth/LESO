@@ -1,11 +1,9 @@
-import pandas as pd
+# %%
 import pandas as pd
 import numpy as np
-import plotly.express as pe
 from pathlib import Path
 import sys
 import LESO
-import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.pyplot as plt
 

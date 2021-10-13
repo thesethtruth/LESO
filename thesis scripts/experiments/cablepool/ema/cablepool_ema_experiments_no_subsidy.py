@@ -31,11 +31,11 @@ if __name__ == "__main__":
     model.outcomes = [ScalarOutcome(metric) for metric in METRICS]
 
     # run experiments
-    # with MultiprocessingEvaluator(model, n_processes=7) as evaluator:
-        # results = evaluator.perform_experiments(scenarios=3)
+    with MultiprocessingEvaluator(model, n_processes=7) as evaluator:
+        results = evaluator.perform_experiments(scenarios=200)
     
-    with SequentialEvaluator(model) as evaluator:
-        results = evaluator.perform_experiments(scenarios=1)
+    # with SequentialEvaluator(model) as evaluator:
+    #     results = evaluator.perform_experiments(scenarios=1)
 
     # save results
     RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)

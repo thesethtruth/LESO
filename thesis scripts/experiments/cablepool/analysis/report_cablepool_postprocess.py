@@ -121,21 +121,50 @@ ax.set_ylim([0, 3000])
 
 default_matplotlib_save(fig, "report_cablepool_init_abs_curtailment_vs_deployment.png")
 
-# %%
+#%% Add battery cost for 2 hour battery
+
+def linear_map(value, ):
+    min, max = 0.41, 0.70 # @@
+    map_min, map_max = 0.42, 0.81 # @@
+
+    frac = (value - min) / (max-min)
+    m_value = frac * (map_max-map_min) + map_min
+
+    return m_value
+
+power_ref = 257
+storage_ref = 277
+
+greenfield["battery_cost_absolute_2h"] = [
+    (bcf * storage_ref *2 + linear_map(bcf)*power_ref)/2
+    for bcf in greenfield["battery_cost_factor"].values
+]
+
+
+#%% bi-variate scatterplot
+
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
-fig.set_size_inches(3,2.2)
+fig.set_size_inches(5,3)
 
-
-sns.lineplot(
-    x="total_generation",
-    y="curtailment",
-    # size='curtailment',
-    # hue='curtailment',
+sns.scatterplot(
+    x="pv_cost_absolute",
+    y="battery_cost_absolute_2h",
+    size=pv_col,
+    hue=pv_col,
     data=greenfield,
-    color='steelblue',
+    palette="dark:#5b8eb5",
+    sizes=(10, 40),
     ax=ax,
-    # edgecolor="black"
+    edgecolor="black"
 )
-ax.axis("equal")
+
+ax.set_ylabel("2h battery \n capacity cost (€/kWh)")
+ax.set_ylim([160, 310])
+
+ax.set_xlabel("PV capacity cost (€/kWp)")
+ax.set_xlim([370, 870])
+ax.legend(bbox_to_anchor=(0.5, -.4), loc=9, borderaxespad=0., frameon=True, title='Deployed PV capacity (MW)',ncol=6)
+
+default_matplotlib_save(fig, "report_cablepool_init_bivariate_deployment.png")
 # %%

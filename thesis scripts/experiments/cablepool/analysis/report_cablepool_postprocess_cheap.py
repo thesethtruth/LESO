@@ -33,7 +33,7 @@ df["total_installed_capacity"] = df[pv_col] + 10
 
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
-fig.set_size_inches(6, 2.2)
+fig.set_size_inches(6, 2.5)
 sns.scatterplot(
     x="pv_cost_absolute",
     y=pv_col,
@@ -78,12 +78,12 @@ ax.set_xlim([0, 40])
 ax.set_ylabel("relative curtailment (%)")
 ax.set_ylim([0, 6])
 ax.legend(
-    bbox_to_anchor=(0.5, -0.4),
+    bbox_to_anchor=(0.5, -0.35),
     loc=9,
     borderaxespad=0.0,
     frameon=True,
     title="Deployed battery capacity (MWh)",
-    ncol=5,
+    ncol=3,
 )
 
 default_matplotlib_save(
@@ -109,16 +109,16 @@ sns.scatterplot(
 ax.set_xlabel("total deployed capacity (MW)")
 ax.set_xlim([0, 40])
 
-ax.set_ylabel("absolute curtailment (MWh)")
+ax.set_ylabel("curtailment (MWh)")
 ax.set_ylim([0, 3000])
 
 ax.legend(
-    bbox_to_anchor=(0.5, -0.4),
+    bbox_to_anchor=(0.5, -0.35),
     loc=9,
     borderaxespad=0.0,
     frameon=True,
     title="Deployed battery capacity (MWh)",
-    ncol=5,
+    ncol=3,
 )
 
 default_matplotlib_save(
@@ -149,7 +149,7 @@ sns.scatterplot(
     size=pv_col,
     hue=pv_col,
     data=df,
-    palette="dark:#5b8eb5",
+    palette="Reds",
     sizes=(5, 100),
     ax=ax,
     edgecolor="black",
@@ -174,7 +174,7 @@ default_matplotlib_save(fig, "report_cablepool_cheapbat_bivariate_deployment.png
 
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
-fig.set_size_inches(6, 2.2)
+fig.set_size_inches(6, 2.5)
 sns.scatterplot(
     x="battery_cost_absolute_2h",
     y=bat_col,

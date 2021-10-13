@@ -20,7 +20,7 @@ if __name__ == "__main__":
     APPROACH =  "cheap_battery"
     run_ID = f"{APPROACH}_{input('Please enter the run ID:')}" 
     initialized_model = partial(CablePooling, run_ID=run_ID, approach=APPROACH)
-    model = Model(name="cablepooling_cheap_battery", function=initialized_model)
+    model = Model(name="cablepoolingCheapBattery", function=initialized_model)
 
     # uncertainties / scenarios
     model.uncertainties = [
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         # results = evaluator.perform_experiments(scenarios=3, policies=1)
     
     with SequentialEvaluator(model) as evaluator:
-        results = evaluator.perform_experiments(scenarios=1, policies=1)
+        results = evaluator.perform_experiments(scenarios=1)
 
     # save results
     RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)

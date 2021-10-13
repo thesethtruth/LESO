@@ -20,22 +20,22 @@ if __name__ == "__main__":
     APPROACH =  "no_subsidy"
     run_ID = f"{APPROACH}_{input('Please enter the run ID:')}" 
     initialized_model = partial(CablePooling, run_ID=run_ID, approach=APPROACH)
-    model = Model(name=f"cablepooling_{APPROACH}", function=initialized_model)
+    model = Model(name=f"cablepoolingNoSubsidy", function=initialized_model)
 
     # uncertainties / scenarios
     model.uncertainties = [
         RealParameter("pv_cost_factor", 0.38, 0.85),
-        RealParameter("battery_cost_factor", 0.1, 0.41),
+        RealParameter("battery_cost_factor", 0.41, 0.70),
     ]
     # specify outcomes
     model.outcomes = [ScalarOutcome(metric) for metric in METRICS]
 
     # run experiments
     # with MultiprocessingEvaluator(model, n_processes=7) as evaluator:
-        # results = evaluator.perform_experiments(scenarios=3, policies=1)
+        # results = evaluator.perform_experiments(scenarios=3)
     
     with SequentialEvaluator(model) as evaluator:
-        results = evaluator.perform_experiments(scenarios=1, policies=1)
+        results = evaluator.perform_experiments(scenarios=1)
 
     # save results
     RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)

@@ -464,37 +464,6 @@ merit_order = {
     "finalbalance": 4,
 }
 
-scenarios_2050 = {
-    "Gelderland_2050_regional": {
-        "id": 815695,
-        "latlon": (52.06, 5.93),
-        "target_re_share": 0.92,
-        "target_re_share_ex_export": 0.71,
-        "grid_cap": 2145.9,
-    },
-    "Gelderland_2050_national": {
-        "id": 815696,
-        "latlon": (52.06, 5.93),
-        "target_re_share": 1.01,
-        "target_re_share_ex_export": 0.72,
-        "grid_cap": 2145.9,
-    },
-    "Gelderland_2050_european": {
-        "id": 815697,
-        "latlon": (52.06, 5.93),
-        "target_re_share": 0.58,
-        "target_re_share_ex_export": 0.49,
-        "grid_cap": 2145.9,
-    },
-    "Gelderland_2050_international": {
-        "id": 815698,
-        "latlon": (52.06, 5.93),
-        "target_re_share": 0.56,
-        "target_re_share_ex_export": 0.48,
-        "grid_cap": 2145.9,
-    },
-}
-
 
 # this is used for generation of a ETM demand curve
 generation_whitelist = [

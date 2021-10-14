@@ -9,6 +9,7 @@ def default_matplotlib_style(
     height=None,
     disable_box=True,
     subplots=None,
+    decrease_legend=True
 )-> plt.figure:
     """ Convience method for styling figures to meet default styling"""
     ratio=2
@@ -18,7 +19,7 @@ def default_matplotlib_style(
     rc = {
         'font.family':'Open Sans',
         'font.size' : font_size,
-        'legend.fontsize' : font_size-2
+        'legend.fontsize' : font_size-2 if decrease_legend else font_size
         }
 
     plt.rcParams.update(rc)

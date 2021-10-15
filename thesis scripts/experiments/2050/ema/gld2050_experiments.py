@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     # run experiments
     with MultiprocessingEvaluator(model, n_processes=10) as evaluator:
-        results = evaluator.perform_experiments(scenarios=1, policies=12)
+        results = evaluator.perform_experiments(scenarios=300, policies=12)
     
     # with SequentialEvaluator(model) as evaluator:
     #     results = evaluator.perform_experiments(scenarios=1, policies=5)

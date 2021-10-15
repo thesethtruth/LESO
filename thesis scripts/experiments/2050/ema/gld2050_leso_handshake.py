@@ -51,6 +51,7 @@ def Handshake(
             )
         if isinstance(component, LESO.Hydrogen):
             component.capex_power = component.capex_power * hydrogen_cost_factor
+            component.capex_storage = component.capex_storage * hydrogen_cost_factor
     
         # grab the ETM demand component
         if isinstance(component, LESO.ETMdemand):

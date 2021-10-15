@@ -48,10 +48,10 @@ if __name__ == "__main__":
 
     # uncertainties / scenarios
     model.uncertainties = [
-        RealParameter("pv_cost_factor", 0.38, 0.85),
-        RealParameter("wind_cost_factor", 0.77, 0.98),
-        RealParameter("battery_cost_factor", 0.41, 0.70),
-        RealParameter("hydrogen_cost_factor", 0.37, 0.69),
+        RealParameter("pv_cost_factor", 0.25, 0.72),
+        RealParameter("wind_cost_factor", 0.67, 0.95),
+        RealParameter("battery_cost_factor", 0.25, 0.70),
+        RealParameter("hydrogen_cost_factor", 0.13, 0.53),
     ]
 
     # specify outcomes

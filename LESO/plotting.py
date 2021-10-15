@@ -44,10 +44,14 @@ def default_matplotlib_style(
     
     return fig, ax
 
-def default_matplotlib_save(fig: plt.figure, filename: str, dpi=300, pad=None):
+def default_matplotlib_save(fig: plt.figure, filename: str, dpi=300, pad=None, adjust_left = None):
     if pad is None:
         pad=PAD
     plt.tight_layout(pad=pad)
+    
+    if adjust_left is not None:
+        plt.subplots_adjust(left=adjust_left)
+    
     plt.savefig(filename, dpi=dpi)
 
 

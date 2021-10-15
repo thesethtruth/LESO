@@ -15,6 +15,7 @@ from LESO.plotting import default_matplotlib_save, default_matplotlib_style
 FOLDER = Path(__file__).parent
 FIG_FOLDER = FOLDER / "images"
 RESULT_FOLDER = FOLDER.parent / "results"
+LEFT_MARGIN = 0.15
 
 run_id = 210907
 
@@ -87,7 +88,7 @@ for grid_cap in grid_capacities:
         edgecolor="black"
     )
 
-    ax.set_ylabel("deployed PV capacity (MWp)")
+    ax.set_ylabel("deployed PV \n capacity (MWp)")
     # ax.set_ylim([-1, 20])
 
     ax.set_xlabel("PV capacity cost (€/kWp)")
@@ -120,7 +121,7 @@ for grid_cap in grid_capacities:
         edgecolor="black"
     )
 
-    ax.set_ylabel("deployed battery capacity (MWh)")
+    ax.set_ylabel("deployed battery \n capacity (MW)")
     # ax.set_ylim([-1, 20])
 
     ax.set_xlabel("battery capacity cost (€/kWh)")
@@ -135,7 +136,7 @@ for grid_cap in grid_capacities:
     )
     plt.setp(l.get_title(), multialignment='center')
 
-    default_matplotlib_save(fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_battery_deployment_vs_cost.png")
+    default_matplotlib_save(fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_battery_deployment_vs_cost.png", adjust_left=LEFT_MARGIN)
 
     #%% Wind deployment vs absolut cost scatter
 
@@ -153,7 +154,7 @@ for grid_cap in grid_capacities:
         edgecolor="black"
     )
 
-    ax.set_ylabel("deployed wind capacity (MW)")
+    ax.set_ylabel("deployed wind \n capacity (MW)")
     # ax.set_ylim([-1, 20])
 
     ax.set_xlabel("wind capacity cost (€/kW)")
@@ -196,7 +197,7 @@ for grid_cap in grid_capacities:
         loc=9,
         borderaxespad=0.0,
         frameon=True,
-        title="deployed battery capacity (MWh)",
+        title="deployed battery capacity (MW)",
         ncol=3,
     )
 
@@ -228,7 +229,7 @@ for grid_cap in grid_capacities:
         loc=9,
         borderaxespad=0.0,
         frameon=True,
-        title="deployed battery capacity (MWh)",
+        title="deployed battery capacity (MW)",
         ncol=3,
     )
 
@@ -306,7 +307,7 @@ for grid_cap in grid_capacities:
         edgecolor="black"
     )
 
-    ax.set_ylabel("PV capacity cost (€/kWp)")
+    ax.set_ylabel("PV capacity \ncost (€/kWp)")
     # ax.set_ylim([160, 310])
 
     ax.set_xlabel("wind capacity cost (€/kW)")

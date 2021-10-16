@@ -37,8 +37,8 @@ fig.set_size_inches(6, 2.5)
 sns.scatterplot(
     x="pv_cost_absolute",
     y=pv_col,
-    size="curtailment",
-    hue="curtailment",
+    size=bat_col,
+    hue=bat_col,
     data=df,
     palette="Reds",
     ax=ax,
@@ -51,7 +51,7 @@ ax.set_ylim([-1, 35])
 ax.set_xlabel("PV capacity cost (€/kWp)")
 ax.set_xlim([380, 870])
 
-ax.legend(frameon=False, title="Curtailment (MWh)")
+ax.legend(frameon=False, title="battery deployed \ncapacity (MW)")
 
 default_matplotlib_save(fig, "report_cablepool_cheapbat_pv_deployment_vs_cost.png")
 
@@ -82,7 +82,7 @@ ax.legend(
     loc=9,
     borderaxespad=0.0,
     frameon=True,
-    title="Deployed battery capacity (MWh)",
+    title="deployed battery capacity (MW)",
     ncol=3,
 )
 
@@ -117,7 +117,7 @@ ax.legend(
     loc=9,
     borderaxespad=0.0,
     frameon=True,
-    title="Deployed battery capacity (MWh)",
+    title="deployed battery capacity (MW)",
     ncol=3,
 )
 
@@ -137,7 +137,7 @@ df["battery_cost_absolute_2h"] = [
 ]
 
 
-#%% bi-variate scatterplot
+#%% bi-variate scatterplot 1
 
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
@@ -165,11 +165,45 @@ ax.legend(
     loc=9,
     borderaxespad=0.0,
     frameon=True,
-    title="Deployed PV capacity (MW)",
+    title="deployed PV capacity (MW)",
     ncol=6,
 )
 
 default_matplotlib_save(fig, "report_cablepool_cheapbat_bivariate_deployment.png")
+
+#%% bi-variate scatterplot 1
+
+fig, ax = plt.subplots()
+fig, ax = default_matplotlib_style(fig, ax)
+fig.set_size_inches(5, 3)
+
+sns.scatterplot(
+    x="pv_cost_absolute",
+    y="battery_cost_absolute_2h",
+    size=bat_col,
+    hue=bat_col,
+    data=df,
+    palette="Reds",
+    sizes=(5, 100),
+    ax=ax,
+    edgecolor="black",
+)
+
+ax.set_ylabel("2h battery \n capacity cost (€/kWh)")
+ax.set_ylim([20, 180])
+
+ax.set_xlabel("PV capacity cost (€/kWp)")
+ax.set_xlim([370, 870])
+ax.legend(
+    bbox_to_anchor=(0.5, -0.4),
+    loc=9,
+    borderaxespad=0.0,
+    frameon=True,
+    title="battery deployed \ncapacity (MW)",
+    ncol=6,
+)
+
+default_matplotlib_save(fig, "report_cablepool_cheapbat_bivariate_deployment2.png")
 #%% Battery deployment vs absolut cost scatter
 
 fig, ax = plt.subplots()
@@ -186,13 +220,13 @@ sns.scatterplot(
     edgecolor="black",
 )
 
-ax.set_ylabel("deployed battery capacity (MWh)")
+ax.set_ylabel("deployed battery capacity (MW)")
 ax.set_ylim([-3, 70])
 
 ax.set_xlabel("battery capacity cost (€/kWh)")
 ax.set_xlim([30, 170])
     
-ax.legend(frameon=False, title="Deployed PV capacity (MW)")
+ax.legend(frameon=False, title="deployed PV capacity (MW)")
 
 default_matplotlib_save(fig, "report_cablepool_cheapbat_bat_deployment_vs_cost.png")
 

@@ -1,4 +1,4 @@
-from sys import path
+#%%
 from LESO import System
 from LESO import PhotoVoltaic, Wind, Lithium, Grid, FinalBalance
 import pandas as pd

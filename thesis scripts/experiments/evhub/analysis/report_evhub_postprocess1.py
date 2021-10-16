@@ -21,13 +21,19 @@ run_id = 210907
 
 #%% load in results
 experiments, outcomes, db = load_ema_leso_results(
-    run_id=run_id, 
-    exp_prefix="evhub",
-    results_folder=RESULT_FOLDER)
+    run_id=run_id, exp_prefix="evhub", results_folder=RESULT_FOLDER
+)
 
 ## note that for 21 cases the optimizer did not exit sucessfully. No clue on how to deal with this. --> ignore it is
 
-grid_capacities = [0.5, 1. , 0. , 1.5]
+## pointers
+pv_col = "PV South installed capacity"
+wind_col = "Nordex N100 2500 installed capacity"
+bat_col = "2h battery installed capacity"
+
+bivar_tech_dict = {"PV": pv_col, "wind": wind_col, "battery": bat_col}
+
+grid_capacities = [0.5, 1.0, 0.0, 1.5]
 for grid_cap in grid_capacities:
     ## data selection
 
@@ -36,31 +42,27 @@ for grid_cap in grid_capacities:
 
     ## needed for more kpis
     spec_yield_pv = (
-        sum(exp.components.pv2.state['power [+]']) /
-        exp.components.pv2.settings.installed 
+        sum(exp.components.pv2.state["power [+]"])
+        / exp.components.pv2.settings.installed
     )
-    tot_yield_wind = sum(exp.components.wind1.state['power [+]'])
-
-    ## pointers
-    pv_col = "PV South installed capacity"
-    wind_col = "Nordex N100 2500 installed capacity"
-    bat_col = "2h battery installed capacity"
+    tot_yield_wind = sum(exp.components.wind1.state["power [+]"])
 
     ## change / add some data
-    df['pv_cost_absolute'] = df.pv_cost_factor * 1020
-    df['wind_cost_absolute'] = df.wind_cost_factor * 1350
-    df['curtailment'] = -df['curtailment']
-    df['total_generation'] = (df[pv_col] * spec_yield_pv + tot_yield_wind)
-    df['relative_curtailment'] = df['curtailment'] / df['total_generation'] *100
-    df['total_installed_capacity'] = df[pv_col] + df[wind_col]
+    df["pv_cost_absolute"] = df.pv_cost_factor * 1020
+    df["wind_cost_absolute"] = df.wind_cost_factor * 1350
+    df["curtailment"] = -df["curtailment"]
+    df["total_generation"] = df[pv_col] * spec_yield_pv + tot_yield_wind
+    df["relative_curtailment"] = df["curtailment"] / df["total_generation"] * 100
+    df["total_installed_capacity"] = df[pv_col] + df[wind_col]
 
+    def linear_map(
+        value,
+    ):
+        min, max = 0.41, 0.70  # @@
+        map_min, map_max = 0.42, 0.81  # @@
 
-    def linear_map(value, ):
-        min, max = 0.41, 0.70 # @@
-        map_min, map_max = 0.42, 0.81 # @@
-
-        frac = (value - min) / (max-min)
-        m_value = frac * (map_max-map_min) + map_min
+        frac = (value - min) / (max - min)
+        m_value = frac * (map_max - map_min) + map_min
 
         return m_value
 
@@ -68,24 +70,24 @@ for grid_cap in grid_capacities:
     storage_ref = 277
 
     df["battery_cost_absolute_2h"] = [
-        (bcf * storage_ref *2 + linear_map(bcf)*power_ref)/2
+        (bcf * storage_ref * 2 + linear_map(bcf) * power_ref) / 2
         for bcf in df["battery_cost_factor"].values
     ]
 
-#%% PV Deployment vs absolut cost scatter
+    #%% PV Deployment vs absolut cost scatter
 
     fig, ax = plt.subplots()
     fig, ax = default_matplotlib_style(fig, ax)
-    fig.set_size_inches(6,2.2)
+    fig.set_size_inches(6, 2.2)
     sns.scatterplot(
         x="pv_cost_absolute",
         y=pv_col,
-        size='relative_curtailment',
-        hue='relative_curtailment',
+        size="total_installed_capacity",
+        hue="total_installed_capacity",
         data=df,
         palette="Blues",
         ax=ax,
-        edgecolor="black"
+        edgecolor="black",
     )
 
     ax.set_ylabel("deployed PV \n capacity (MWp)")
@@ -93,32 +95,34 @@ for grid_cap in grid_capacities:
 
     ax.set_xlabel("PV capacity cost (€/kWp)")
     ax.set_xlim([380, 870])
-    
+
     l = ax.legend(
         bbox_to_anchor=(1.02, 0.5),
         loc=6,
         borderaxespad=0.0,
         frameon=True,
-        title='relative \ncurtailment (%)',
+        title="wind+PV\ncapacity (MW)",
     )
-    plt.setp(l.get_title(), multialignment='center')
+    plt.setp(l.get_title(), multialignment="center")
 
-    default_matplotlib_save(fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_pv_deployment_vs_cost.png")
+    default_matplotlib_save(
+        fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_pv_deployment_vs_cost.png"
+    )
 
-#%% Battery deployment vs absolut cost scatter
+    #%% Battery deployment vs absolut cost scatter
 
     fig, ax = plt.subplots()
     fig, ax = default_matplotlib_style(fig, ax)
-    fig.set_size_inches(6,2.2)
+    fig.set_size_inches(6, 2.2)
     sns.scatterplot(
         x="battery_cost_absolute_2h",
         y=bat_col,
-        size='relative_curtailment',
-        hue='relative_curtailment',
+        size="total_installed_capacity",
+        hue="total_installed_capacity",
         data=df,
         palette="Blues",
         ax=ax,
-        edgecolor="black"
+        edgecolor="black",
     )
 
     ax.set_ylabel("deployed battery \n capacity (MW)")
@@ -132,26 +136,30 @@ for grid_cap in grid_capacities:
         loc=6,
         borderaxespad=0.0,
         frameon=True,
-        title='relative \ncurtailment (%)',
+        title="wind+PV\ncapacity (MW)",
     )
-    plt.setp(l.get_title(), multialignment='center')
+    plt.setp(l.get_title(), multialignment="center")
 
-    default_matplotlib_save(fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_battery_deployment_vs_cost.png", adjust_left=LEFT_MARGIN)
+    default_matplotlib_save(
+        fig,
+        FIG_FOLDER / f"report_evhub_grid-{grid_cap}_battery_deployment_vs_cost.png",
+        adjust_left=LEFT_MARGIN,
+    )
 
     #%% Wind deployment vs absolut cost scatter
 
     fig, ax = plt.subplots()
     fig, ax = default_matplotlib_style(fig, ax)
-    fig.set_size_inches(6,2.2)
+    fig.set_size_inches(6, 2.2)
     sns.scatterplot(
         x="wind_cost_absolute",
         y=wind_col,
-        size='relative_curtailment',
-        hue='relative_curtailment',
+        size="total_installed_capacity",
+        hue="total_installed_capacity",
         data=df,
         palette="Blues",
         ax=ax,
-        edgecolor="black"
+        edgecolor="black",
     )
 
     ax.set_ylabel("deployed wind \n capacity (MW)")
@@ -165,16 +173,18 @@ for grid_cap in grid_capacities:
         loc=6,
         borderaxespad=0.0,
         frameon=True,
-        title='relative \ncurtailment (%)',
+        title="wind+PV\ncapacity (MW)",
     )
-    plt.setp(l.get_title(), multialignment='center')
+    plt.setp(l.get_title(), multialignment="center")
 
-    default_matplotlib_save(fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_wind_deployment_vs_cost.png")
+    default_matplotlib_save(
+        fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_wind_deployment_vs_cost.png"
+    )
 
     #%% relative curtailment
     fig, ax = plt.subplots()
     fig, ax = default_matplotlib_style(fig, ax)
-    fig.set_size_inches(3,3)
+    fig.set_size_inches(3, 3)
 
     sns.scatterplot(
         x="total_installed_capacity",
@@ -201,12 +211,14 @@ for grid_cap in grid_capacities:
         ncol=3,
     )
 
-    default_matplotlib_save(fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_curtailment_vs_deployment.png")
+    default_matplotlib_save(
+        fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_curtailment_vs_deployment.png"
+    )
 
     #%% absolute curtailment
     fig, ax = plt.subplots()
     fig, ax = default_matplotlib_style(fig, ax)
-    fig.set_size_inches(3,3)
+    fig.set_size_inches(3, 3)
 
     sns.scatterplot(
         x="total_installed_capacity",
@@ -233,85 +245,123 @@ for grid_cap in grid_capacities:
         ncol=3,
     )
 
-    default_matplotlib_save(fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_abs_curtailment_vs_deployment.png")
-
-
-    #%% bi-variate scatterplot PV vs BAT
-
-    fig, ax = plt.subplots()
-    fig, ax = default_matplotlib_style(fig, ax)
-    fig.set_size_inches(5,3)
-
-    sns.scatterplot(
-        x="pv_cost_absolute",
-        y="battery_cost_absolute_2h",
-        size=pv_col,
-        hue=pv_col,
-        data=df,
-        palette="Blues",
-        sizes=(10, 80),
-        ax=ax,
-        edgecolor="black"
+    default_matplotlib_save(
+        fig,
+        FIG_FOLDER / f"report_evhub_grid-{grid_cap}_abs_curtailment_vs_deployment.png",
     )
 
-    ax.set_ylabel("2h battery \n capacity cost (€/kWh)")
-    # ax.set_ylim([160, 310])
 
-    ax.set_xlabel("PV capacity cost (€/kWp)")
-    # ax.set_xlim([370, 870])
-    ax.legend(bbox_to_anchor=(0.5, -.4), loc=9, borderaxespad=0., frameon=True, title='deployed PV capacity (MW)',ncol=6)
+    ###
+    for tech, tech_col in bivar_tech_dict.items():
+        #%% bi-variate scatterplot PV vs BAT
 
-    default_matplotlib_save(fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_bivariate_pv_vs_bat.png")
-    #%% bi-variate scatterplot WIND vs BAT
+        fig, ax = plt.subplots()
+        fig, ax = default_matplotlib_style(fig, ax)
+        fig.set_size_inches(5, 3)
 
-    fig, ax = plt.subplots()
-    fig, ax = default_matplotlib_style(fig, ax)
-    fig.set_size_inches(5,3)
+        sns.scatterplot(
+            x="pv_cost_absolute",
+            y="battery_cost_absolute_2h",
+            size=tech_col,
+            hue=tech_col,
+            data=df,
+            palette="Blues",
+            sizes=(10, 80),
+            ax=ax,
+            edgecolor="black",
+        )
 
-    sns.scatterplot(
-        x="wind_cost_absolute",
-        y="battery_cost_absolute_2h",
-        size=pv_col,
-        hue=pv_col,
-        data=df,
-        palette="Blues",
-        sizes=(10, 80),
-        ax=ax,
-        edgecolor="black"
-    )
+        ax.set_ylabel("2h battery \n capacity cost (€/kWh)")
+        # ax.set_ylim([160, 310])
 
-    ax.set_ylabel("2h battery \n capacity cost (€/kWh)")
-    # ax.set_ylim([160, 310])
+        ax.set_xlabel("PV capacity cost (€/kWp)")
+        # ax.set_xlim([370, 870])
+        ax.legend(
+            bbox_to_anchor=(0.5, -0.4),
+            loc=9,
+            borderaxespad=0.0,
+            frameon=True,
+            title=f"deployed {tech} capacity (MW)",
+            ncol=6,
+        )
 
-    ax.set_xlabel("wind capacity cost (€/kW)")
-    # ax.set_xlim([370, 870])
-    ax.legend(bbox_to_anchor=(0.5, -.4), loc=9, borderaxespad=0., frameon=True, title='deployed PV capacity (MW)',ncol=6)
+        default_matplotlib_save(
+            fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_bivariate_pv_vs_bat_{tech}.png"
+        )
 
-    default_matplotlib_save(fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_bivariate_wind_vs_bat.png")
+    
+        #%% bi-variate scatterplot WIND vs BAT
 
-    #%% bi-variate scatterplot WIND vs PV
+        fig, ax = plt.subplots()
+        fig, ax = default_matplotlib_style(fig, ax)
+        fig.set_size_inches(5, 3)
 
-    fig, ax = plt.subplots()
-    fig, ax = default_matplotlib_style(fig, ax)
-    fig.set_size_inches(5,3)
+        sns.scatterplot(
+            x="wind_cost_absolute",
+            y="battery_cost_absolute_2h",
+            size=tech_col,
+            hue=tech_col,
+            data=df,
+            palette="Blues",
+            sizes=(10, 80),
+            ax=ax,
+            edgecolor="black",
+        )
 
-    sns.scatterplot(
-        x="wind_cost_absolute",
-        y="pv_cost_absolute",
-        size=pv_col,
-        hue=pv_col,
-        data=df,
-        palette="Blues",
-        sizes=(10, 80),
-        ax=ax,
-        edgecolor="black"
-    )
+        ax.set_ylabel("2h battery \n capacity cost (€/kWh)")
+        # ax.set_ylim([160, 310])
 
-    ax.set_ylabel("PV capacity \ncost (€/kWp)")
-    # ax.set_ylim([160, 310])
+        ax.set_xlabel("wind capacity cost (€/kW)")
+        # ax.set_xlim([370, 870])
+        ax.legend(
+            bbox_to_anchor=(0.5, -0.4), 
+            loc=9,
+            borderaxespad=0.0,
+            frameon=True,
+            title=f"deployed {tech} capacity (MW)",
+            ncol=6,
+        )
 
-    ax.set_xlabel("wind capacity cost (€/kW)")
-    # ax.set_xlim([370, 870])
-    ax.legend(bbox_to_anchor=(0.5, -.4), loc=9, borderaxespad=0., frameon=True, title='deployed PV capacity (MW)',ncol=6)
+        default_matplotlib_save(
+            fig,
+            FIG_FOLDER
+            / f"report_evhub_grid-{grid_cap}_bivariate_wind_vs_bat_{tech}.png",
+        )
 
-    default_matplotlib_save(fig, FIG_FOLDER / f"report_evhub_grid-{grid_cap}_bivariate_wind_vs_pv.png")
+        #%% bi-variate scatterplot WIND vs PV
+
+        fig, ax = plt.subplots()
+        fig, ax = default_matplotlib_style(fig, ax)
+        fig.set_size_inches(5, 3)
+
+        sns.scatterplot(
+            x="wind_cost_absolute",
+            y="pv_cost_absolute",
+            size=tech_col,
+            hue=tech_col,
+            data=df,
+            palette="Blues",
+            sizes=(10, 80),
+            ax=ax,
+            edgecolor="black",
+        )
+
+        ax.set_ylabel("PV capacity \ncost (€/kWp)")
+        # ax.set_ylim([160, 310])
+
+        ax.set_xlabel("wind capacity cost (€/kW)")
+        # ax.set_xlim([370, 870])
+        ax.legend(
+            bbox_to_anchor=(0.5, -0.4),
+            loc=9,
+            borderaxespad=0.0,
+            frameon=True,
+            title=f"deployed {tech} capacity (MW)",
+            ncol=6,
+        )
+
+        default_matplotlib_save(
+            fig,
+            FIG_FOLDER
+            / f"report_evhub_grid-{grid_cap}_bivariate_wind_vs_pv_{tech}.png",
+        )

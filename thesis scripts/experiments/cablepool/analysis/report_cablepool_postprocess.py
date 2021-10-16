@@ -166,3 +166,21 @@ ax.legend(bbox_to_anchor=(0.5, -.4), loc=9, borderaxespad=0., frameon=True, titl
 
 default_matplotlib_save(fig, "report_cablepool_init_bivariate_deployment.png")
 # %%
+timeseries = exp.components.pv1.state["power [+]"]
+timeseries = [i/max(timeseries) for i in timeseries]
+
+fig, ax = plt.subplots()
+fig, ax = default_matplotlib_style(fig, ax)
+fig.set_size_inches(4,2)
+ax.hist(
+    timeseries,
+    color='firebrick',
+    alpha=0.5,
+    bins=30,
+)
+ax.legend(frameon=False)
+ax.set_ylabel("frequency [h/y]")
+ax.set_ylim([0,500])
+ax.set_xlabel("capacity factor [-]")
+ax.set_xlim([0,1])
+default_matplotlib_save(fig, "images/report_cablepool_PV_histogram.png")

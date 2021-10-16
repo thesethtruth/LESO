@@ -361,14 +361,6 @@ class Lithium(Storage):
         self.name = name
 
     @property
-    def dischargepower(self):
-        return self.installed / self.EP_ratio
-
-    @dischargepower.setter
-    def dischargepower(self, value):
-        return print("---> Note: Change the EP ratio to change this variable")
-
-    @property
     def capex(self):
         cpxs = self.capex_storage
         cpxp = self.capex_power

@@ -392,8 +392,8 @@ hydrogen = dict(
     capex_storage=31e-3,  # cite: Schmidt2019 storage cost only (assumption: does not decrease over time)
     capex_power=5417e-3,  # cite: Schmidt2019
     opex_ratio=8.5e-3,  # cite: Schmidt2019 (only related to power component, changed the opex @property)
-    variable_cost=2.8e-12,
-    variable_income=2.8e-12,
+    variable_cost=1e-13,
+    variable_income=-1e-13,
 )
 
 fastcharger = dict(

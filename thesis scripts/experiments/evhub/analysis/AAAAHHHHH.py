@@ -21,23 +21,23 @@ thisone = "cablepooling_exp_162076137670371.json"
 exp = open_leso_experiment_file(thisone)
 # filename = "evhub_exp_227895.json"
 # exp = open_leso_experiment_file(RESULT_FOLDER / filename)
-for filename in ref_filenames.values():
-    exp = open_leso_experiment_file(RESULT_FOLDER / filename)
-    plt.figure()
-    df = pd.DataFrame(exp.components.lithium2h_1.state)
-    lst = []
-    for i in range(8760):
-        lst.append(-sum(df.loc[:i,'power [-]'])-sum(df.loc[:i,'power [+]']))
-    df.plot()
-    df['E check'] = lst
+# for filename in ref_filenames.values():
+# exp = open_leso_experiment_file(RESULT_FOLDER / filename)
+plt.figure()
+df = pd.DataFrame(exp.components.lithium2h_1.state)
+lst = []
+for i in range(8760):
+    lst.append(-sum(df.loc[:i,'power [-]'])-sum(df.loc[:i,'power [+]']))
+df.plot()
+df['E check'] = lst
 
-    plt.figure()
-    df.loc[100:200,:].plot()
+plt.figure()
+df.loc[100:200,:].plot()
 
-    plt.figure()
-    df.plot()
-    losses = sum(df['power [+]'] * (1-0.85** .5)  - df['power [-]'] * (1-0.85** .5)  +  df['energy'] * (1-0.995))
-    plt.hlines([losses], 0, 8760)
+plt.figure()
+df.plot()
+losses = sum(df['power [+]'] * (1-0.85** .5)  - df['power [-]'] * (1-0.85** .5)  +  df['energy'] * (1-0.995))
+plt.hlines([losses], 0, 8760)
 
 
     

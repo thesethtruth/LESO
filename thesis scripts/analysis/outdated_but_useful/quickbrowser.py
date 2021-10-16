@@ -20,14 +20,14 @@ app = dash.Dash(
     __name__, external_stylesheets=external_stylesheets, title="LESO results browser"
 )
 
-# FOLDER = Path(r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\cablepool\results")
-# *_, df = load_ema_leso_results(
-#     run_id=210907, 
-#     exp_prefix='cablepooling',
-#     results_folder=FOLDER)
+FOLDER = Path(r"D:\01 Thesis\evhub_210907")
+*_, df = load_ema_leso_results(
+    run_id=210907, 
+    exp_prefix='evhub',
+    results_folder=FOLDER)
 
-file = r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\cablepool\analysis\cablepooling_dbcheap_battery_1"
-df = pd.read_pickle(file)
+# file = r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\cablepool\analysis\cablepooling_dbcheap_battery_1"
+# df = pd.read_pickle(file)
 
 app.layout = html.Div(
     [

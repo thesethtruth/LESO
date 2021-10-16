@@ -70,7 +70,7 @@ grid_capacities = {
 }
 
 ref_df = pd.DataFrame()
-
+ref_idx = {}
 for grid_cap, filter_limit in grid_capacities.items():
     df = db.query(f"grid_capacity == {grid_cap}").copy(deep=True)
 
@@ -81,10 +81,14 @@ for grid_cap, filter_limit in grid_capacities.items():
     # max battery deployment
     idx = df[bat_col].argmax()
     df_barplot["reference"] = df.loc[df.index[idx],cols_of_interest].copy(deep=True)
+    ref_idx.update({grid_cap: df.index[idx]})
     # med battery deployment
     subset = df[df[bat_col]< filter_limit]
     subset_idx = subset[bat_col].argmax()
     df_barplot["in-between"] = subset.loc[subset.index[subset_idx],cols_of_interest].copy(deep=True)
+    
+    if grid_cap == 1.5: # for 1.5 grid, the 
+        ref_idx.update({grid_cap: subset.index[subset_idx]})
         # max pv deployment
     idx = df[pv_col].argmax()
     df_barplot["PV oversized"] = df.loc[df.index[idx],cols_of_interest].copy(deep=True)
@@ -93,6 +97,7 @@ for grid_cap, filter_limit in grid_capacities.items():
         org_order = df_barplot.columns
         df_barplot.columns = ["in-between","reference", "PV oversized"]
         df_barplot = df_barplot[org_order]
+        
 
     df_barplot.index = ['PV', 'wind', 'li-ion ESS']
     df_barplot = df_barplot.T

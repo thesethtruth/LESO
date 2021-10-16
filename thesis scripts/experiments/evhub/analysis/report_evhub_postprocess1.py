@@ -283,6 +283,7 @@ for grid_cap in grid_capacities:
             frameon=True,
             title=f"deployed {tech} capacity (MW)",
             ncol=6,
+            handletextpad=0.1,
         )
 
         default_matplotlib_save(
@@ -320,6 +321,7 @@ for grid_cap in grid_capacities:
             frameon=True,
             title=f"deployed {tech} capacity (MW)",
             ncol=6,
+            handletextpad=0.1,
         )
 
         default_matplotlib_save(
@@ -358,6 +360,7 @@ for grid_cap in grid_capacities:
             frameon=True,
             title=f"deployed {tech} capacity (MW)",
             ncol=6,
+            handletextpad=0.1,
         )
 
         default_matplotlib_save(

@@ -352,7 +352,7 @@ lithium = dict(
     capex_power=257e-3,  # cite: ATB NPREL power cost only
     opex_ratio=0.025,  # [%] cite: ATB NPREL (fraction of TOTAL cost)
     variable_cost=1e-13,
-    variable_income=1e-13,
+    variable_income=-1e-13,
 )
 
 hydrogen = dict(

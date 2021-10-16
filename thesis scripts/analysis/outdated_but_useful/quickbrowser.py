@@ -20,11 +20,14 @@ app = dash.Dash(
     __name__, external_stylesheets=external_stylesheets, title="LESO results browser"
 )
 
-FOLDER = Path(r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\2030\results")
-*_, df = load_ema_leso_results(
-    run_id=210924, 
-    exp_prefix='gld2030',
-    results_folder=FOLDER)
+# FOLDER = Path(r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\cablepool\results")
+# *_, df = load_ema_leso_results(
+#     run_id=210907, 
+#     exp_prefix='cablepooling',
+#     results_folder=FOLDER)
+
+file = r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\cablepool\analysis\cablepooling_dbcheap_battery_1"
+df = pd.read_pickle(file)
 
 app.layout = html.Div(
     [
@@ -176,8 +179,8 @@ def filter_figure(x_col, y_col, x_range, y_range):
     xmin, xmax = x_range
     ymin, ymax = y_range
     
-    x_slice = (df[x_col] > xmin) & (df[x_col] < xmax)
-    y_slice = (df[y_col] > ymin) & (df[y_col] < ymax)
+    x_slice = (df[x_col] >= xmin) & (df[x_col] <= xmax)
+    y_slice = (df[y_col] >= ymin) & (df[y_col] <= ymax)
     total_slice = x_slice & y_slice
     sliced_df = df[total_slice]
     fig = go.Figure(data=px.scatter(
@@ -192,7 +195,7 @@ def filter_figure(x_col, y_col, x_range, y_range):
     fig.update_xaxes(range=(df[x_col].min()*1.05, df[x_col].max()*1.05))
     fig.update_yaxes(range=(df[y_col].min()*1.05, df[y_col].max()*1.05))
 
-    data = df.to_json()
+    data = sliced_df.to_json()
     return fig, data
 
 ## populate dropdown based on selection

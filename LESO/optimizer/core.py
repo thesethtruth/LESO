@@ -14,8 +14,8 @@ def battery_control_constraints(model, component):
     # Fetch states
     E = getattr(model, key+'_E')
     P = getattr(model, key+'_P')
-    Ppos = getattr(model, key+'_Ppos')
-    Pneg = getattr(model, key+'_Pneg')
+    Ppos = getattr(model, key+'_Ppos') # discharge
+    Pneg = getattr(model, key+'_Pneg') # charge
     
     # Fetch model variables
     EP_ratio = component.EP_ratio

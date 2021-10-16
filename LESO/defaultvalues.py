@@ -389,7 +389,7 @@ hydrogen = dict(
     upper=upper_bound,
     # financials
     lifetime=18,  # cite: Schmidt2019
-    capex_storage=37e-3,  # cite: Schmidt2019 storage cost only (assumption: does not decrease over time)
+    capex_storage=31e-3,  # cite: Schmidt2019 storage cost only (assumption: does not decrease over time)
     capex_power=5417e-3,  # cite: Schmidt2019
     opex_ratio=8.5e-3,  # cite: Schmidt2019 (only related to power component, changed the opex @property)
     variable_cost=2.8e-12,

@@ -1,14 +1,10 @@
 #%%
-
 from pathlib import Path
 import LESO
 
 
-MODEL_FOLDER = Path(__file__).parent.parent / "model"
-RESULTS_FOLDER = Path(__file__).parent.parent / "results"
-RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
-
-MODEL = MODEL_FOLDER / 'evhub.pkl'
+FOLDER = Path(__file__).parent
+MODEL = FOLDER / 'evhub.pkl'
 
 system = LESO.System.read_pickle(MODEL)
 for component in system.components:

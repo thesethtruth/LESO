@@ -51,10 +51,10 @@ def battery_control_constraints(model, component):
         contraintlist.add(E[t] <= battery_size * battery_installed)
         
         # limit battery DISCHARGING to bat size
-        contraintlist.add(P[t] <= 1/ EP_ratio * battery_size * battery_installed)
+        contraintlist.add(Ppos[t] <= 1/ EP_ratio * battery_size * battery_installed)
         
         # limit battery CHARGING to bat size
-        contraintlist.add(P[t] >= -1/ EP_ratio * battery_size * battery_installed)
+        contraintlist.add(Pneg[t] >= -1/ EP_ratio * battery_size * battery_installed)
         
         # Make total power the sum of positive and negative instances of powercurve
         contraintlist.add(P[t] == Ppos[t] + Pneg[t])

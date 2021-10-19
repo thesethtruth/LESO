@@ -330,9 +330,11 @@ class System:
             Parses pyomo results to a comprehensive dict. 
         """
 
-        print("proceeding to hacky method of splitting power to pos/neg") #@Seth fix this
+        print("Splitting the power of sources/sinks to pos/neg")
         for component in self.components:
-            component.split_states()
+            if not hasattr(component, "power_control"):
+                component.split_states()
+                
 
         # small helper function
         def _date_to_string(component):

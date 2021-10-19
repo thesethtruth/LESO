@@ -1,6 +1,7 @@
 #%%
 from pathlib import Path
 import LESO
+from profile_plotting import profile_plot_battery
 
 
 FOLDER = Path(__file__).parent
@@ -11,6 +12,13 @@ for component in system.components:
     if "Grid" in component.name:
         component.installed = 0
 
+for component in system.components:
+    if "2h" in component.name:
+        battery = component
+
+battery.variable_cost = 1e-6
+battery.variable_income = -1e-6
+
 # %%
 system.optimize(
     objective="osc",  # overnight system cost
@@ -19,31 +27,26 @@ system.optimize(
     solver="gurobi",  # default solver
     nonconvex=False,  # solver option (warning will show if needed)
     solve=True,  # solve or just create model
+    tee=True,
 )
 
-# %%
-import matplotlib.pyplot as plt
-
+#%%
 for component in system.components:
     if "2h" in component.name:
-        bat = component
-        df = component.state
-        df.plot()
+        battery = component
 
+time = system.time
+df = battery.state
 
-lst = []
-for i in range(8760):
-    lst.append(-sum(df.loc[df.index[:i],'power [-]'])-sum(df.loc[df.index[:i],'power [+]']))
-df.plot()
-df['E check'] = lst
+if hasattr(battery, 'power_control'):
+    for key, modelvar in battery.keylist:
+        df[key] = [modelvar[t].value for t in time]
 
-plt.figure()
-df.loc[df.index[100:200],:].plot()
-
-losses = sum(df['power [+]'] * (1-0.85** .5)  - df['power [-]'] * (1-0.85** .5)  +  df['energy'] * (1-0.995))
-df['total losses'] = losses
-
-plt.figure()
-df.plot()
-
-# %%
+profile_plot_battery(
+    charging = battery.state['power [-]'],
+    discharging = battery.state['power [+]'],
+    energy= battery.state['energy'],
+    start=3000,
+    duration=7,
+    fig_filename="evhub_00mw_changed_cost_"
+)

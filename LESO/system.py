@@ -251,6 +251,7 @@ class System:
 
         opt.options["IterationLimit"] = 2000
         # opt.options['BarHomogeneous'] = 1
+        # opt.options["Method"] = 3
 
         self.model.results = opt.solve(self.model, tee=tee)
 
@@ -260,7 +261,7 @@ class System:
 
     def optimize(
         self,
-        objective="tco",
+        objective="osc",
         additional_constraints: Optional[list] = None,
         time=None,
         store=False,

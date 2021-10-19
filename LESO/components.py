@@ -392,17 +392,31 @@ class Lithium(Storage):
 
         core.battery_control_constraints(system.model, self)
 
+    # def get_variable_cost(self, pM):
+    #     time = pM.time
+    #     key = self.__str__()
+    #     zeros = np.zeros(len(time))
+
+    #     # get pyoVar if key exists, otherwise zeros matrix
+    #     P = getattr(pM, key + "_P", zeros)
+
+    #     # returns some quadratic formula that simulates battery wear
+    #     return sum((P[t]) * self.variable_cost for t in time)
+
     def get_variable_cost(self, pM):
+        
         time = pM.time
-        key = self.__str__()
+        ckey = self.__str__()
         zeros = np.zeros(len(time))
 
-        # get pyoVar if key exists, otherwise zeros matrix
-        P = getattr(pM, key + "_P", zeros)
+        charging = getattr(pM, ckey + "_Pneg", zeros)
+        discharging = getattr(pM, ckey + "_Ppos", zeros)
+        
+        # note: variable_income should be negative!
+        income = sum(charging[t] * self.variable_income for t in time)
+        cost = sum(discharging[t] * self.variable_cost for t in time)
 
-        # returns some quadratic formula that simulates battery wear
-        return sum((P[t]) ** 2 * self.variable_cost for t in time)
-
+        return cost + income
 
 class Hydrogen(Storage):
 

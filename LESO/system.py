@@ -249,9 +249,9 @@ class System:
         if noncovex:
             opt.options["NonConvex"] = 2
 
-        opt.options["IterationLimit"] = 2000
+        opt.options["IterationLimit"] = 200000
         # opt.options['BarHomogeneous'] = 1
-        # opt.options["Method"] = 3
+        opt.options["Method"] = 1
 
         self.model.results = opt.solve(self.model, tee=tee)
 

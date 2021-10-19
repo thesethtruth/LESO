@@ -188,15 +188,14 @@ def profile_plot_battery(charging: pd.Series, discharging: pd.Series, energy: pd
     fig, ax = default_matplotlib_style(fig, ax)
     fig.set_size_inches(6, 3)
     
-    energy = pd.DataFrame(
-        data=energy.iloc[start : start + duration * 24].values, 
-        index=energy.iloc[start : start + duration * 24].index,
-        columns=['battery energy'])
-    charging = charging.iloc[start : start + duration * 24]
-    discharging = discharging.iloc[start : start + duration * 24]
 
     charging.name = "battery charging"
     discharging.name = "battery discharging"
+
+    energy = pd.DataFrame(
+        data=energy.values, 
+        index=energy.index,
+        columns=['battery energy'])
     
     energy['p.t. energy balance w/o loss'] = (
         -charging.cumsum()
@@ -208,6 +207,16 @@ def profile_plot_battery(charging: pd.Series, discharging: pd.Series, energy: pd
         - (discharging * (1.0846522890932808-1)).cumsum()
         - (energy["battery energy"] * (1-0.9995)).cumsum())
     )
+
+    df = energy.copy(deep=True)
+    df["battery discharging"] = discharging.values
+    df["battery charging"] = charging.values
+
+    energy = energy.iloc[start : start + duration * 24]
+    charging = charging.iloc[start : start + duration * 24]
+    discharging = discharging.iloc[start : start + duration * 24]
+
+
 
     charging.plot.area(
         ax=ax, color=LOAD_COLORS, alpha=OPACITY, linewidth=LINEWIDTH
@@ -239,3 +248,4 @@ def profile_plot_battery(charging: pd.Series, discharging: pd.Series, energy: pd
         IMAGES_FOLDER
         / f"{fig_filename}_bat_indepth_start_{start}_duration{duration}.png",
     )
+    return df

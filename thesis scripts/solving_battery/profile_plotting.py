@@ -32,8 +32,6 @@ LOAD_COLORS = {
 }
 
 
-
-
 def plot_experiment_curves(
     experiment_file: str,
     start: int,
@@ -63,15 +61,14 @@ def plot_experiment_curves(
             loads[ckey] = load
 
         try:
-            if sum(components[ckey].state["energy"])>1:
+            if sum(components[ckey].state["energy"]) > 1:
                 energy = pd.DataFrame(
                     data=components[ckey].state["energy"],
                     index=dates,
-                    columns=["battery energy"]
+                    columns=["battery energy"],
                 )
         except KeyError:
             pass
-        
 
     source_matches = {
         "pv": "PV",
@@ -103,11 +100,10 @@ def plot_experiment_curves(
 
     #%% plotting
 
-
     energy = energy.iloc[start : start + duration * 24, :]
     loads = loads.iloc[start : start + duration * 24, :]
     sources = sources.iloc[start : start + duration * 24, :]
-    
+
     fig, ax = plt.subplots()
     fig, ax = default_matplotlib_style(fig, ax)
     fig.set_size_inches(6, 3)
@@ -136,34 +132,36 @@ def plot_experiment_curves(
         fig, ax = plt.subplots()
         fig, ax = default_matplotlib_style(fig, ax)
         fig.set_size_inches(6, 3)
-        
+
         charging = loads["battery charging"]
         discharging = sources["battery discharging"]
 
-        energy['p.t. energy balance w/o loss'] = (
-            -charging.cumsum()
-            - discharging.cumsum()
+        energy["p.t. energy balance w/o loss"] = (
+            -charging.cumsum() - discharging.cumsum()
         ) + energy["battery energy"].iat[0]
-        energy['p.t. energy balance w loss'] = (
-            energy['p.t. energy balance w/o loss'] + (
-            (charging * (1-0.9219544457292888)).cumsum()
-            - (discharging * (1.0846522890932808-1)).cumsum()
-            - (energy["battery energy"] * (1-0.9995)).cumsum())
+
+        energy["p.t. energy balance w loss"] = energy[
+            "p.t. energy balance w/o loss"
+        ] + (
+            (charging * (1 - 0.9219544457292888)).cumsum()
+            - (discharging * (1.0846522890932808 - 1)).cumsum()
+            - (energy["battery energy"] * (1 - 0.9995)).cumsum()
         )
 
-        charging.plot.area(
-            ax=ax, color=LOAD_COLORS, alpha=OPACITY, linewidth=LINEWIDTH
-        )
+        charging.plot.area(ax=ax, color=LOAD_COLORS, alpha=OPACITY, linewidth=LINEWIDTH)
         discharging.plot.area(
             ax=ax, color=SUPPLY_COLORS, alpha=OPACITY, linewidth=LINEWIDTH
         )
-        energy.plot(ax=ax, color=['navy', 'firebrick', 'forestgreen'], style=['--', '--', '--'], linewidth=2*LINEWIDTH)
-
-        
+        energy.plot(
+            ax=ax,
+            color=["navy", "firebrick", "forestgreen"],
+            style=["--", "--", "--"],
+            linewidth=2 * LINEWIDTH,
+        )
 
         low_limit = 1.1 * charging.min()
-        high_limit = 1.1* max(energy.max())
-        
+        high_limit = 1.1 * max(energy.max())
+
         ax.set_ylim([low_limit, high_limit])
 
         plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0.0, frameon=False)
@@ -183,29 +181,40 @@ def plot_experiment_curves(
         )
 
 
-def profile_plot_battery(charging: pd.Series, discharging: pd.Series, energy: pd.Series, start: int, duration: int, fig_filename: str):
+def profile_plot_battery(
+    charging: pd.Series,
+    discharging: pd.Series,
+    energy: pd.Series,
+    start: int,
+    duration: int,
+    fig_filename: str,
+    plot_pt_no_loss= False,
+    plot_pt_w_loss= True,
+):
     fig, ax = plt.subplots()
     fig, ax = default_matplotlib_style(fig, ax)
     fig.set_size_inches(6, 3)
-    
+
+    selected_energy_cols = ["battery energy"]
+    if plot_pt_no_loss:
+        selected_energy_cols.append("p.t. energy balance w/o loss")
+    if plot_pt_w_loss:
+        selected_energy_cols.append("p.t. energy balance w loss")
 
     charging.name = "battery charging"
     discharging.name = "battery discharging"
-
-    energy = pd.DataFrame(
-        data=energy.values, 
-        index=energy.index,
-        columns=['battery energy'])
     
-    energy['p.t. energy balance w/o loss'] = (
-        -charging.cumsum()
-        - discharging.cumsum()
+    energy = pd.DataFrame(
+        data=energy.values, index=energy.index, columns=["battery energy"]
+    )
+
+    energy["p.t. energy balance w/o loss"] = (
+        -charging.cumsum() - discharging.cumsum()
     ) + energy["battery energy"].iat[0]
-    energy['p.t. energy balance w loss'] = (
-        energy['p.t. energy balance w/o loss'] + (
-        (charging * (1-0.9219544457292888)).cumsum()
-        - (discharging * (1.0846522890932808-1)).cumsum()
-        - (energy["battery energy"] * (1-0.9995)).cumsum())
+    energy["p.t. energy balance w loss"] = energy["p.t. energy balance w/o loss"] + (
+        (charging * (1 - 0.9219544457292888)).cumsum()
+        - (discharging * (1.0846522890932808 - 1)).cumsum()
+        - (energy["battery energy"] * (1 - 0.9995)).cumsum()
     )
 
     df = energy.copy(deep=True)
@@ -216,21 +225,26 @@ def profile_plot_battery(charging: pd.Series, discharging: pd.Series, energy: pd
     charging = charging.iloc[start : start + duration * 24]
     discharging = discharging.iloc[start : start + duration * 24]
 
-
-
-    charging.plot.area(
-        ax=ax, color=LOAD_COLORS, alpha=OPACITY, linewidth=LINEWIDTH
-    )
+    charging.plot.area(ax=ax, color=LOAD_COLORS, alpha=OPACITY, linewidth=LINEWIDTH)
     discharging.plot.area(
         ax=ax, color=SUPPLY_COLORS, alpha=OPACITY, linewidth=LINEWIDTH
     )
-    energy.plot(ax=ax, color=['navy', 'firebrick', 'forestgreen'], style=['--', '--', '--'], linewidth=2*LINEWIDTH)
+    energy_style = {
+        "battery energy": "navy", 
+        "p.t. energy balance w/o loss": "firebrick", 
+        "p.t. energy balance w loss": "forestgreen",
+        }
 
-    
+    energy[selected_energy_cols].plot(
+        ax=ax,
+        color=energy_style,
+        style="--",
+        linewidth=2 * LINEWIDTH,
+    )
 
     low_limit = 1.1 * charging.min()
-    high_limit = 1.1* max(energy.max())
-    
+    high_limit = 1.1 * max(energy[selected_energy_cols].max())
+
     ax.set_ylim([low_limit, high_limit])
 
     plt.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0.0, frameon=False)

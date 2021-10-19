@@ -49,7 +49,10 @@ df2 = profile_plot_battery(
     energy= battery.state['energy'],
     start=700,
     duration=7,
-    fig_filename="evhub_00mw_changed_cost_"
+    fig_filename="evhub_00mw_changed_cost_",
+    plot_pt_no_loss = False,
+    plot_pt_w_loss = False,
+
 )
 # %%
 

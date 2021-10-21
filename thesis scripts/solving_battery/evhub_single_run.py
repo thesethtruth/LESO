@@ -36,7 +36,7 @@ system.optimize(
 )
 
 #%%
-if True:
+if False:
     batteries_placed = []
     zero_threshold = 0.1
     for component in system.components:

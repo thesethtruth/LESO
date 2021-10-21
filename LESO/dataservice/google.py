@@ -5,8 +5,10 @@ from typing import List, Tuple
 from google.cloud import datastore
 from google.cloud import storage
 from LESO.attrdict import AttrDict
+from pathlib import Path
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gkey.json"
+path = str((Path(__file__).parent / "gkey.json").absolute())
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = path
 DSCLIENT = datastore.Client()
 CSCLIENT = storage.Client()
 

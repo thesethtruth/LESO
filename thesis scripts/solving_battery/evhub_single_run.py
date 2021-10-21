@@ -6,7 +6,7 @@ from LESO.logging import log_to_stderr
 from logging import INFO
 
 
-log_to_stderr(level=INFO)
+log_to_stderr(level=0)
 
 
 FOLDER = Path(__file__).parent

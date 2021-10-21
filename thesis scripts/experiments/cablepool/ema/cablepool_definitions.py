@@ -3,15 +3,19 @@ from pathlib import Path
 import LESO
 from google.cloud.exceptions import Conflict
 
-MODEL_FOLDER = Path(__file__).parent.parent / "model"
-RESULTS_FOLDER = Path(__file__).parent.parent / "results"
-RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
 
 COLLECTION = "cablepooling"
-try:
-    LESO.dataservice.google.cloud_create_bucket(COLLECTION)
-except Conflict as c:
-    pass
+
+MODEL_FOLDER = Path(__file__).parent.parent / "model"
+RESULTS_FOLDER = Path(r"D:\0. Seth\v2 results") / f"{COLLECTION}"
+RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
+
+# create bucket if not already exist
+if False:
+    try:
+        LESO.dataservice.google.cloud_create_bucket(COLLECTION)
+    except Conflict as c:
+        print(c)
 
 MODELS = {
     "no_subsidy": MODEL_FOLDER / "cablepool_no_subsidy.pkl",

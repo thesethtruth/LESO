@@ -1,5 +1,6 @@
 """
 Taken mostly from ema workbench by Jan Kwakkel. https://github.com/quaquel/EMAworkbench
+Eddited for output to stderr when exposed to multiprocessing
 """
 
 # from ema_workbench.util.ema_logging

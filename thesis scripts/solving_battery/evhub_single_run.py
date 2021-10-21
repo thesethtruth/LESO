@@ -32,10 +32,11 @@ system.optimize(
     nonconvex=False,  # solver option (warning will show if needed)
     solve=True,  # solve or just create model
     tee=True,
+    method=None,
 )
 
-    #%%
-if False:
+#%%
+if True:
     batteries_placed = []
     zero_threshold = 0.1
     for component in system.components:

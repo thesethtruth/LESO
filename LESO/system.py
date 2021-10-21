@@ -243,7 +243,7 @@ class System:
             except TypeError:
                 additional_constraints(self)
 
-    def pyomo_solve(self, solver="gurobi", noncovex=False, tee=False):
+    def pyomo_solve(self, solver="gurobi", method = None, noncovex=False, tee=False):
 
         opt = pyo.SolverFactory(solver)
         if noncovex:
@@ -251,7 +251,8 @@ class System:
 
         # opt.options["IterationLimit"] = 200000
         # opt.options['BarHomogeneous'] = 1
-        opt.options["Method"] = 1 # force to use dual simplex
+        if method is not None:
+            opt.options["Method"] = method # force to use dual simplex
 
         self.model.results = opt.solve(self.model, tee=tee)
 
@@ -271,6 +272,7 @@ class System:
         nonconvex=False,
         unit="k",
         tee=False,
+        method=None,
     ):
         """ 
         Toolchain called to use all methods needed to apply optimization to the defined
@@ -295,7 +297,7 @@ class System:
         self.pyomo_add_additional_constraints(additional_constraints=additional_constraints)
 
         if solve:
-            self.pyomo_solve(solver=solver, noncovex=nonconvex, tee=tee)
+            self.pyomo_solve(solver=solver, noncovex=nonconvex, tee=tee, method=method)
 
             # check solver status before proceeding to post process options
             if pyo.check_optimal_termination(self.model.results):

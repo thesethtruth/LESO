@@ -39,8 +39,8 @@ if __name__ == "__main__":
     model.outcomes = [ScalarOutcome(metric) for metric in METRICS]
 
     # run experiments
-    with MultiprocessingEvaluator(model, n_processes=10) as evaluator:
-        results = evaluator.perform_experiments(scenarios=200, policies=4)
+    with MultiprocessingEvaluator(model, n_processes=2) as evaluator:
+        results = evaluator.perform_experiments(scenarios=1, policies=4)
     
     # with SequentialEvaluator(model) as evaluator:
     #     results = evaluator.perform_experiments(scenarios=5, policies=2)

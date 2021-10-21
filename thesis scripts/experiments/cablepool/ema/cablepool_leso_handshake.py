@@ -1,17 +1,18 @@
-import os
 import uuid
 import pyomo.environ as pyo
 import numpy as np
-from tinydb import TinyDB
 from copy import deepcopy as copy
-from LESO.experiments.analysis import gdatastore_put_entry, gcloud_upload_experiment_dict
+from LESO.experiments.analysis import (
+    gdatastore_put_entry,
+    gcloud_upload_experiment_dict,
+)
 
 import LESO
 from LESO.experiments import ema_pyomo_interface
 from LESO.finance import (
     determine_total_investment_cost,
     determine_roi,
-    determine_total_net_profit
+    determine_total_net_profit,
 )
 
 from cablepool_definitions import (
@@ -21,12 +22,8 @@ from cablepool_definitions import (
     MODELS,
     METRICS,
     COLLECTION,
+    OUTPUT_PREFIX,
 )
-
-OUTPUT_PREFIX = f"{COLLECTION}_exp_"
-DB_NAMETAG = COLLECTION
-
-
 
 
 def Handshake(
@@ -50,8 +47,10 @@ def Handshake(
             component.capex = component.capex * pv_cost_factor
         if isinstance(component, LESO.Lithium):
             component.capex_storage = component.capex_storage * battery_cost_factor
-            component.capex_power = component.capex_power * linear_map(battery_cost_factor)
-    
+            component.capex_power = component.capex_power * linear_map(
+                battery_cost_factor
+            )
+
     # generate file name and filepath for storing
     filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1]) + ".json"
     filepath = RESULTS_FOLDER / filename_export
@@ -69,13 +68,14 @@ def Handshake(
 
     return system, filename_export
 
+
 @ema_pyomo_interface
 def CablePooling(
     pv_cost_factor=1,
     battery_cost_factor=1,
     approach=None,
     run_ID=None,
-):  
+):
     model = MODELS[approach]
 
     # hand ema_inputs over to the LESO handshake
@@ -97,20 +97,27 @@ def CablePooling(
         }
 
         # calculate total renewable energy
-        total_renewable_energy = sum(sum(
-            component.state.power
-            for component in system.components
-            if any(
-                [isinstance(component, LESO.PhotoVoltaic), isinstance(component, LESO.Wind)]
+        total_renewable_energy = sum(
+            sum(
+                component.state.power
+                for component in system.components
+                if any(
+                    [
+                        isinstance(component, LESO.PhotoVoltaic),
+                        isinstance(component, LESO.Wind),
+                    ]
+                )
             )
-        ))
+        )
 
         # calculate curtailment
-        curtailment = sum(sum(
-            component.state.power
-            for component in system.components
-            if isinstance(component, LESO.FinalBalance)
-        ))
+        curtailment = sum(
+            sum(
+                component.state.power
+                for component in system.components
+                if isinstance(component, LESO.FinalBalance)
+            )
+        )
 
         # calculate additional investment cost
         total_investment_cost = determine_total_investment_cost(system)
@@ -132,29 +139,33 @@ def CablePooling(
         results.update(capacities)
         results.update(pi)
         meta_data = {"filename_export": filename_export}
-    
+
     ## Non optimal exit, no results
     else:
         meta_data = {"filename_export": "N/a"}
         results = {metric: np.nan for metric in METRICS}
 
     ## In any case
-    meta_data.update({
-        "solving_time": system.model.results["solver"][0]["Time"],
-        "solver_status": system.model.results["solver"][0]["status"].__str__(),
-        "solver_status_code": system.model.results["solver"][0]["Return code"],
-    })
+    meta_data.update(
+        {
+            "solving_time": system.model.results["solver"][0]["Time"],
+            "solver_status": system.model.results["solver"][0]["status"].__str__(),
+            "solver_status_code": system.model.results["solver"][0]["Return code"],
+        }
+    )
 
     # create db entry with results, ema_inputs and meta_data
-    db_entry = copy(results)    # results
-    db_entry.update({           # ema_inputs
-        "battery_cost_factor": battery_cost_factor,
-        "pv_cost_factor": pv_cost_factor,
-        "approach": approach,
-    })
+    db_entry = copy(results)  # results
+    db_entry.update(
+        {  # ema_inputs
+            "battery_cost_factor": battery_cost_factor,
+            "pv_cost_factor": pv_cost_factor,
+            "approach": approach,
+        }
+    )
     db_entry.update(meta_data)  # metadata
     db_entry.update({"run_id": run_ID})
-    
+
     # put db_entry to google datastore, keeps retrying when internet is down.
     succesful = False
     while not succesful:
@@ -163,7 +174,7 @@ def CablePooling(
             succesful = True
         except:
             pass
-    
+
     # put system.results to google cloud, keeps retrying when internet is down.
     succesful = False
     while not succesful:
@@ -172,5 +183,5 @@ def CablePooling(
             succesful = True
         except:
             pass
-    
+
     return results

@@ -4,9 +4,8 @@ import LESO
 from google.cloud.exceptions import Conflict
 
 
-COLLECTION = "cablepooling"
+COLLECTION = "evhub"
 OUTPUT_PREFIX = f"{COLLECTION}_exp_"
-
 
 MODEL_FOLDER = Path(__file__).parent.parent / "model"
 RESULTS_FOLDER = Path(r"D:\0. Seth\v2 results") / f"{COLLECTION}"
@@ -19,30 +18,28 @@ if False:
     except Conflict as c:
         print(c)
 
-MODELS = {
-    "no_subsidy": MODEL_FOLDER / "cablepool_no_subsidy.pkl",
-    "subsidy": MODEL_FOLDER / "cablepool_subsidy.pkl",
-    "cheap_battery": MODEL_FOLDER / "cablepool_no_subsidy.pkl",
-}
+MODEL = MODEL_FOLDER / "evhub.pkl"
 
 METRICS = [
-    # components
-    "PV South installed capacity",
-    "PV West installed capacity",
-    "PV East installed capacity",
+    'PV South soundwall installed capacity',
+    'PV South installed capacity',
+    'PV West installed capacity',
+    'PV East installed capacity',
     'Nordex N100 2500 installed capacity',
-    "2h battery installed capacity",
-    "6h battery installed capacity",
-    "10h battery installed capacity",
-    "Grid connection installed capacity",
-    # others
+    'Charging demand installed capacity',
+    '2h battery installed capacity',
+    '6h battery installed capacity',
+    '10h battery installed capacity',
+    'Grid connection installed capacity'
     "objective_result",
-    "total_renewable_energy",
-    "total_investment_cost",
+    "additional_renewable_energy",
     "curtailment",
-    "return_on_add_investment",
-    "net_profit_add_investment",
+    "additional_investment_cost",
+    "return_on_investment",
+    "net_profit",
 ]
+
+
 
 
 
@@ -62,7 +59,7 @@ def linear_map_2050(value):
 
 if __name__ == "__main__":
     # use this to easily generate the metrics for installed capacity
-    if True:  
+    if False:  
         ref_system = LESO.System.read_pickle(list(MODELS.values())[0])
         m = []
         for c in ref_system.components:

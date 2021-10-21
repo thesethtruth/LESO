@@ -36,18 +36,18 @@ def constrain_minimal_share_of_renewables(
         is_generator = any(isinstance(component, generator) for generator in generators)
         if is_generator:
 
-            # for this we can just sum the dataframe
-            contributing_components.append(sum(component.state.power) * component.pyoVar)
+            # generation is positive by definition; so we can just add this to the sum
+            contributing_components.append(sum(component.state.power) * component.pyoVar) 
 
         # catch storages
-        # is_storage = any(isinstance(component, storage) for storage in storages)
-        # if is_storage:
-        #     ckey = component.__str__()
-        #     energy = getattr(pyo_model, ckey + "_E", None)
+        is_storage = any(isinstance(component, storage) for storage in storages)
+        if is_storage:
+            ckey = component.__str__()
+            storage_losses = getattr(pyo_model, ckey + "_Losses", None) # is positive but contributes negatively
 
-        #     # if energy is buffered at the end of the year it does not contribute towards the goals; 
-        #     # so it should be substracted from initial state of charge
-        #     contributing_components.append(energy[t_zero] - energy[t_final])
+            # storage (conversion) losses do not contribute towards the goals; 
+            # so it should be substracted from initial state of charge (losses is a positive value)
+            contributing_components.append(-sum(storage_losses[t] for t in time))
 
         
         # cath final balance
@@ -55,22 +55,19 @@ def constrain_minimal_share_of_renewables(
             ckey = component.__str__()
             curtailment = getattr(pyo_model, ckey + "_Pneg", None)
 
-            # curtailment is negative by deffinition; so we can just add this to the sum
+            # curtailment is negative by definition; so we can just add this to the sum
             contributing_components.append(sum(curtailment[t] for t in time))
         
         # catch grid
         if isinstance(component, LESO.Grid):
 
             ckey = component.__str__()
-            importo = getattr(pyo_model, ckey + "_Ppos", None) if exclude_export_from_share else np.zeros(len(time))
+            # importo = getattr(pyo_model, ckey + "_Ppos", None) if exclude_export_from_share else np.zeros(len(time))
             export = getattr(pyo_model, ckey + "_Pneg", None) if exclude_export_from_share else np.zeros(len(time))
             
             
-            # export is negative by deffinition; so we can just add this to the sum
-            contributing_components.append(
-                sum(export[t] for t in time)
-                - sum(importo[t] for t in time)
-                )
+            # export is negative by definition; so we can just add this to the sum
+            contributing_components.append(sum(export[t] for t in time)) 
 
     contraintlist = getattr(pyo_model, pyo_model.constraint_ID)
 

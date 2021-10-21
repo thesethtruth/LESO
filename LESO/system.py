@@ -225,7 +225,7 @@ class System:
 
             Adds all constraints per component.
         """
-
+        logger.info("constructing the optimisation problem")
         for component in self.components:
 
             if hasattr(component, "construct_constraints"):
@@ -259,7 +259,7 @@ class System:
                 additional_constraints(self)
 
     def pyomo_solve(self, solver="gurobi", method = None, noncovex=False, tee=False):
-
+        logger.info(f"sending the optimisation problem to {solver}")
         opt = pyo.SolverFactory(solver)
         if noncovex:
             opt.options["NonConvex"] = 2
@@ -316,15 +316,15 @@ class System:
 
             # check solver status before proceeding to post process options
             if pyo.check_optimal_termination(self.model.results):
-                if solve:
-                    self.pyomo_post_process(unit=unit)
+                logger.info("optimal solution found, processing results")
+                self.pyomo_post_process(unit=unit)
 
                 self.pyomo_extract_results()
 
                 if store:
                     self.to_json(filepath=filepath)
             else:
-                warnings.warn("LESO: Exiting without processing a solution since non-optimal solver exit.")
+                logger.warn("exiting without solution due non-optimal solver exit")
         
     def pyomo_print(self, time=None):
         """
@@ -347,7 +347,7 @@ class System:
             Parses pyomo results to a comprehensive dict. 
         """
 
-        logger.info("Splitting the power of sources/sinks to pos/neg")
+        logger.debug("Splitting the power of sources/sinks to pos/neg")
         for component in self.components:
             if not hasattr(component, "power_control"):
                 component.split_states()

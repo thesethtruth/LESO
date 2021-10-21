@@ -10,15 +10,11 @@ from ema_workbench import (
     MultiprocessingEvaluator,
     SequentialEvaluator,
 )
-
+from cablepool_leso_handshake import METRICS, RESULTS_FOLDER, CablePooling, COLLECTION
 
 
 
 if __name__ == "__main__":
-    from cablepool_leso_handshake import METRICS, RESULTS_FOLDER, CablePooling, COLLECTION
-    import LESO
-    # LESO.leso_logging.log_to_stderr(ema_logging.INFO)
-
     
     # initiate model
     ema_logging.log_to_stderr(ema_logging.INFO)

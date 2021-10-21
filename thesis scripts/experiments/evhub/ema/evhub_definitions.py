@@ -30,7 +30,7 @@ METRICS = [
     '2h battery installed capacity',
     '6h battery installed capacity',
     '10h battery installed capacity',
-    'Grid connection installed capacity'
+    'Grid connection installed capacity',
     "objective_result",
     "additional_renewable_energy",
     "curtailment",
@@ -59,8 +59,8 @@ def linear_map_2050(value):
 
 if __name__ == "__main__":
     # use this to easily generate the metrics for installed capacity
-    if False:  
-        ref_system = LESO.System.read_pickle(list(MODELS.values())[0])
+    if True:  
+        ref_system = LESO.System.read_pickle(MODEL)
         m = []
         for c in ref_system.components:
             if not isinstance(c, (LESO.FinalBalance, LESO.ETMdemand)):

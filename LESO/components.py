@@ -345,8 +345,8 @@ class Lithium(Storage):
 
     instances = 0
     default_values = defs.lithium
-    states = ["power", "energy"]
-    control_states = {"power": 1, "energy": 1}
+    states = ["power", "energy", "losses"]
+    control_states = {"power": 1, "energy": 1, "losses": 0}
 
     def __init__(self, name, **kwargs):
 
@@ -372,7 +372,7 @@ class Lithium(Storage):
         try:
             opex = self._opex
         except AttributeError:
-            opex = self.capex * self.EP_ratio * self.opex_ratio
+            opex = self.capex * self.opex_ratio
         return opex
 
     @opex.setter
@@ -392,17 +392,6 @@ class Lithium(Storage):
 
         core.battery_control_constraints(system.model, self)
 
-    # def get_variable_cost(self, pM):
-    #     time = pM.time
-    #     key = self.__str__()
-    #     zeros = np.zeros(len(time))
-
-    #     # get pyoVar if key exists, otherwise zeros matrix
-    #     P = getattr(pM, key + "_P", zeros)
-
-    #     # returns some quadratic formula that simulates battery wear
-    #     return sum((P[t]) * self.variable_cost for t in time)
-
     def get_variable_cost(self, pM):
         
         time = pM.time
@@ -412,18 +401,18 @@ class Lithium(Storage):
         charging = getattr(pM, ckey + "_Pneg", zeros)
         discharging = getattr(pM, ckey + "_Ppos", zeros)
         
-        # note: variable_income should be negative!
-        income = sum(charging[t] * self.variable_income for t in time)
-        cost = sum(discharging[t] * self.variable_cost for t in time)
+        # charge is NonPositive thus; negative cost times negative value yields positive is cost
+        cost_of_charge = sum(charging[t] * -self.variable_cost for t in time)
+        cost_of_discharge = sum(discharging[t] * self.variable_cost for t in time)
 
-        return cost + income
+        return cost_of_charge + cost_of_discharge
 
 class Hydrogen(Storage):
 
     instances = 0
     default_values = defs.hydrogen
-    states = ["power", "energy"]
-    control_states = {"power": 1, "energy": 1}
+    states = ["power", "energy", "losses"]
+    control_states = {"power": 1, "energy": 1, "losses": 0}
 
     def __init__(self, name, **kwargs):
 
@@ -438,14 +427,6 @@ class Hydrogen(Storage):
         self.name = name
 
     @property
-    def dischargepower(self):
-        return self.installed / self.EP_ratio
-
-    @dischargepower.setter
-    def dischargepower(self, value):
-        return print("---> Note: Change the EP ratio to change this variable")
-
-    @property
     def capex(self):
         cpxs = self.capex_storage
         cpxp = self.capex_power
@@ -457,7 +438,7 @@ class Hydrogen(Storage):
         try:
             opex = self._opex
         except AttributeError:
-            opex = self.capex_power * self.opex_ratio
+            opex = self.capex_power / self.EP_ratio * self.opex_ratio
         return opex
     
     @opex.setter
@@ -479,15 +460,19 @@ class Hydrogen(Storage):
         core.battery_control_constraints(system.model, self)
 
     def get_variable_cost(self, pM):
+        
         time = pM.time
-        key = self.__str__()
+        ckey = self.__str__()
         zeros = np.zeros(len(time))
 
-        # get pyoVar if key exists, otherwise zeros matrix
-        P = getattr(pM, key + "_P", zeros)
+        charging = getattr(pM, ckey + "_Pneg", zeros)
+        discharging = getattr(pM, ckey + "_Ppos", zeros)
+        
+        # charge is NonPositive thus; negative cost times negative value yields positive is cost
+        cost_of_charge = sum(charging[t] * -self.variable_cost for t in time)
+        cost_of_discharge = sum(discharging[t] * self.variable_cost for t in time)
 
-        # returns some quadratic formula that simulates battery wear
-        return sum((P[t]) ** 2 * self.variable_cost for t in time)
+        return cost_of_charge + cost_of_discharge
 
 
 class FastCharger(SourceSink):

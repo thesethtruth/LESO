@@ -11,9 +11,11 @@ system = LESO.System.read_pickle(MODEL)
 #%%
 system.pyomo_print(time=range(1))
 
+
+
+# %%
 # get battery component
 for component in system.components:
-    if "2h" in component.name:
-        battery = component
-# %%
+    if isinstance(component, LESO.Lithium):
+        print(component.name, f": {component.crf} x {component.capex}  + {component.opex} = {component.crf * component.capex + component.opex}")
 

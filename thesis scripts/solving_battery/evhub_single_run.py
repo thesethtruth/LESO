@@ -2,7 +2,7 @@
 from pathlib import Path
 import LESO
 from profile_plotting import profile_plot_battery
-from LESO.logging import log_to_stderr
+from LESO.leso_logging import log_to_stderr
 from logging import INFO
 
 

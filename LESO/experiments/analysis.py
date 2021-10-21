@@ -12,7 +12,8 @@ from LESO.dataservice import (
     cloud_upload_dict_to_blob,
 )
 from typing import Tuple, List
-
+from LESO.leso_logging import get_module_logger
+logger = get_module_logger(__name__)
 
 def load_ema_leso_results(
     run_id: int,
@@ -93,6 +94,7 @@ def gdatastore_put_entry(
     """ put an entry to google datastore 
             collection == kind
     """
+    logger.info("putting entry to google datastore")
     return datastore_put_entry(kind=collection, entry=entry)
 
 def gcloud_read_experiment(
@@ -115,6 +117,7 @@ def gcloud_upload_experiment_dict(
         collection == bucket_name
         experiment_id == destination_blob_name
     """
+    logger.info("sending exported result file to google cloud")
     return cloud_upload_dict_to_blob(
         dicto=dicto,
         bucket_name=collection,

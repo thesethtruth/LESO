@@ -10,7 +10,7 @@ from pvlib.location import Location
 from pvlib.modelchain import ModelChain
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
 import LESO
-from LESO.logging import get_module_logger
+from LESO.leso_logging import get_module_logger
 logger = get_module_logger(__name__)
 
 

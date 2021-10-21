@@ -1,7 +1,7 @@
 # postprocess.py
 import pandas as pd
 from pyomo.environ import value
-from LESO.logging import get_module_logger
+from LESO.leso_logging import get_module_logger
 import LESO
 logger = get_module_logger(__name__)
 

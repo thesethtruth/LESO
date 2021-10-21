@@ -2,7 +2,7 @@
 from pathlib import Path
 import numpy as np
 import LESO
-from LESO.logging import log_to_stderr
+from LESO.leso_logging import log_to_stderr
 from LESO.optimizer.extension import contexted_constraint, constrain_minimal_share_of_renewables
 log_to_stderr(level=20)
 

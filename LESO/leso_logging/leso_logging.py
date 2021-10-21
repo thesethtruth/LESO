@@ -2,15 +2,22 @@
 Taken mostly from ema workbench by Jan Kwakkel. https://github.com/quaquel/EMAworkbench
 """
 
-
+# from ema_workbench.util.ema_logging
 import logging
 from logging import DEBUG, INFO
+from logging.handlers import QueueHandler
 import inspect
 from functools import wraps
+import multiprocessing
+
 
 DEFAULT_LEVEL = DEBUG
 LOG_FORMAT = "[%(processName)s/%(levelname)s] %(message)s"
 LOGGER_NAME = "LESO"
+
+_rootlogger = None
+_module_loggers = {}
+_multi_module_loggers = {}
 
 
 def create_module_logger(name=None):
@@ -32,8 +39,7 @@ def get_module_logger(name):
 
     return logger
 
-_rootlogger = None
-_module_loggers = {}
+
 _logger = get_module_logger(__name__)
 
 def method_logger(name):

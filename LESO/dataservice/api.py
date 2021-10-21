@@ -10,7 +10,7 @@ from datetime import datetime
 import pandas as pd
 
 from .api_static import renewable_ninja_turbines
-from LESO.logging import get_module_logger
+from LESO.leso_logging import get_module_logger
 logger = get_module_logger(__name__)
 
 CACHE_FOLDER = Path(__file__).parent / "cache"
@@ -43,21 +43,21 @@ def get_pvgis(lat, lon):
         if not (tmy["lat"][1] == lat and tmy["lon"][1] == lon):
 
             # get new data true API
-            logger.info(f"get_pvgis: fetching data through API...", extra={'dct': req_args})
+            logger.debug(f"get_pvgis: fetching data through API...", extra={'dct': req_args})
             tmy = _getPVGIS(lat, lon)
-            logger.info(f"get_pvgis: code 200: success...", extra={'dct': req_args})
+            logger.debug(f"get_pvgis: code 200: success...", extra={'dct': req_args})
             tmy.to_pickle(filepath)
 
         else:
 
-            logger.info(f"get_pvgis: using stored data...", extra={'dct': req_args})
+            logger.debug(f"get_pvgis: using stored data...", extra={'dct': req_args})
     else:
 
         # data does not exist locally
 
-        logger.info(f"get_pvgis: fetching data through API...", extra={'dct': req_args})
+        logger.debug(f"get_pvgis: fetching data through API...", extra={'dct': req_args})
         tmy = _getPVGIS(lat, lon)
-        logger.info(f"get_pvgis: code 200: success...", extra={'dct': req_args})
+        logger.debug(f"get_pvgis: code 200: success...", extra={'dct': req_args})
         tmy.to_pickle(filepath)
 
     # set relevant parameters needed for further processing based on PVgis
@@ -138,9 +138,9 @@ def get_dowa(lat, lon, height=100):
 
         # data does not exist locally
 
-        logger.info(f"get_dowa: fetching data through API... [lat:{lat}, lon:{lon}, height:{height}]")
+        logger.debug(f"get_dowa: fetching data through API... [lat:{lat}, lon:{lon}, height:{height}]")
         dowa = _getDOWA(lat, lon, height)
-        logger.info(f"get_dowa: code 200: success... [lat:{lat}, lon:{lon}, height:{height}]")
+        logger.debug(f"get_dowa: code 200: success... [lat:{lat}, lon:{lon}, height:{height}]")
         dowa.to_pickle(filestring)
 
     # set height of data points in same way as PVGIS api
@@ -275,12 +275,12 @@ def get_renewable_ninja(instance, tmy, ignore_cache=False):
 
         # read last API call
         data = pd.read_pickle(filepath)
-        logger.info(f"get_renewable_ninja: using stored data...", extra={'dct': req_args})
+        logger.debug(f"get_renewable_ninja: using stored data...", extra={'dct': req_args})
 
     else:
 
         # data does not exist locally
-        logger.info(f"get_renewable_ninja: fetching data through API...", extra={'dct': req_args})
+        logger.debug(f"get_renewable_ninja: fetching data through API...", extra={'dct': req_args})
         data = _get_renewable_ninja(
             name=name,
             date_from=instance.date_from,
@@ -290,7 +290,7 @@ def get_renewable_ninja(instance, tmy, ignore_cache=False):
             lon=lon,
             **kwargs,
         )
-        logger.info(f"get_renewable_ninja: code 200: success...", extra={'dct': req_args})
+        logger.debug(f"get_renewable_ninja: code 200: success...", extra={'dct': req_args})
         if not ignore_cache:
             data.to_pickle(filepath)
 
@@ -411,12 +411,12 @@ def get_etm_curve(
             with open(filepath, 'rb') as infile:
                 array = pickle.load(infile)
 
-            logger.info(f"get_etm_curve: using stored data...", extra={'dct': req_args})
+            logger.debug(f"get_etm_curve: using stored data...", extra={'dct': req_args})
 
         else:
 
             # data does not exist locally
-            logger.info(f"get_etm_curve: downloading ETM curve...", extra={'dct': req_args})
+            logger.debug(f"get_etm_curve: downloading ETM curve...", extra={'dct': req_args})
             array = _get_etm_curve(
                 session_id=session_id,
                 generation_whitelist=generation_whitelist,
@@ -424,7 +424,7 @@ def get_etm_curve(
                 allow_export=allow_export,
                 raw=False
             )
-            logger.info(f"get_etm_curve: success... probably", extra={'dct': req_args})
+            logger.debug(f"get_etm_curve: success... probably", extra={'dct': req_args})
 
             with open(filepath, 'wb') as outfile:
                 pickle.dump(array, outfile)

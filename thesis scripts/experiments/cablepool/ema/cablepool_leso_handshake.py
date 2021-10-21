@@ -4,7 +4,7 @@ import pyomo.environ as pyo
 import numpy as np
 from tinydb import TinyDB
 from copy import deepcopy as copy
-from LESO.experiments.database import send_ema_exp_to_mongo
+from LESO.experiments.analysis import gdatastore_put_entry, gcloud_upload_experiment_dict
 
 import LESO
 from LESO.experiments import ema_pyomo_interface
@@ -20,9 +20,13 @@ from cablepool_definitions import (
     RESULTS_FOLDER,
     MODELS,
     METRICS,
+    COLLECTION,
 )
-OUTPUT_PREFIX = "cablepooling_exp_"
-DB_NAMETAG = COLLECTION = "cablepooling"
+
+OUTPUT_PREFIX = f"{COLLECTION}_exp_"
+DB_NAMETAG = COLLECTION
+
+
 
 
 def Handshake(
@@ -151,11 +155,20 @@ def CablePooling(
     db_entry.update(meta_data)  # metadata
     db_entry.update({"run_id": run_ID})
     
-    # Just keep trying untill the internet gets going again?
+    # put db_entry to google datastore, keeps retrying when internet is down.
     succesful = False
     while not succesful:
         try:
-            send_ema_exp_to_mongo(COLLECTION, db_entry)
+            gdatastore_put_entry(COLLECTION, db_entry)
+            succesful = True
+        except:
+            pass
+    
+    # put system.results to google cloud, keeps retrying when internet is down.
+    succesful = False
+    while not succesful:
+        try:
+            gcloud_upload_experiment_dict(system.results, COLLECTION, filename_export)
             succesful = True
         except:
             pass

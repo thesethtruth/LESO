@@ -1,4 +1,5 @@
 # required packages
+
 import pandas as pd
 import numpy as np
 import warnings
@@ -7,8 +8,21 @@ import json
 from datetime import datetime
 import os
 from typing import Optional
-from LESO.logging import get_module_logger
+from LESO.leso_logging import get_module_logger
 logger = get_module_logger(__name__)
+
+
+#==== WORKING:
+# from multiprocessing import current_process
+# if current_process().name == 'MainProcess':
+#     from LESO.leso_logging import get_module_logger
+#     logger = get_module_logger(__name__)
+#     # print("I think I am mother")
+# else:
+#     from multiprocessing import log_to_stderr
+#     from logging import INFO
+#     logger = log_to_stderr(INFO)
+#     # print("I am NOT mother")
 
 # for optimizing
 import pyomo.environ as pyo
@@ -133,7 +147,7 @@ class System:
             try:
                 component.calculate_time_serie(self.tmy)
             except AttributeError:
-                logger.info(
+                logger.debug(
                     f"{component} does not have 'calculate_"
                     + "time_serie' function"
                 )

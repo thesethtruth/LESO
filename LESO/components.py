@@ -22,7 +22,7 @@ import LESO.functions as functions
 import LESO.optimizer.core as core
 from LESO.optimizer.preprocess import initializeGenericPyomoVariables
 from LESO.dataservice import get_pvgis, get_dowa, get_etm_curve
-from LESO.logging import get_module_logger
+from LESO.leso_logging import get_module_logger
 logger = get_module_logger(__name__)
 
 

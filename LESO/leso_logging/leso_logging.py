@@ -17,25 +17,43 @@ LOGGER_NAME = "LESO"
 
 _rootlogger = None
 _module_loggers = {}
-_multi_module_loggers = {}
 
 
-def create_module_logger(name=None):
+def create_module_logger(name=None, process_name=None):
     if name is None:
         frm = inspect.stack()[1]
         mod = inspect.getmodule(frm[0])
         name = mod.__name__
-    logger = logging.getLogger("{}.{}".format(LOGGER_NAME, name))
-
-    _module_loggers[name] = logger
+    
+    if process_name is None:
+        logger = logging.getLogger("{}.{}".format(LOGGER_NAME, name))
+        _module_loggers[name] = logger
+    else:
+        logger = multiprocessing.log_to_stderr(INFO)
+        formatter = logging.Formatter(LOG_FORMAT)
+        try:
+            h = list(logger.handlers)[0]
+        except TypeError:
+            h = logger.handlers
+        h.setFormatter(formatter)
+        logger.handlers = [h]
+        _module_loggers[name] = logger
+    
     return logger
 
-
 def get_module_logger(name):
+
+    process_name = multiprocessing.current_process().name
+    if process_name != "MainProcess":
+        key = f"{name}.{process_name}"
+    else:
+        key = name
+        process_name = None
+
     try:
-        logger = _module_loggers[name]
+        logger = _module_loggers[key]
     except KeyError:
-        logger = create_module_logger(name)
+        logger = create_module_logger(key, process_name)
 
     return logger
 

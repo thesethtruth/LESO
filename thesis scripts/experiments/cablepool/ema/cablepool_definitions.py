@@ -11,7 +11,7 @@ COLLECTION = "cablepooling"
 try:
     LESO.dataservice.google.cloud_create_bucket(COLLECTION)
 except Conflict as c:
-    print(c)
+    pass
 
 MODELS = {
     "no_subsidy": MODEL_FOLDER / "cablepool_no_subsidy.pkl",

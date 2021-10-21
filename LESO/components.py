@@ -22,6 +22,8 @@ import LESO.functions as functions
 import LESO.optimizer.core as core
 from LESO.optimizer.preprocess import initializeGenericPyomoVariables
 from LESO.dataservice import get_pvgis, get_dowa, get_etm_curve
+from LESO.logging import get_module_logger
+logger = get_module_logger(__name__)
 
 
 class Component:
@@ -63,7 +65,7 @@ class Component:
                     self.dof = value
                     self.installed = 1
             else:
-                print(
+                logger.info(
                     f"Warning: Invalid input argument supplied -- default used: {key} for {self}"
                 )
         pass
@@ -142,16 +144,6 @@ class PhotoVoltaic(SourceSink):
         PhotoVoltaic.instances += 1
         self.number = PhotoVoltaic.instances
         self.name = name
-
-    @property
-    def area(self):
-        return self.installed / self.module_power * self.module_area
-
-    @area.setter
-    def area(self, value):
-        return print(
-            "---> Note: Change the module power or -area to change this variable"
-        )
 
     @property
     def opex(self):

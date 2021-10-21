@@ -10,6 +10,8 @@ from pvlib.location import Location
 from pvlib.modelchain import ModelChain
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
 import LESO
+from LESO.logging import get_module_logger
+logger = get_module_logger(__name__)
 
 
 def PVlibwrapper(PV_instance, tmy, return_model_object=False):
@@ -66,18 +68,12 @@ def PVlibwrapper(PV_instance, tmy, return_model_object=False):
 
     if hasattr(PV, "bifacial_irradiance"):
         mc.run_model_from_effective_irradiance(PV.bifacial_irradiance)
-        print()
-        print()
-        print(f"{PV.name} triggered run_from")
-        print()
-        print()
+        logger.info(f"PVlibwrapper: {PV.name} triggered run_from")
+
     else:
         mc.run_model(PVlibweather(tmy))
-        print()
-        print()
-        print(f"{PV.name} triggered run_model")
-        print()
-        print()
+        logger.info(f"PVlibwrapper: {PV.name} triggered run_model")
+
 
     normalized_power = mc.ac / total_module_power
     scaled_power = normalized_power * PV.installed

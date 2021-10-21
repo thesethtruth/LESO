@@ -7,6 +7,8 @@ import json
 from datetime import datetime
 import os
 from typing import Optional
+from LESO.logging import get_module_logger
+logger = get_module_logger(__name__)
 
 # for optimizing
 import pyomo.environ as pyo
@@ -102,7 +104,7 @@ class System:
             if key in self._default_parameters.keys():
                 setattr(self, key, value)
             else:
-                print(f"Warning: Invalid input argument supplied -- default used: {key} for {self}")
+                logger.info(f"Warning: Invalid input argument supplied -- default used: {key} for {self}")
         pass
 
     def update_component_attr(self, attribute, value, overwrite_zero=False):
@@ -122,8 +124,7 @@ class System:
 
     def calculate_time_series(self):
 
-        print()
-        print(
+        logger.info(
             "Calculating time series for {} components...".format(len(self.components))
         )
 
@@ -132,8 +133,8 @@ class System:
             try:
                 component.calculate_time_serie(self.tmy)
             except AttributeError:
-                print(
-                    f"---> Note: {component} does not have 'calculate_"
+                logger.info(
+                    f"{component} does not have 'calculate_"
                     + "time_serie' function"
                 )
 
@@ -168,8 +169,7 @@ class System:
             )
             self.add_components([FinalBalance(positive=True)])
 
-        print()
-        print("Merit order calculation started...")
+        logger.info("Merit order calculation started...")
         self.fetch_input_data()
         self.calculate_time_series()
         self.calculate_merit_balance()
@@ -330,7 +330,7 @@ class System:
             Parses pyomo results to a comprehensive dict. 
         """
 
-        print("Splitting the power of sources/sinks to pos/neg")
+        logger.info("Splitting the power of sources/sinks to pos/neg")
         for component in self.components:
             if not hasattr(component, "power_control"):
                 component.split_states()
@@ -413,8 +413,7 @@ class System:
         pickle.dump(self, picklefile)
         picklefile.close()
 
-        print()
-        print("Saved and pickled model instance to {}".format(filepath))
+        logger.info("Saved and pickled model instance to {}".format(filepath))
 
     @staticmethod
     def read_pickle(filepath):
@@ -425,8 +424,8 @@ class System:
         loaded_model_instance = pickle.load(salty_model_instance)
         salty_model_instance.close()
 
-        print()
-        print("Opened and unpickled {}".format(loaded_model_instance.name))
+
+        logger.info("Opened and unpickled {}".format(loaded_model_instance.name))
 
         return loaded_model_instance
 

@@ -10,6 +10,10 @@ from datetime import datetime
 import pandas as pd
 
 from .api_static import renewable_ninja_turbines
+from LESO.logging import get_module_logger
+logger = get_module_logger(__name__)
+
+CACHE_FOLDER = Path(__file__).parent / "cache"
 
 
 @lru_cache(10)
@@ -24,10 +28,12 @@ def get_pvgis(lat, lon):
     Checks the cache for a match (stored offline) to save the time of getting
     data from PV GIS
     """
-    filestring = f"cache\\pvgis_lat_{str(lat)}_lon_{str(lon)}.pkl"
-    dataservice_folder = os.path.dirname(__file__)
-
-    filepath = os.path.join(dataservice_folder, filestring)
+    filestring = f"pvgis_lat_{str(lat)}_lon_{str(lon)}.pkl"
+    req_args = {
+        "lat": lat,
+        "lon": lon
+    }
+    filepath = CACHE_FOLDER / filestring
 
     if os.path.isfile(filepath):
 
@@ -37,21 +43,21 @@ def get_pvgis(lat, lon):
         if not (tmy["lat"][1] == lat and tmy["lon"][1] == lon):
 
             # get new data true API
-            print("Fetching data through API...")
+            logger.info(f"get_pvgis: fetching data through API...", extra={'dct': req_args})
             tmy = _getPVGIS(lat, lon)
-            print("Code 200: Succes!")
+            logger.info(f"get_pvgis: code 200: success...", extra={'dct': req_args})
             tmy.to_pickle(filepath)
 
         else:
 
-            print("API call matches last call, using stored data")
+            logger.info(f"get_pvgis: using stored data...", extra={'dct': req_args})
     else:
 
         # data does not exist locally
 
-        print("Fetching data through API...")
+        logger.info(f"get_pvgis: fetching data through API...", extra={'dct': req_args})
         tmy = _getPVGIS(lat, lon)
-        print("Code 200: Succes!")
+        logger.info(f"get_pvgis: code 200: success...", extra={'dct': req_args})
         tmy.to_pickle(filepath)
 
     # set relevant parameters needed for further processing based on PVgis
@@ -132,9 +138,9 @@ def get_dowa(lat, lon, height=100):
 
         # data does not exist locally
 
-        print("Fetching data through API...")
+        logger.info(f"get_dowa: fetching data through API... [lat:{lat}, lon:{lon}, height:{height}]")
         dowa = _getDOWA(lat, lon, height)
-        print("Code 200: Succes!")
+        logger.info(f"get_dowa: code 200: success... [lat:{lat}, lon:{lon}, height:{height}]")
         dowa.to_pickle(filestring)
 
     # set height of data points in same way as PVGIS api
@@ -233,6 +239,13 @@ def get_renewable_ninja(instance, tmy, ignore_cache=False):
         t = instance.tilt
         a = instance.azimuth
         filestring = f"cache\\ninja_{name}_lat_{str(lat)}_lon_{str(lon)}_a_{a}_t{t}.pkl"
+        req_args = {
+            "type": name,
+            "lat": lat,
+            "lon": lon,
+            "azimuth": a,
+            "tilt": t,
+        }
         kwargs = {
             "tilt": instance.tilt,
             "azim": instance.azimuth,
@@ -243,6 +256,13 @@ def get_renewable_ninja(instance, tmy, ignore_cache=False):
         turbinetype = instance.turbine_type.lower().replace(" ", "_")
         hubheight = str(instance.hub_height)
         filestring = f"cache\\ninja_{name}_lat_{str(lat)}_lon_{str(lon)}_h_{hubheight}_{turbinetype}.pkl"
+        req_args = {
+            "type": name,
+            "lat": lat,
+            "lon": lon,
+            "hubheight": hubheight,
+            "turbinetype": turbinetype,
+        }
         kwargs = {
             "height": instance.hub_height,
             "turbine": instance.turbine_type,
@@ -255,12 +275,12 @@ def get_renewable_ninja(instance, tmy, ignore_cache=False):
 
         # read last API call
         data = pd.read_pickle(filepath)
-        print("API call matches last call, using stored data")
+        logger.info(f"get_renewable_ninja: using stored data...", extra={'dct': req_args})
 
     else:
 
         # data does not exist locally
-        print("Fetching data through API...")
+        logger.info(f"get_renewable_ninja: fetching data through API...", extra={'dct': req_args})
         data = _get_renewable_ninja(
             name=name,
             date_from=instance.date_from,
@@ -270,7 +290,7 @@ def get_renewable_ninja(instance, tmy, ignore_cache=False):
             lon=lon,
             **kwargs,
         )
-        print("Code 200: Succes!")
+        logger.info(f"get_renewable_ninja: code 200: success...", extra={'dct': req_args})
         if not ignore_cache:
             data.to_pickle(filepath)
 
@@ -374,9 +394,16 @@ def get_etm_curve(
         return df
     else:
         timetag = datetime.now().strftime("%y%m%d")
-        filestring = f"ETM_curves_{session_id}_{timetag}_i{int(allow_export)}_e{int(allow_export)}.pkl"
-        dataservice_folder = os.path.dirname(__file__)
-        filepath = os.path.join(dataservice_folder, filestring)
+        filestring = f"ETM_curves_{session_id}_{timetag}_i{int(allow_import)}_e{int(allow_export)}.pkl"
+        req_args = {
+            "session_id": session_id,
+            "timetag": timetag,
+            "allow_import": allow_import,
+            "allow_export": allow_export,
+        }
+         
+        
+        filepath = CACHE_FOLDER / filestring
 
         if os.path.isfile(filepath):
 
@@ -384,12 +411,12 @@ def get_etm_curve(
             with open(filepath, 'rb') as infile:
                 array = pickle.load(infile)
 
-            print("Call matches last call, using stored data")
+            logger.info(f"get_etm_curve: using stored data...", extra={'dct': req_args})
 
         else:
 
             # data does not exist locally
-            print("Downloading ETM curve...")
+            logger.info(f"get_etm_curve: downloading ETM curve...", extra={'dct': req_args})
             array = _get_etm_curve(
                 session_id=session_id,
                 generation_whitelist=generation_whitelist,
@@ -397,7 +424,7 @@ def get_etm_curve(
                 allow_export=allow_export,
                 raw=False
             )
-            print("Success... Probably.")
+            logger.info(f"get_etm_curve: success... probably", extra={'dct': req_args})
 
             with open(filepath, 'wb') as outfile:
                 pickle.dump(array, outfile)

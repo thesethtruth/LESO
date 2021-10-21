@@ -1,6 +1,9 @@
 # postprocess.py
 import pandas as pd
 from pyomo.environ import value
+from LESO.logging import get_module_logger
+logger = get_module_logger(__name__)
+
 
 
 def process_results(eM, unit='k'):
@@ -65,7 +68,7 @@ def process_results(eM, unit='k'):
     values.append(system.cost)
     df['name'] = names
     df['value'] = values
-    print(df)
+    logger.info("Optimisation result:\n"+df.to_string())
     
     system.optimization_result = {
         "Component name": [

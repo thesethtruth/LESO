@@ -2,6 +2,11 @@
 from pathlib import Path
 import LESO
 from profile_plotting import profile_plot_battery
+from LESO.logging import log_to_stderr
+from logging import INFO
+
+
+log_to_stderr(level=INFO)
 
 
 FOLDER = Path(__file__).parent
@@ -29,57 +34,57 @@ system.optimize(
     tee=True,
 )
 
-#%%
+    #%%
+if False:
+    batteries_placed = []
+    zero_threshold = 0.1
+    for component in system.components:
+        if isinstance(component, LESO.Lithium):
+            if component.installed > zero_threshold:
+                batteries_placed.append(component)
 
-batteries_placed = []
-zero_threshold = 0.1
-for component in system.components:
-    if isinstance(component, LESO.Lithium):
-        if component.installed > zero_threshold:
-            batteries_placed.append(component)
+    for battery in batteries_placed:
+        time = system.time
+        df = battery.state.copy(deep=True)
 
-for battery in batteries_placed:
-    time = system.time
-    df = battery.state.copy(deep=True)
+        if hasattr(battery, 'power_control'):
+            for key, modelvar in battery.keylist:
+                df[key] = [modelvar[t].value for t in time]
 
-    if hasattr(battery, 'power_control'):
-        for key, modelvar in battery.keylist:
-            df[key] = [modelvar[t].value for t in time]
+        df2 = profile_plot_battery(
+            charging = battery.state['power [-]'],
+            discharging = battery.state['power [+]'],
+            energy= battery.state['energy'],
+            start=300,
+            duration=7,
+            fig_filename="evhub_00mw_changed_cost_",
+            plot_pt_no_loss = False,
+            plot_pt_w_loss = False,
 
-    df2 = profile_plot_battery(
-        charging = battery.state['power [-]'],
-        discharging = battery.state['power [+]'],
-        energy= battery.state['energy'],
-        start=300,
-        duration=7,
-        fig_filename="evhub_00mw_changed_cost_",
-        plot_pt_no_loss = False,
-        plot_pt_w_loss = False,
+        )
+        # %%
 
-    )
+
+        charging = battery.state['power [-]']
+        discharging = battery.state['power [+]']
+        energy =battery.state['energy']
+
+        print("leaked discharge :", discharging[charging!=0].sum())
+        print("leaked charge :", charging[discharging!=0].sum())
+        print("peak power :", max([-charging.min(), discharging.max()]))
+        print("peak power [%]:", max([-charging.min(), discharging.max()])/(battery.installed/battery.EP_ratio))
+        print("peak energy:", energy.max())
+        print("peak energy [%]:", energy.max()/battery.installed)
+
     # %%
 
+    for component in system.components:
+        if "battery" in component.name:
+            print(component.name, f": {component.capex}")
 
-    charging = battery.state['power [-]']
-    discharging = battery.state['power [+]']
-    energy =battery.state['energy']
-
-    print("leaked discharge :", discharging[charging!=0].sum())
-    print("leaked charge :", charging[discharging!=0].sum())
-    print("peak power :", max([-charging.min(), discharging.max()]))
-    print("peak power [%]:", max([-charging.min(), discharging.max()])/(battery.installed/battery.EP_ratio))
-    print("peak energy:", energy.max())
-    print("peak energy [%]:", energy.max()/battery.installed)
-
-# %%
-
-for component in system.components:
-    if "battery" in component.name:
-        print(component.name, f": {component.capex}")
-
-#%%
-for component in system.components:
-    try:
-        print(component.name, f": {component.installed}")
-    except AttributeError:
-        pass
+    #%%
+    for component in system.components:
+        try:
+            print(component.name, f": {component.installed}")
+        except AttributeError:
+            pass

@@ -20,7 +20,7 @@ RESOURCE_FOLDER = FOLDER / "resources"
 COLLECTION = "evhub"
 RUN_ID = "2110_v2"
 
-force_refresh = False
+force_refresh = True
 
 ## pointers
 pv_col = "PV South installed capacity"
@@ -31,8 +31,6 @@ bat_col = "2h battery installed capacity"
 #%% load in results
 
 filename = f"{COLLECTION}_{RUN_ID}.pkl"
-pickled_df = RESOURCE_FOLDER / filename
-
 pickled_df = RESOURCE_FOLDER / filename
 
 # buffer all the calculations/df, only refresh if forced to refresh
@@ -77,6 +75,7 @@ else:
     ]
 
     db.to_pickle(RESOURCE_FOLDER / filename)
+    print("requested data from the server -- refreshed the pickle")
 
 ## data selection
 

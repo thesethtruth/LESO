@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # uncertainties / scenarios
     model.uncertainties = [
         RealParameter("pv_cost_factor", 0.38, 0.85),
-        RealParameter("battery_cost_factor", 0.41, 0.70),
+        RealParameter("battery_cost_factor", 0.1, 0.41),
     ]
     # specify outcomes
     model.outcomes = [ScalarOutcome(metric) for metric in METRICS]

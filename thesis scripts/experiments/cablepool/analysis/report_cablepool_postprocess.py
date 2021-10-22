@@ -23,6 +23,8 @@ APPROACH = "subsidy"
 
 force_refresh = False
 
+pv_col = "PV South installed capacity"
+
 #%% load in results
 
 filename = f"{COLLECTION}_{RUN_ID}.{APPROACH}.pkl"
@@ -59,7 +61,6 @@ else:
 
 
     ## change / add some data
-    pv_col = "PV South installed capacity"
     df['pv_cost_absolute'] = df.pv_cost_factor * 1020
     df['curtailment'] = -df['curtailment']
     df['total_generation'] = (df[pv_col] * spec_yield_pv + tot_yield_wind)
@@ -87,8 +88,12 @@ else:
 
     print("fetched data from the cloud -- refreshed")
     df.to_pickle(RESOURCE_FOLDER / filename)
+#%%
 
-
+subset = df[df[pv_col]!=0]
+idx = subset[pv_col].argmin()
+max_solar_price = subset.loc[subset.index[idx], "pv_cost_absolute"]
+print(f"Solar deployment starts at: {round(max_solar_price,0)} €/kWp")
 
 #%% Deployment vs absolut cost scatter
 

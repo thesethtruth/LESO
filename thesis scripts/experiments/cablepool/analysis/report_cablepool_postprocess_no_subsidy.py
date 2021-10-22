@@ -23,6 +23,10 @@ force_refresh = False
 filename = f"{COLLECTION}_{RUN_ID}.{APPROACH}.pkl"
 pickled_df = RESOURCE_FOLDER / filename
 
+pv_col = "PV South installed capacity"
+wind_col = "Nordex N100 2500 installed capacity"
+bat_col = "2h battery installed capacity"
+
 # buffer all the calculations/df, only refresh if forced to refresh
 if pickled_df.exists() and not force_refresh:
 
@@ -46,8 +50,6 @@ else:
 
 
     ## change / add some data
-    pv_col = "PV South installed capacity"
-    bat_col = "2h battery installed capacity"
     df["pv_cost_absolute"] = df.pv_cost_factor * 1020
     df["curtailment"] = -df["curtailment"]
     df["total_generation"] = df[pv_col] * spec_yield_pv + tot_yield_wind
@@ -77,6 +79,12 @@ else:
 
     print("fetched data from the cloud -- refreshed")
     df.to_pickle(RESOURCE_FOLDER / filename)
+#%%
+
+subset = df[df[pv_col]!=0]
+idx = subset[pv_col].argmin()
+max_solar_price = subset.loc[subset.index[idx], "pv_cost_absolute"]
+print(f"Solar deployment starts at: {round(max_solar_price,0)} €/kWp")
 
 #%% PV deployment vs absolut cost scatter
 
@@ -105,11 +113,17 @@ ax.legend(frameon=False, title="Curtailment (MWh)")
 default_matplotlib_save(fig, IMAGE_FOLDER / "report_cablepool_no_sub_pv_deployment_vs_cost.png")
 
 
+#%%
+idx = df["relative_curtailment"].argmin()
+min_curtailment_ratio = df[pv_col].iat[idx] / df[wind_col].iat[idx]
+print(f"Minimal curtailment ratio: {round(min_curtailment_ratio*100,0)} ")
+
 #%% relative curtailment
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
 fig.set_size_inches(3, 3)
 
+df.sort_values("ratio", inplace=True)
 sns.scatterplot(
     x="total_installed_capacity",
     y="relative_curtailment",

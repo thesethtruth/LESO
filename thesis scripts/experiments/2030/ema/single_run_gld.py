@@ -1,11 +1,15 @@
 import numpy as np
 import LESO
 from LESO.optimizer.extension import constrain_minimal_share_of_renewables, contexted_constraint
-from gld2030_definitions import scenarios_2030, MODELS
+from gld2030_definitions import scenarios_2030, MODELS, RESULTS_FOLDER, OUTPUT_PREFIX
+import uuid
+from LESO.leso_logging import log_to_stderr, INFO
+log_to_stderr(level=INFO)
 
-SCENARIO = list(scenarios_2030.keys())[0]
+scenario = "2030Gelderland_laag"
+target_RE_strategy = "fixed_target_60"
+scenario_data = scenarios_2030[scenario]
 
-scenario_data = scenarios_2030[SCENARIO]
 STRATEGIES = {
     "no_target": (None, None),
     "current_projection_include_export": (scenario_data['target_re_share'], False),
@@ -15,40 +19,65 @@ STRATEGIES = {
     "fixed_target_100": (1, True),
 }
 
-model_to_open = MODELS[SCENARIO]
-target_RE_strategy = "current_projection_excl_export"
 
+# initiate System component
+model_to_open = MODELS[scenario]
 system = LESO.System.read_pickle(model_to_open)
 
-target_share, exclude_export_from_share = STRATEGIES[target_RE_strategy]
-
-# grab the ETM demand component
+# process ema inputs to components
 for component in system.components:
+    # grab the ETM demand component
     if isinstance(component, LESO.ETMdemand):
         demand = component
 
-# set the correct 
-    if target_share:
-        re_share_constraint = contexted_constraint(
-            constrain_minimal_share_of_renewables,
-            share_of_re=target_share,
-            demands=[demand],
-            exclude_export_from_share=exclude_export_from_share
-        )
-    else: 
-        re_share_constraint = None
+# do something with the target RE strategy
+scenario_data = scenarios_2030[scenario]
+if target_RE_strategy: 
+    STRATEGIES = {
+        "no_target": (None, None),
+        "current_projection_include_export": (scenario_data['target_re_share'], False),
+        "current_projection_excl_export": (scenario_data['target_re_share_ex_export'], True),
+        "fixed_target_60": (.60, True),
+        "fixed_target_80": (.80, True),
+        "fixed_target_100": (1, True),
+    }
+
+    target_share, exlude_export = STRATEGIES[target_RE_strategy]
+
+
+
+# generate file name and filepath for storing
+filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1]) + ".json"
+filepath = RESULTS_FOLDER / filename_export
+
+# set the correct context and share
+if target_share:
+    re_share_constraint = contexted_constraint(
+        constrain_minimal_share_of_renewables,
+        share_of_re=target_share,
+        demands=[demand],
+        exclude_export_from_share=exlude_export
+    )
+else: 
+    re_share_constraint = None
 
 ## SOLVE
 system.optimize(
     objective="osc",  # overnight system cost
     additional_constraints= re_share_constraint,
     store=False,  # write-out to json
+    filepath=filepath,  # resorts to default: modelname+timestamp
+    solver="gurobi",  # default solver
     solve=True,  # solve or just create model
-    # nonconvex=True,
     tee=True,
+    # solver_kwrgs={
+    #     "BarConvTol": 1e-10
+    # }
 )
+
+
 #%%
-if True:
+if False:
 
     generators = [LESO.PhotoVoltaic, LESO.PhotoVoltaicAdvanced, LESO.BifacialPhotoVoltaic, LESO.Wind, LESO.WindOffshore]
 
@@ -114,35 +143,35 @@ if True:
             - sum(demand.state.power.sum() for demand in [demand])
         )
 # %%
-for c in system.components:
-    if getattr(c, "installed", False):
-        print(c.name, c.installed)
+    for c in system.components:
+        if getattr(c, "installed", False):
+            print(c.name, c.installed)
 
-    if isinstance(c, LESO.Grid):
-        ckey = c.__str__()
-        export = getattr(pyo_model, ckey + "_Pneg", None)
-        grid = c
-    if isinstance(c, LESO.Lithium):
-        if c.EP_ratio == 2:
-            bat = c
+        if isinstance(c, LESO.Grid):
+            ckey = c.__str__()
+            export = getattr(pyo_model, ckey + "_Pneg", None)
+            grid = c
+        if isinstance(c, LESO.Lithium):
+            if c.EP_ratio == 2:
+                bat = c
 
 
-print("---")
+    print("---")
 
-from pyomo.environ import value
-for key, v in contributing_components.items():
-    if not isinstance(v, float):
-        print(key, value(v)/1e6)
-    else:
-        print(key, v/1e6)
-print("exported:", value(sum(export[t] for t in time))/1e6)
+    from pyomo.environ import value
+    for key, v in contributing_components.items():
+        if not isinstance(v, float):
+            print(key, value(v)/1e6)
+        else:
+            print(key, v/1e6)
+    print("exported:", value(sum(export[t] for t in time))/1e6)
 
-print("---")
-print("realized_share:", value(realized_share))
-# print("realized_share (no export):", value(realized_share) -  value(sum(export[t] for t in time))/demand.state.power.sum())
-print("total_demand:", demand.state.power.sum()/1e6)
-# %%
+    print("---")
+    print("realized_share:", value(realized_share))
+    # print("realized_share (no export):", value(realized_share) -  value(sum(export[t] for t in time))/demand.state.power.sum())
+    print("total_demand:", demand.state.power.sum()/1e6)
+    # %%
 
-system.to_json("latest.json")
+    system.to_json("latest.json")
 
-# %%
+    # %%

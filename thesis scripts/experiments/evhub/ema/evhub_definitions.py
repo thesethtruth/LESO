@@ -8,8 +8,14 @@ COLLECTION = "evhub"
 OUTPUT_PREFIX = f"{COLLECTION}_exp_"
 
 MODEL_FOLDER = Path(__file__).parent.parent / "model"
-RESULTS_FOLDER = Path(r"D:\0. Seth\v2 results") / f"{COLLECTION}"
-RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
+try:
+    RESULTS_FOLDER = Path(r"D:\0. Seth\v2 results") / f"{COLLECTION}"
+    RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
+    # when on beast
+except FileNotFoundError:
+    RESULTS_FOLDER = Path(r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\2030\results")
+    RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
+    # when on Seth's laptop
 
 # create bucket if not already exist
 if False:

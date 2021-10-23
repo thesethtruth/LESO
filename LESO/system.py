@@ -13,18 +13,6 @@ from LESO.leso_logging import get_module_logger
 logger = get_module_logger(__name__)
 
 
-#==== WORKING:
-# from multiprocessing import current_process
-# if current_process().name == 'MainProcess':
-#     from LESO.leso_logging import get_module_logger
-#     logger = get_module_logger(__name__)
-#     # print("I think I am mother")
-# else:
-#     from multiprocessing import log_to_stderr
-#     from logging import INFO
-#     logger = log_to_stderr(INFO)
-#     # print("I am NOT mother")
-
 # for optimizing
 import pyomo.environ as pyo
 
@@ -258,7 +246,7 @@ class System:
             except TypeError:
                 additional_constraints(self)
 
-    def pyomo_solve(self, solver="gurobi", method = None, noncovex=False, tee=False):
+    def pyomo_solve(self, solver="gurobi", method = None, noncovex=False, tee=False, solver_kwrgs=None):
         logger.info(f"sending the optimisation problem to {solver}")
         opt = pyo.SolverFactory(solver)
         if noncovex:
@@ -268,6 +256,10 @@ class System:
         # opt.options['BarHomogeneous'] = 1
         if method is not None:
             opt.options["Method"] = method # force to use dual simplex
+
+        if solver_kwrgs is not None:
+            for key, value in solver_kwrgs.items():
+                opt.options[key] = value
 
         self.model.results = opt.solve(self.model, tee=tee)
 
@@ -288,6 +280,7 @@ class System:
         unit="k",
         tee=False,
         method=None,
+        solver_kwrgs:dict = None
     ):
         """ 
         Toolchain called to use all methods needed to apply optimization to the defined
@@ -312,7 +305,7 @@ class System:
         self.pyomo_add_additional_constraints(additional_constraints=additional_constraints)
 
         if solve:
-            self.pyomo_solve(solver=solver, noncovex=nonconvex, tee=tee, method=method)
+            self.pyomo_solve(solver=solver, noncovex=nonconvex, tee=tee, method=method, solver_kwrgs=solver_kwrgs)
 
             # check solver status before proceeding to post process options
             if pyo.check_optimal_termination(self.model.results):

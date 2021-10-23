@@ -4,4 +4,5 @@ from .leso_logging import (
     method_logger,
     get_rootlogger,
     log_to_stderr,
+    INFO
 )

@@ -51,7 +51,7 @@ def Handshake(
             )
         if isinstance(component, LESO.Hydrogen):
             component.capex_power = component.capex_power * hydrogen_cost_factor
-            !!
+            component.capex_storage = component.capex_storage * hydrogen_cost_factor
     
         # grab the ETM demand component
         if isinstance(component, LESO.ETMdemand):
@@ -98,6 +98,10 @@ def Handshake(
         solver="gurobi",  # default solver
         nonconvex=False,  # solver option (warning will show if needed)
         solve=True,  # solve or just create model
+        tee=True,
+        solver_kwrgs={
+            "BarConvTol": 1e-10
+        }
     )
 
     return system, filename_export
@@ -182,6 +186,12 @@ def GLD2030(
     else:
         meta_data = {"filename_export": "N/a"}
         results = {metric: np.nan for metric in METRICS}
+    
+    # compute the total storage reflux, only exists when optimisation is succesful (therefore hassattr)
+    total_reflux = 0
+    for component in system.components:
+        if isinstance(component, LESO.Storage) and hasattr(component, "reflux"):
+            total_reflux += component.reflux
 
     ## In any case
     meta_data.update(
@@ -189,6 +199,7 @@ def GLD2030(
             "solving_time": system.model.results["solver"][0]["Time"],
             "solver_status": system.model.results["solver"][0]["status"].__str__(),
             "solver_status_code": system.model.results["solver"][0]["Return code"],
+            "battery_reflux": total_reflux
         }
     )
 

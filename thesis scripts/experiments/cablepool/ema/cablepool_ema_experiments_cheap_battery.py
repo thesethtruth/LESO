@@ -33,8 +33,8 @@ if __name__ == "__main__":
     model.outcomes = [ScalarOutcome(metric) for metric in METRICS]
 
     # run experiments
-    with MultiprocessingEvaluator(model, n_processes=10) as evaluator:
-        results = evaluator.perform_experiments(scenarios=200, policies=1)
+    with MultiprocessingEvaluator(model, n_processes=2) as evaluator:
+        results = evaluator.perform_experiments(scenarios=200)
     
     # save results
     results_file_name = RESULTS_FOLDER / f"{COLLECTION}_ema_results_{run_ID}.tar.gz"

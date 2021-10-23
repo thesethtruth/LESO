@@ -9,7 +9,8 @@ OUTPUT_PREFIX = f"{COLLECTION}_exp_"
 
 
 MODEL_FOLDER = Path(__file__).parent.parent / "model"
-RESULTS_FOLDER = Path(r"D:\0. Seth\v2 results") / f"{COLLECTION}"
+# RESULTS_FOLDER = Path(r"D:\0. Seth\v2 results") / f"{COLLECTION}"
+RESULTS_FOLDER = Path(r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\cablepool\results")
 RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
 
 # create bucket if not already exist
@@ -22,7 +23,7 @@ if False:
 MODELS = {
     "no_subsidy": MODEL_FOLDER / "cablepool_no_subsidy.pkl",
     "subsidy": MODEL_FOLDER / "cablepool_subsidy.pkl",
-    "cheap_battery": MODEL_FOLDER / "cablepool_no_subsidy.pkl",
+    "cheap_battery": MODEL_FOLDER / "cablepool_subsidy.pkl",
 }
 
 METRICS = [

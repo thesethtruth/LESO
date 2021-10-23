@@ -5,10 +5,7 @@ from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from LESO.experiments.analysis import (
-    gdatastore_results_to_df,
-    gcloud_read_experiment
-)
+from LESO.experiments.analysis import gdatastore_results_to_df, gcloud_read_experiment
 from LESO.plotting import default_matplotlib_save, default_matplotlib_style
 
 #%% constants
@@ -25,8 +22,11 @@ force_refresh = True
 ## pointers
 pv_col = "PV South installed capacity"
 wind_col = "Nordex N100 2500 installed capacity"
-bat_col = "2h battery installed capacity"
+bat2_col = "2h battery installed capacity"
+bat6_col = "6h battery installed capacity"
+bat10_col = "10h battery installed capacity"
 
+batcols = [bat2_col, bat6_col, bat10_col]
 
 #%% load in results
 
@@ -35,7 +35,7 @@ pickled_df = RESOURCE_FOLDER / filename
 
 # buffer all the calculations/df, only refresh if forced to refresh
 if pickled_df.exists() and not force_refresh:
-    
+
     print("opened pickle -- not refreshed")
     db = pd.read_pickle(pickled_df)
 
@@ -50,19 +50,23 @@ else:
     spec_yield_wind = 2937.6
 
     ## change / add some data
-    db['pv_cost_absolute'] = db.pv_cost_factor * 1020
-    db['wind_cost_absolute'] = db.wind_cost_factor * 1350
-    db['curtailment'] = -db['curtailment']
-    db['total_generation'] = (db[pv_col] * spec_yield_pv + db[wind_col]*spec_yield_wind)
-    db['relative_curtailment'] = db['curtailment'] / db['total_generation'] *100
-    db['total_installed_capacity'] = db[pv_col] + db[wind_col]
+    db["pv_cost_absolute"] = db.pv_cost_factor * 1020
+    db["wind_cost_absolute"] = db.wind_cost_factor * 1350
+    db["curtailment"] = -db["curtailment"]
+    db["total_generation"] = db[pv_col] * spec_yield_pv + db[wind_col] * spec_yield_wind
+    db["relative_curtailment"] = db["curtailment"] / db["total_generation"] * 100
+    db["total_installed_capacity"] = db[pv_col] + db[wind_col]
+    db["total_storage_energy"] = db[batcols].sum(axis=1)
+    db["total_storage_power"] = db[bat2_col] / 2 + db[bat6_col] / 6 + db[bat10_col] / 10
 
-    def linear_map(value, ):
-        min, max = 0.41, 0.70 # @@
-        map_min, map_max = 0.42, 0.81 # @@
+    def linear_map(
+        value,
+    ):
+        min, max = 0.41, 0.70  # @@
+        map_min, map_max = 0.42, 0.81  # @@
 
-        frac = (value - min) / (max-min)
-        m_value = frac * (map_max-map_min) + map_min
+        frac = (value - min) / (max - min)
+        m_value = frac * (map_max - map_min) + map_min
 
         return m_value
 
@@ -70,7 +74,7 @@ else:
     storage_ref = 277
 
     db["battery_cost_absolute_2h"] = [
-        (bcf * storage_ref *2 + linear_map(bcf)*power_ref)/2
+        (bcf * storage_ref * 2 + linear_map(bcf) * power_ref) / 2
         for bcf in db["battery_cost_factor"].values
     ]
 
@@ -153,4 +157,80 @@ plt.setp(l.get_title(), multialignment="center")
 
 default_matplotlib_save(
     fig, IMAGE_FOLDER / f"analysis_evhub_computational_times_{run_id}.png"
+)
+#%% swarm plot
+sns.set_palette(sns.color_palette(["#b7094c","#892b64","#5c4d7d","#2e6f95"]))
+fig, ax = plt.subplots()
+fig, ax = default_matplotlib_style(fig, ax)
+fig.set_size_inches(6, 4)
+
+
+# sns.stripplot(x="solving_time", y="grid_capacity", data=df, ax=ax, orient='h', size=2, alpha=.3, jitter=.5, edgecolor="black", palette="dark:#69d_r")
+sns.swarmplot(
+    x="solving_time",
+    y="grid_capacity",
+    data=df,
+    ax=ax,
+    orient="h",
+    size=1.5,
+    alpha=0.5,
+    # hue="total_storage_energy",
+    edgecolor="black",
+)
+
+ax.set_ylabel("grid capacity")
+ax.set_xlabel("solving time (s)")
+
+
+default_matplotlib_save(
+    fig, IMAGE_FOLDER / f"analysis_evhub_computational_times_{run_id}_swarmplot.png"
+)
+
+#%% strip plot
+fig, ax = plt.subplots()
+fig, ax = default_matplotlib_style(fig, ax)
+fig.set_size_inches(6, 3)
+
+
+sns.stripplot(
+    x="solving_time",
+    y="grid_capacity",
+    data=df,
+    ax=ax,
+    orient="h",
+    size=2,
+    alpha=.5,
+    jitter=0.4,
+    edgecolor="black",
+)
+
+ax.set_ylabel("grid capacity")
+ax.set_xlabel("solving time (s)")
+
+
+default_matplotlib_save(
+    fig, IMAGE_FOLDER / f"analysis_evhub_computational_times_{run_id}_stripplot.png"
+)
+
+
+#%% violin plot
+fig, ax = plt.subplots()
+fig, ax = default_matplotlib_style(fig, ax)
+fig.set_size_inches(6, 3)
+
+
+sns.boxplot(
+    x="solving_time",
+    y="grid_capacity",
+    data=df,
+    ax=ax,
+    orient="h",
+)
+
+ax.set_ylabel("grid capacity")
+ax.set_xlabel("solving time (s)")
+
+
+default_matplotlib_save(
+    fig, IMAGE_FOLDER / f"analysis_evhub_computational_times_{run_id}_boxplot.png"
 )

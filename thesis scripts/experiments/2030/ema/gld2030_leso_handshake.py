@@ -100,7 +100,7 @@ def Handshake(
         solve=True,  # solve or just create model
         tee=True,
         solver_kwrgs={
-            "BarConvTol": 1e-10
+            "BarConvTol": 1e-12
         }
     )
 

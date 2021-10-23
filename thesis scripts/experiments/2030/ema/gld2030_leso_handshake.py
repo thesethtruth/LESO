@@ -1,12 +1,11 @@
-from LESO.experiments.database import send_ema_exp_to_mongo
 import uuid
-from copy import deepcopy as copy
-from time import sleep
-
 import pyomo.environ as pyo
 import numpy as np
-from tinydb import TinyDB
-
+from copy import deepcopy as copy
+from LESO.experiments.analysis import (
+    gdatastore_put_entry,
+    gcloud_upload_experiment_dict,
+)
 
 import LESO
 from LESO.experiments import ema_pyomo_interface
@@ -18,15 +17,14 @@ from LESO.finance import (
 )
 
 from gld2030_definitions import (
-    lithium_storage_linear_map,
-    RESULTS_FOLDER,
+    COLLECTION,
     MODELS,
-    METRICS,
+    OUTPUT_PREFIX,
+    linear_map_2030,
+    RESULTS_FOLDER,
+    METRICS,    
     scenarios_2030,
 )
-
-OUTPUT_PREFIX = "gld2030_exp_"
-DB_NAMETAG = COLLECTION = "gld2030"
 
 def Handshake(
     pv_cost_factor=None,
@@ -48,11 +46,12 @@ def Handshake(
             component.capex = component.capex * wind_cost_factor
         if isinstance(component, LESO.Lithium):
             component.capex_storage = component.capex_storage * battery_cost_factor
-            component.capex_power = component.capex_power * lithium_storage_linear_map(
+            component.capex_power = component.capex_power * linear_map_2030(
                 battery_cost_factor
             )
         if isinstance(component, LESO.Hydrogen):
             component.capex_power = component.capex_power * hydrogen_cost_factor
+            !!
     
         # grab the ETM demand component
         if isinstance(component, LESO.ETMdemand):
@@ -208,25 +207,22 @@ def GLD2030(
     db_entry.update(meta_data)  # metadata
     db_entry.update({"run_id": run_ID})
 
-    send_ema_exp_to_mongo(COLLECTION, db_entry)
+    # put db_entry to google datastore, keeps retrying when internet is down.
+    succesful = False
+    while not succesful:
+        try:
+            gdatastore_put_entry(COLLECTION, db_entry)
+            succesful = True
+        except:
+            pass
 
-    # write to db
-    # db_filename = f"{DB_NAMETAG}_db{run_ID}.json"
-    # db_path = RESULTS_FOLDER / db_filename
-    
-    # # TODO: unsure whether this is needed for parallization due to possible write errors (unknown what error this would throw)
-    # not_written = True
-    # tries = 0
-    # while not_written:
-    #     try:
-    #         with TinyDB(db_path) as db:
-    #             db.insert(db_entry)
-    #         not_written = False
-    #         tries += 1
-    #         if tries>4:
-    #              db_filename = f"{DB_NAMETAG}_db{run_ID}_alt.json"
-    #              db_path = RESULTS_FOLDER / db_filename
-    #     except:
-    #         sleep(0.2)
+    # put system.results to google cloud, keeps retrying when internet is down.
+    succesful = False
+    while not succesful:
+        try:
+            gcloud_upload_experiment_dict(system.results, COLLECTION, filename_export)
+            succesful = True
+        except:
+            pass
 
     return results

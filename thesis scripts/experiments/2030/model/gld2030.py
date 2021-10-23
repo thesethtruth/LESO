@@ -1,19 +1,22 @@
+#%%
 from LESO import System
 from LESO.components import PhotoVoltaic, Wind, Lithium, Grid, FinalBalance, Hydrogen, ETMdemand
 import pandas as pd
 from pathlib import Path
-from LESO.defaultvalues import scenarios_2030
+import sys
 
 
 #%%
 FOLDER = Path(__file__).parent
-
+EXP_FOLDER = FOLDER.parent
+sys.path.append(str(EXP_FOLDER.absolute()))
+from ema.gld2030_definitions import scenarios_2030
 
 # parameters used:
 equity_share = 0.2 # no cite
 end_year = 2030
 
-price_filename = "etm_dynamic_savgol_filtered_etmprice_31ch4_85co2.pkl"
+price_filename = "etm_dynamic_savgol_filtered_etmprice_40ch4_85co2.pkl"
 retail_prices = list((pd.read_pickle(FOLDER / price_filename)/1e6).values)
 
 #%% Define system and components

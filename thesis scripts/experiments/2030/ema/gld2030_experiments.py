@@ -11,17 +11,18 @@ from ema_workbench import (
     MultiprocessingEvaluator,
     SequentialEvaluator,
 )
-from gld2030_leso_handshake import METRICS, RESULTS_FOLDER, GLD2030
+from gld2030_leso_handshake import METRICS, RESULTS_FOLDER, GLD2030, COLLECTION
 
 
 if __name__ == "__main__":
     
     # initiate model
     ema_logging.log_to_stderr(ema_logging.INFO)
+
     SCENARIO = "2030Gelderland_laag"
     run_ID = input("Please enter the run ID:")
-    GLD2030_w_runID = partial(GLD2030, run_ID=run_ID)
-    model = Model(name="gld2030", function=GLD2030_w_runID)
+    initialized_model = partial(GLD2030, run_ID=run_ID, scenario=SCENARIO)
+    model = Model(name=f"{COLLECTION}", function=initialized_model)
 
     # levers / policies
     model.levers = [
@@ -29,15 +30,15 @@ if __name__ == "__main__":
             "target_RE_strategy", 
             [
                 "no_target",
-                "current_projection_include_export",
-                "current_projection_excl_export",
+                # "current_projection_include_export", not relevant
+                # "current_projection_excl_export", only interesting under static cost
                 "fixed_target_60",
                 "fixed_target_80",
                 "fixed_target_100",
             ],
-        ),  # 6 options
+        ),  # 4 options
     ]
-    # --> 6 policies
+    # --> 4 policies
 
 
     # uncertainties / scenarios
@@ -48,21 +49,18 @@ if __name__ == "__main__":
         RealParameter("hydrogen_cost_factor", 0.37, 0.69),
     ]
 
-    model.constants = [
-        Constant("scenario", SCENARIO),
-    ]
     # specify outcomes
     model.outcomes = [ScalarOutcome(metric) for metric in METRICS]
 
     # run experiments
-    with MultiprocessingEvaluator(model, n_processes=7) as evaluator:
-        results = evaluator.perform_experiments(scenarios=150, policies=6)
+    with MultiprocessingEvaluator(model, n_processes=10) as evaluator:
+        results = evaluator.perform_experiments(scenarios=250, policies=4)
     
     # with SequentialEvaluator(model) as evaluator:
         # results = evaluator.perform_experiments(scenarios=1, policies=5)
 
     # save results
     RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
-    results_file_name = RESULTS_FOLDER / f"gld2030_ema_results_{run_ID}.tar.gz"
+    results_file_name = RESULTS_FOLDER / f"{COLLECTION}_ema_results_{run_ID}.tar.gz"
     save_results(results, file_name=results_file_name)
 

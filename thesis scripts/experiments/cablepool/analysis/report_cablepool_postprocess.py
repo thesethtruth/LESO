@@ -34,7 +34,7 @@ df = get_data_from_db(
     collection=COLLECTION,
     run_id=RUN_ID,
     approach=APPROACH,
-    force_refresh=True,
+    force_refresh=False,
     # filter=filter,
 )
 
@@ -65,7 +65,7 @@ sns.scatterplot(
     edgecolor="black"
 )
 
-ax.set_ylabel("deployed PV capacity (MW)")
+ax.set_ylabel("deployed PV\ncapacity (MW)")
 ax.set_ylim([-1, 20])
 
 ax.set_xlabel("PV capacity cost (€/kWp)")
@@ -132,7 +132,7 @@ fig.set_size_inches(5,3)
 
 sns.scatterplot(
     x="pv_cost_absolute",
-    y="battery_cost_absolute_2h",
+    y="battery_power_cost_absolute",
     size=pv_col,
     hue=pv_col,
     data=df,
@@ -142,7 +142,7 @@ sns.scatterplot(
     edgecolor="black"
 )
 
-ax.set_ylabel("2h battery \n capacity cost (€/kWh)")
+ax.set_ylabel("battery power\ncapacity cost (€/kW)")
 ax.set_ylim([160, 310])
 
 ax.set_xlabel("PV capacity cost (€/kWp)")

@@ -23,6 +23,7 @@ bivar_tech_dict = {"PV": pv_col, "wind": wind_col, "battery": total_bat_col}
 
 #%% load in results
 def get_data_from_db(collection, run_id, force_refresh=False, filter=None):
+    
     filename = f"{collection}_{run_id}.pkl"
     pickled_df = RESOURCE_FOLDER / filename
 
@@ -33,20 +34,32 @@ def get_data_from_db(collection, run_id, force_refresh=False, filter=None):
         db = pd.read_pickle(pickled_df)
 
     else:
+        
+        filters = [
+            ("run_id", "=", run_id),
+        ]
+        if filter is not None:
+            filters.append(filter)
+
         db = gdatastore_results_to_df(
             collection=collection,
-            filter=filter,
+            filters=filters,
         )
         exp = gcloud_read_experiment(collection, db.filename_export.iat[20])
-        ## needed for more kpis
-        spec_yield_pv = (
-            sum(exp.components.pv2.state["power [+]"])
-            / exp.components.pv2.settings.installed
-        )
-        spec_yield_wind = (
-            sum(exp.components.wind1.state["power [+]"])
-            / exp.components.wind1.settings.installed
-        )
+        ## Hard-coded for convience, can be set to True and recorded in debug
+        if False:
+            spec_yield_pv = (
+                sum(exp.components.pv2.state["power [+]"])
+                / exp.components.pv2.settings.installed
+            )
+            spec_yield_wind = (
+                sum(exp.components.wind1.state["power [+]"])
+                / exp.components.wind1.settings.installed
+            )
+        else:
+            spec_yield_pv = 1025.3069999999996
+            spec_yield_wind = 2937.600000000013
+
 
         ## change / add some data
         db["pv_cost_absolute"] = db.pv_cost_factor * 1020
@@ -72,12 +85,17 @@ def get_data_from_db(collection, run_id, force_refresh=False, filter=None):
         power_ref = 257
         storage_ref = 277
 
-        db["battery_cost_absolute_2h"] = [
-            (bcf * storage_ref * 2 + linear_map(bcf) * power_ref) / 2
-            for bcf in db["battery_cost_factor"].values
-        ]
+        ep_ratios = [2, 6, 10]
+        for ep_ratio in ep_ratios:
+            db[f"battery_cost_absolute_{ep_ratio}h"] = [
+                (bcf * storage_ref * ep_ratio + linear_map(bcf) * power_ref) / ep_ratio
+                for bcf in db["battery_cost_factor"].values
+            ]
+
         db["battery_power_cost_absolute"] = db["battery_cost_factor"] * power_ref
         print("fetched data from the cloud -- refreshed")
         db.to_pickle(RESOURCE_FOLDER / filename)
-        return db
+    
+    
+    return db
         

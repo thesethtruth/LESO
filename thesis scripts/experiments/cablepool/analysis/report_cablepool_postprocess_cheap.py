@@ -69,7 +69,7 @@ sns.scatterplot(
 )
 
 ax.set_ylabel("deployed PV capacity (MW)")
-ax.set_ylim([-1, 35])
+ax.set_ylim([-1, 45])
 
 ax.set_xlabel("PV capacity cost (€/kWp)")
 ax.set_xlim([380, 870])
@@ -239,7 +239,7 @@ sns.scatterplot(
 ax.set_ylabel("deployed battery\ncapacity (MWh)")
 ax.set_ylim([-3, 100])
 
-ax.set_xlabel("battery capacity cost (€/kWh)")
+ax.set_xlabel("6h battery capacity cost (€/kWh)")
 ax.set_xlim([25, 135])
     
 ax.legend(frameon=False, title="deployed PV capacity (MW)")

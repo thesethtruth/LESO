@@ -25,14 +25,13 @@ RESOURCE_FOLDER = FOLDER / "resources"
 COLLECTION = "cablepooling"
 RUN_ID = "2110_v2"
 APPROACH = "no_subsidy"
-force_refresh = True
 
 #%% read in data
 df = get_data_from_db(
     collection=COLLECTION,
     run_id=RUN_ID,
     approach=APPROACH,
-    force_refresh=True,
+    force_refresh=False,
     # filter=filter,
 )
 
@@ -64,7 +63,7 @@ sns.scatterplot(
     edgecolor="black",
 )
 
-ax.set_ylabel("deployed PV capacity (MW)")
+ax.set_ylabel("deployed PV\ncapacity (MW)")
 ax.set_ylim([-1, 20])
 
 ax.set_xlabel("PV capacity cost (€/kWp)")
@@ -183,7 +182,7 @@ ax.plot(
     label='Fixed-support subsidy'
 )
 
-ax.set_ylabel("deployed PV capacity (MW)")
+ax.set_ylabel("deployed PV\ncapacity (MW)")
 ax.set_ylim([-1, 20])
 
 ax.set_xlabel("PV capacity cost (€/kWp)")

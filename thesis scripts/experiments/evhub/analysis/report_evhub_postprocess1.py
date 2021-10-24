@@ -7,7 +7,18 @@ import matplotlib.pyplot as plt
 
 
 from LESO.plotting import default_matplotlib_save, default_matplotlib_style
-from evhub_postprocess_tools import get_data_from_db
+from evhub_postprocess_tools import (
+    get_data_from_db,
+    gcloud_read_experiment,
+    pv_col,
+    wind_col,
+    bat2_col,
+    bat6_col,
+    bat10_col,
+    total_bat_col,
+    batcols,
+    bivar_tech_dict
+)
 
 #%% paths
 FOLDER = Path(__file__).parent
@@ -21,30 +32,15 @@ LEFT_MARGIN = 0.15
 COLLECTION = "evhub"
 RUN_ID = "2210_v2"
 
-## settings
-filter = ("run_id", "=", RUN_ID)
-
-## pointers
-pv_col = "PV South installed capacity"
-wind_col = "Nordex N100 2500 installed capacity"
-bat2_col = "battery installed capacity"
-bat6_col = "6h battery installed capacity"
-bat10_col = "10h battery installed capacity"
-total_bat_col = "total_storage_energy"
-batcols = [bat2_col, bat6_col, bat10_col]
-bivar_tech_dict = {"PV": pv_col, "wind": wind_col, "battery": total_bat_col}
-
-
 #%% load in results
 db = get_data_from_db(
     collection=COLLECTION,
     run_id=RUN_ID,
-    filter=filter,
     force_refresh=False
 )
 
 #%% plotting
-grid_capacities = [0.5, 1.0, 0.0, 1.5]
+grid_capacities = [0.0, 0.5, 1.0, 1.5]
 for grid_cap in grid_capacities:
     ## data selection
 
@@ -82,7 +78,7 @@ for grid_cap in grid_capacities:
     plt.setp(l.get_title(), multialignment="center")
 
     default_matplotlib_save(
-        fig, IMAGE_FOLDER / f"report_evhub_grid-{grid_cap}_pv_deployment_vs_cost.png"
+        fig, IMAGE_FOLDER / f"report_evhub_grid-{grid_cap}_pv_deployment_vs_cost.png", adjust_left=LEFT_MARGIN
     )
 
     #%% Battery deployment vs absolut cost scatter
@@ -101,11 +97,11 @@ for grid_cap in grid_capacities:
         edgecolor="black",
     )
 
-    ax.set_ylabel("deployed battery \n capacity (MW)")
+    ax.set_ylabel("deployed battery \n capacity (MWh)")
     # ax.set_ylim([-1, 20])
 
-    ax.set_xlabel("battery capacity cost (€/kWh)")
-    ax.set_xlim([160, 300])
+    ax.set_xlabel("battery power capacity cost (€/kW)")
+    # ax.set_xlim([100, 180])
 
     l = ax.legend(
         bbox_to_anchor=(1.02, 0.5),
@@ -229,6 +225,10 @@ for grid_cap in grid_capacities:
 
     ###
     for tech, tech_col in bivar_tech_dict.items():
+        if tech == "battery":
+            unit = "MWh"
+        else:
+            unit = "MW"
         #%% bi-variate scatterplot PV vs BAT
 
         fig, ax = plt.subplots()
@@ -247,8 +247,8 @@ for grid_cap in grid_capacities:
             edgecolor="black",
         )
 
-        ax.set_ylabel("battery \n capacity cost (€/kW)")
-        # ax.set_ylim([160, 310])
+        ax.set_ylabel("battery power\ncapacity cost (€/kW)")
+        # ax.set_ylim([100, 180])
 
         ax.set_xlabel("PV capacity cost (€/kWp)")
         # ax.set_xlim([370, 870])
@@ -257,7 +257,7 @@ for grid_cap in grid_capacities:
             loc=9,
             borderaxespad=0.0,
             frameon=True,
-            title=f"deployed {tech} capacity (MW)",
+            title=f"deployed {tech} capacity ({unit})",
             ncol=6,
             handletextpad=0.1,
         )
@@ -285,7 +285,7 @@ for grid_cap in grid_capacities:
             edgecolor="black",
         )
 
-        ax.set_ylabel("battery \n capacity cost (€/kW)")
+        ax.set_ylabel("battery power\ncapacity cost (€/kW)")
         # ax.set_ylim([160, 310])
 
         ax.set_xlabel("wind capacity cost (€/kW)")
@@ -295,7 +295,7 @@ for grid_cap in grid_capacities:
             loc=9,
             borderaxespad=0.0,
             frameon=True,
-            title=f"deployed {tech} capacity (MW)",
+            title=f"deployed {tech} capacity ({unit})",
             ncol=6,
             handletextpad=0.1,
         )
@@ -324,7 +324,7 @@ for grid_cap in grid_capacities:
             edgecolor="black",
         )
 
-        ax.set_ylabel("PV capacity \ncost (€/kWp)")
+        ax.set_ylabel("PV capacity\ncost (€/kWp)")
         # ax.set_ylim([160, 310])
 
         ax.set_xlabel("wind capacity cost (€/kW)")
@@ -334,7 +334,7 @@ for grid_cap in grid_capacities:
             loc=9,
             borderaxespad=0.0,
             frameon=True,
-            title=f"deployed {tech} capacity (MW)",
+            title=f"deployed {tech} capacity ({unit})",
             ncol=6,
             handletextpad=0.1,
         )

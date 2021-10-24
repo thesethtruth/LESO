@@ -91,7 +91,7 @@ df = db.query(f"run_id == '{run_id}'")
 
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
-fig.set_size_inches(6, 2.2)
+fig.set_size_inches(4, 4)
 sns.scatterplot(
     x=df.index,
     y="solving_time",
@@ -129,7 +129,7 @@ df = db.query(f"run_id == '{run_id}'")
 
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
-fig.set_size_inches(6, 2.2)
+fig.set_size_inches(4, 4)
 sns.scatterplot(
     x=df.index,
     y="solving_time",
@@ -162,7 +162,7 @@ default_matplotlib_save(
 sns.set_palette(sns.color_palette(["#b7094c","#892b64","#5c4d7d","#2e6f95"]))
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
-fig.set_size_inches(6, 4)
+fig.set_size_inches(4, 4)
 
 
 # sns.stripplot(x="solving_time", y="grid_capacity", data=df, ax=ax, orient='h', size=2, alpha=.3, jitter=.5, edgecolor="black", palette="dark:#69d_r")
@@ -189,7 +189,7 @@ default_matplotlib_save(
 #%% strip plot
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
-fig.set_size_inches(6, 3)
+fig.set_size_inches(4, 4)
 
 
 sns.stripplot(
@@ -216,7 +216,7 @@ default_matplotlib_save(
 #%% violin plot
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
-fig.set_size_inches(6, 3)
+fig.set_size_inches(4, 4)
 
 
 sns.boxplot(

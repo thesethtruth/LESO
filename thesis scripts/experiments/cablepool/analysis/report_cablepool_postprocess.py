@@ -5,9 +5,16 @@ from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from LESO.experiments.analysis import (
-    gdatastore_results_to_df,
-    gcloud_read_experiment
+from cablepool_postprocess_tools import (
+    get_data_from_db,
+    gcloud_read_experiment,
+    pv_col,
+    wind_col,
+    bat2_col,
+    bat6_col,
+    bat10_col,
+    total_bat_col,
+    batcols
 )
 from LESO.plotting import default_matplotlib_save, default_matplotlib_style
 
@@ -21,75 +28,22 @@ COLLECTION = "cablepooling"
 RUN_ID = "2110_v2"
 APPROACH = "subsidy"
 
-force_refresh = False
 
-pv_col = "PV South installed capacity"
+#%% read in data
+df = get_data_from_db(
+    collection=COLLECTION,
+    run_id=RUN_ID,
+    approach=APPROACH,
+    force_refresh=True,
+    # filter=filter,
+)
 
-#%% load in results
+exp = gcloud_read_experiment(
+    collection=COLLECTION,
+    experiment_id=df.filename_export.iat[189]
+)
 
-filename = f"{COLLECTION}_{RUN_ID}.{APPROACH}.pkl"
-pickled_df = RESOURCE_FOLDER / filename
-
-# buffer all the calculations/df, only refresh if forced to refresh
-if pickled_df.exists() and not force_refresh:
-
-    print("opened pickle -- not refreshed")
-    df = pd.read_pickle(pickled_df)
-
-else:
-    filters = [
-        ("run_id", "=", RUN_ID),
-        ("approach", "=", APPROACH)
-    ]
-
-    df = gdatastore_results_to_df(
-        collection=COLLECTION,
-        filters=filters
-    )
-
-    #%% data selection
-    exp = gcloud_read_experiment(
-        collection=COLLECTION,
-        experiment_id=df.filename_export.iat[189]
-    )
-
-    spec_yield_pv = (
-        sum(exp.components.pv1.state['power [+]']) /
-        exp.components.pv1.settings.installed 
-    )
-    tot_yield_wind = sum(exp.components.wind1.state['power [+]'])
-
-
-    ## change / add some data
-    df['pv_cost_absolute'] = df.pv_cost_factor * 1020
-    df['curtailment'] = -df['curtailment']
-    df['total_generation'] = (df[pv_col] * spec_yield_pv + tot_yield_wind)
-    df['relative_curtailment'] = df['curtailment'] / df['total_generation'] *100
-    df['total_installed_capacity'] = df[pv_col] + 10
-
-    #%% Add battery cost for 2 hour battery
-
-    def linear_map(value, ):
-        min, max = 0.41, 0.70 # @@
-        map_min, map_max = 0.42, 0.81 # @@
-
-        frac = (value - min) / (max-min)
-        m_value = frac * (map_max-map_min) + map_min
-
-        return m_value
-
-    power_ref = 257
-    storage_ref = 277
-
-    df["battery_cost_absolute_2h"] = [
-        (bcf * storage_ref *2 + linear_map(bcf)*power_ref)/2
-        for bcf in df["battery_cost_factor"].values
-    ]
-
-    print("fetched data from the cloud -- refreshed")
-    df.to_pickle(RESOURCE_FOLDER / filename)
-#%%
-
+## solar deployment
 subset = df[df[pv_col]!=0]
 idx = subset[pv_col].argmin()
 max_solar_price = subset.loc[subset.index[idx], "pv_cost_absolute"]
@@ -214,4 +168,4 @@ ax.set_ylabel("frequency [h/y]")
 ax.set_ylim([0,500])
 ax.set_xlabel("capacity factor [-]")
 ax.set_xlim([0,1])
-default_matplotlib_save(fig, IMAGE_FOLDER / "images/report_cablepool_PV_histogram.png")
+default_matplotlib_save(fig, IMAGE_FOLDER / "report_cablepool_PV_histogram.png")

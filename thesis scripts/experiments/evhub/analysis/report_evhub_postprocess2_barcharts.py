@@ -88,7 +88,7 @@ for grid_cap, (upper_limit, lower_limit) in grid_capacities.items():
     color={"PV": "#edc645", "wind": "steelblue", 'battery': "darkseagreen", "grid": "darkgrey"}
     df_barplot.plot.bar(stacked=True, ax=ax, color=color)
 
-    ax.set_ylabel("total capacity (MW)")
+    ax.set_ylabel("total capacity (MW(h))")
     ax.set_xticklabels(ax.get_xticklabels(), rotation = 0, fontsize=9)
     ax.legend(
         bbox_to_anchor=(1.02, 0.5),
@@ -119,7 +119,7 @@ fig.set_size_inches(4,3)
 color={"PV": "#edc645", "wind": "steelblue", 'battery': "darkseagreen", "grid": "darkgrey"}
 ref_df.T.plot.bar(stacked=True, ax=ax, color=color)
 
-ax.set_ylabel("total capacity (MW)")
+ax.set_ylabel("total capacity (MW(h))")
 ax.set_xlabel("grid capacity")
 ax.set_xticklabels(ax.get_xticklabels(), rotation = 0, fontsize=9)
 ax.legend(
@@ -143,3 +143,7 @@ for c in ax.containers:
 
 default_matplotlib_save(fig, IMAGE_FOLDER / f"report_evhub_grid_configurations_compare.png")
 
+#%%
+
+ref_out = db.loc[ref_idx.values(), :]
+ref_out.to_pickle(RESOURCE_FOLDER / "ref_systems_df.pkl")

@@ -27,3 +27,5 @@ filter = ("run_id", "=", RUN_ID)
 df = gdatastore_results_to_df(COLLECTION, filter=filter)
 
 
+print(f"Experiment progress: {len(df)} / 1000")
+df.solving_time.describe()

@@ -5,11 +5,12 @@ from pathlib import Path
 
 
 PAD = 0.3
+FONTSIZE = 10
 
 def default_matplotlib_style(
     fig: plt.figure,
     ax: plt.axes,
-    font_size=10,
+    font_size=FONTSIZE,
     height=None,
     disable_box=True,
     subplots=None,

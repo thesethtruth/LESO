@@ -40,7 +40,19 @@ palette = "mako"
 #%% load in results
 db = pd.read_pickle(RESOURCE_FOLDER / "evhub_2210_v2_clustered.pkl")
 
+def normalize_stack(df):
+    result = df.copy()
+    for idx in df.index:
+        sum = df.T[idx].sum()
+        for col in df.columns:
+            result.loc[idx, col] = df.loc[idx, col] / sum
+        
+    result = result*100
+    return result
+
+
 #%% SELECTING THE DATA
+normalize = True
 grid_capacities = [0, 0.5, 1, 1.5]
 ref_df = pd.DataFrame()
 design_cols = [pv_col, wind_col, total_bat_col, "grid_capacity"]
@@ -59,9 +71,16 @@ for grid_cap in grid_capacities:
         "battery": "darkseagreen",
         "grid": "darkgrey",
     }
+    if normalize:
+        df_barplot = normalize_stack(df_barplot)
+        file_name = f"report_evhub_cluster_grid-{grid_cap}_configurations_normed.png"
+        unit = "%"
+    else:
+        file_name = f"report_evhub_cluster_grid-{grid_cap}_configurations.png"
+        unit= "MW(h)"
     df_barplot.plot.bar(stacked=True, ax=ax, color=color)
 
-    ax.set_ylabel("total capacity (MW(h))")
+    ax.set_ylabel(f"total capacity ({unit})")
     ax.set_xticklabels(ax.get_xticklabels(), rotation=0, fontsize=9)
     ax.legend(
         bbox_to_anchor=(1.02, 0.5),
@@ -91,7 +110,7 @@ for grid_cap in grid_capacities:
         ax.bar_label(c, labels=labels, label_type="center", color="#404040")
 
     default_matplotlib_save(
-        fig, IMAGE_FOLDER / f"report_evhub_cluster_grid-{grid_cap}_configurations.png"
+        fig, IMAGE_FOLDER / file_name
     )
     
     highest_cluster_count = 0

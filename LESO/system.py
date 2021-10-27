@@ -248,18 +248,15 @@ class System:
 
     def pyomo_solve(self, solver="gurobi", method = None, noncovex=False, tee=False, solver_kwrgs=None):
         logger.info(f"sending the optimisation problem to {solver}")
+        
         opt = pyo.SolverFactory(solver)
-        if noncovex:
-            opt.options["NonConvex"] = 2
-
-        # opt.options["IterationLimit"] = 200000
-        # opt.options['BarHomogeneous'] = 1
-        if method is not None:
-            opt.options["Method"] = method # force to use dual simplex
-
         if solver_kwrgs is not None:
             for key, value in solver_kwrgs.items():
-                opt.options[key] = value
+                opt.options[key] = value       
+        if noncovex:
+            opt.options["NonConvex"] = 2
+        if method is not None:
+            opt.options["Method"] = method 
 
         self.model.results = opt.solve(self.model, tee=tee)
 

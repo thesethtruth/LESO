@@ -1,4 +1,4 @@
-#%% cablepool_definitions.py
+#%%
 from pathlib import Path
 import LESO
 from google.cloud.exceptions import Conflict

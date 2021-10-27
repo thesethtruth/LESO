@@ -37,7 +37,7 @@ df = gdatastore_results_to_df(COLLECTION, filters=filters)
 uncertainties = [col for col in df.columns if "cost_factor" in col]
 selection = (df
     .sort_values("solving_time", ascending=False)
-    .head(20)
+    .head(50)
 )[[*uncertainties, "solving_time"]]
 
 experiments = selection[uncertainties].reset_index(drop=True)
@@ -58,5 +58,5 @@ if __name__ == "__main__":
     # specify outcomes
     model.outcomes = [ScalarOutcome(metric) for metric in METRICS]
 
-    with MultiprocessingEvaluator(model, n_processes=5) as evaluator:
+    with MultiprocessingEvaluator(model, n_processes=10) as evaluator:
         results = evaluator.perform_experiments(scenarios=scenarios)

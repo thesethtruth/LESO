@@ -96,7 +96,7 @@ def Handshake(
         "BarConvTol": 1e-12,
         "LogToConsole": 0,
         "LogFile": logfile,
-        "TimeLimit": 600,
+        "TimeLimit": 300,
         }
     ## SOLVE
     system.optimize(

@@ -207,12 +207,24 @@ def GLD2050(
         meta_data = {"filename_export": "N/a"}
         results = {metric: np.nan for metric in METRICS}
 
+    # compute the total storage reflux, only exists when optimisation is succesful (therefore hassattr)
+    total_reflux = 0
+    for component in system.components:
+        if isinstance(component, LESO.Storage) and hasattr(component, "reflux"):
+            total_reflux += component.reflux
+    solving_time = system.model.results["solver"][0]["Time"]
+    if solving_time > 500:
+        logger.warn(f"solving took a long time: {int(solving_time)} s")
+    else:
+        logger.info(f"gurobi found the optimum in: {int(solving_time)} s")
     ## In any case
     meta_data.update(
         {
+            "solving_time": solving_time,
             "solving_time": system.model.results["solver"][0]["Time"],
             "solver_status": system.model.results["solver"][0]["status"].__str__(),
             "solver_status_code": system.model.results["solver"][0]["Return code"],
+            "battery_reflux": total_reflux,
         }
     )
 
@@ -256,8 +268,8 @@ def GLD2050(
         try:
             gcloud_upload_log_file(ACTIVE_FOLDER / logfile, COLLECTION, logfile)
             succesful = True
-            move_log_from_active_to_cold(file_name=logfile)
         except:
             pass
+    move_log_from_active_to_cold(file_name=logfile)
 
     return results

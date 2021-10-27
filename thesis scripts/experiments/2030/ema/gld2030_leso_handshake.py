@@ -76,6 +76,7 @@ def Handshake(
     # generate file name and filepath for storing
     filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1]) + ".json"
     filepath = RESULTS_FOLDER / filename_export
+    logfile = filename_export.replace(".json", ".log")
 
     # set the correct context and share
     if target_share:
@@ -88,6 +89,13 @@ def Handshake(
     else: 
         re_share_constraint = None
 
+    ## initiate the solver kwargs
+    solver_kwrgs = {
+        "BarConvTol": 1e-12,
+        "LogToConsole": 0,
+        "LogFile": logfile,
+        "TimeLimit": 600,
+        }
     ## SOLVE
     system.optimize(
         objective="osc",  # overnight system cost
@@ -99,9 +107,7 @@ def Handshake(
         nonconvex=False,  # solver option (warning will show if needed)
         solve=True,  # solve or just create model
         tee=True,
-        solver_kwrgs={
-            "BarConvTol": 1e-12
-        }
+        solver_kwrgs=solver_kwrgs
     )
 
     return system, filename_export

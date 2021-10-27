@@ -17,6 +17,10 @@ except FileNotFoundError:
     RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
     # when on Seth's laptop
 
+SOLVER_KWRGS = {
+    "BarConvTol": 1e-12,
+    "LogToConsole": 0,
+}
 
 # create bucket if not already exist
 if False:

@@ -12,7 +12,7 @@ from LESO.plotting import default_matplotlib_save, default_matplotlib_style
 
 #%% paths
 FOLDER = Path(__file__).parent
-RESULT_FOLDER = FOLDER.parent / "results"
+RESULT_FOLDER = FOLDER.parent  / "results"
 IMAGE_FOLDER = FOLDER / "images"
 RESOURCE_FOLDER = FOLDER / "resources"
 RESOURCE_FOLDER.mkdir(exist_ok=True)
@@ -29,3 +29,12 @@ df = gdatastore_results_to_df(COLLECTION, filter=filter)
 
 print(f"Experiment progress: {len(df)} / 1000")
 df.solving_time.describe()
+
+#%%
+gdf = df.groupby("target_RE_strategy")
+for name, g in gdf:
+    print(name)
+    print(g["solving_time"].describe())
+    print()
+    print()
+    

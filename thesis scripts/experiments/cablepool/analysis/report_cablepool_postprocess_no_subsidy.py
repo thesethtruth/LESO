@@ -3,8 +3,16 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from LESO.experiments.analysis import (
-    gdatastore_results_to_df,
+from cablepool_postprocess_tools import (
+    get_data_from_db,
+    gcloud_read_experiment,
+    pv_col,
+    wind_col,
+    bat2_col,
+    bat6_col,
+    bat10_col,
+    total_bat_col,
+    batcols
 )
 from LESO.plotting import default_matplotlib_save, default_matplotlib_style
 
@@ -18,67 +26,20 @@ COLLECTION = "cablepooling"
 RUN_ID = "2110_v2"
 APPROACH = "no_subsidy"
 
-force_refresh = False
+#%% read in data
+df = get_data_from_db(
+    collection=COLLECTION,
+    run_id=RUN_ID,
+    approach=APPROACH,
+    force_refresh=False,
+    # filter=filter,
+)
 
-filename = f"{COLLECTION}_{RUN_ID}.{APPROACH}.pkl"
-pickled_df = RESOURCE_FOLDER / filename
+exp = gcloud_read_experiment(
+    collection=COLLECTION,
+    experiment_id=df.filename_export.iat[189]
+)
 
-pv_col = "PV South installed capacity"
-wind_col = "Nordex N100 2500 installed capacity"
-bat_col = "2h battery installed capacity"
-
-# buffer all the calculations/df, only refresh if forced to refresh
-if pickled_df.exists() and not force_refresh:
-
-    print("opened pickle -- not refreshed")
-    df = pd.read_pickle(pickled_df)
-
-else:
-    filters = [
-        ("run_id", "=", RUN_ID),
-        ("approach", "=", APPROACH)
-    ]
-
-    df = gdatastore_results_to_df(
-        collection=COLLECTION,
-        filters=filters
-    )
-
-    # hard-coded here for convience
-    spec_yield_pv = 1038.1840000000007
-    tot_yield_wind = 30206.649999999943
-
-
-    ## change / add some data
-    df["pv_cost_absolute"] = df.pv_cost_factor * 1020
-    df["curtailment"] = -df["curtailment"]
-    df["total_generation"] = df[pv_col] * spec_yield_pv + tot_yield_wind
-    df["relative_curtailment"] = df["curtailment"] / df["total_generation"] * 100
-    df["total_installed_capacity"] = df[pv_col] + 10
-    switch = lambda x: "<1" if x < 1 else ">1"
-    df["ratio"] = [switch(x) for x in df[pv_col] / 10]
-
-    #%% Add battery cost for 2 hour battery
-
-    def linear_map(value, ):
-        min, max = 0.41, 0.70 # @@
-        map_min, map_max = 0.42, 0.81 # @@
-
-        frac = (value - min) / (max-min)
-        m_value = frac * (map_max-map_min) + map_min
-
-        return m_value
-
-    power_ref = 257
-    storage_ref = 277
-
-    df["battery_cost_absolute_2h"] = [
-        (bcf * storage_ref *2 + linear_map(bcf)*power_ref)/2
-        for bcf in df["battery_cost_factor"].values
-    ]
-
-    print("fetched data from the cloud -- refreshed")
-    df.to_pickle(RESOURCE_FOLDER / filename)
 #%%
 
 subset = df[df[pv_col]!=0]
@@ -102,7 +63,7 @@ sns.scatterplot(
     edgecolor="black",
 )
 
-ax.set_ylabel("deployed PV capacity (MW)")
+ax.set_ylabel("deployed PV\ncapacity (MW)")
 ax.set_ylim([-1, 20])
 
 ax.set_xlabel("PV capacity cost (€/kWp)")
@@ -186,9 +147,6 @@ default_matplotlib_save(
     fig, IMAGE_FOLDER / "report_cablepool_no_sub_abs_curtailment_vs_deployment.png"
 )
 
-# plt.tight_layout(pad=0.3)
-# plt.savefig("report_cablepool_no_sub_abs_curtailment_vs_deployment_alt.png", dpi=300, bbox_inches='tight', pad_inches=0)
-
 # %% whole lotta stuff to get the original cable pooling results
 
 approach = "subsidy"
@@ -224,7 +182,7 @@ ax.plot(
     label='Fixed-support subsidy'
 )
 
-ax.set_ylabel("deployed PV capacity (MW)")
+ax.set_ylabel("deployed PV\ncapacity (MW)")
 ax.set_ylim([-1, 20])
 
 ax.set_xlabel("PV capacity cost (€/kWp)")

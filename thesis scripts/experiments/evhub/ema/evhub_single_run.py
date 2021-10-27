@@ -62,17 +62,20 @@ for exp_to_select in range(2,6):
     # generate file name and filepath for storing
     filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1]) + ".json"
     filepath = RESULTS_FOLDER / filename_export
-
+    logfile = filename_export.replace(".json", ".log").absolute()
     ## SOLVE
     system.optimize(
         objective="osc",  # overnight system cost
-        store=True,  # write-out to json
+        store=False,  # write-out to json
         filepath=filepath,  # resorts to default: modelname+timestamp
         solver="gurobi",  # default solver
         solve=True,  # solve or just create model
         # tee=True,
         solver_kwrgs ={
-            "BarConvTol": 1e-12
+            "BarConvTol": 1e-12,
+            "LogToConsole": 0,
+            "LogFile": logfile,
+            "TimeLimit": 30
         }
     )
 

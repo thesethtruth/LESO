@@ -15,6 +15,8 @@ from LESO.finance import (
     determine_roi,
     determine_total_net_profit,
 )
+from LESO.leso_logging import get_module_logger
+logger = get_module_logger(__name__)
 
 from gld2030_definitions import (
     COLLECTION,
@@ -98,7 +100,6 @@ def Handshake(
         solver="gurobi",  # default solver
         nonconvex=False,  # solver option (warning will show if needed)
         solve=True,  # solve or just create model
-        tee=True,
         solver_kwrgs={
             "BarConvTol": 1e-12
         }
@@ -192,11 +193,15 @@ def GLD2030(
     for component in system.components:
         if isinstance(component, LESO.Storage) and hasattr(component, "reflux"):
             total_reflux += component.reflux
-
+    solving_time = system.model.results["solver"][0]["Time"]
+    if solving_time > 500:
+        logger.warn(f"solving took a long time: {int(solving_time)} s")
+    else:
+        logger.info(f"gurobi found the optimum in: {int(solving_time)} s")
     ## In any case
     meta_data.update(
         {
-            "solving_time": system.model.results["solver"][0]["Time"],
+            "solving_time": solving_time,
             "solver_status": system.model.results["solver"][0]["status"].__str__(),
             "solver_status_code": system.model.results["solver"][0]["Return code"],
             "battery_reflux": total_reflux

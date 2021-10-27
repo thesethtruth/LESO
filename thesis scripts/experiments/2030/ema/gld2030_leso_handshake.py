@@ -93,10 +93,11 @@ def Handshake(
 
     ## initiate the solver kwargs
     solver_kwrgs = {
-        "BarConvTol": 1e-12,
+        "BarConvTol": 1e-5,
         "LogToConsole": 0,
         "LogFile": logfile,
-        "TimeLimit": 300,
+        "Method": 2,
+        "Crossover": 0
         }
     ## SOLVE
     system.optimize(

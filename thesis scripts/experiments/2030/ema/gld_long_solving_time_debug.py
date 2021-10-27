@@ -18,8 +18,8 @@ from gld2030_definitions import COLLECTION, METRICS
 from LESO.experiments.analysis import gdatastore_results_to_df
 
 #%% experiments for reference of the format
-ema_results_path = r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\evhub\results\evhub_ema_results_210907.tar.gz"
-experiments, outcomes = ema_workbench.load_results(ema_results_path)
+# ema_results_path = r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\evhub\results\evhub_ema_results_210907.tar.gz"
+# experiments, outcomes = ema_workbench.load_results(ema_results_path)
 
 #%%
 

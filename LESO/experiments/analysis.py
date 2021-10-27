@@ -1,4 +1,5 @@
 from typing import Tuple
+from pathlib import Path
 import ema_workbench
 import LESO
 import json
@@ -10,6 +11,7 @@ from LESO.dataservice import (
     datastore_put_entry,
     cloud_fetch_blob_as_AttrDict,
     cloud_upload_dict_to_blob,
+    cloud_upload_blob_from_filename,
 )
 from typing import Tuple, List
 from LESO.leso_logging import get_module_logger
@@ -123,3 +125,28 @@ def gcloud_upload_experiment_dict(
         bucket_name=collection,
         destination_blob_name=experiment_id,
     )
+
+def gcloud_upload_log_file(
+    filepath_to_log: Path,
+    collection: str,
+    log_id: str,
+):
+    """ upload a log file to gcloud 
+        collection == bucket_name
+        log_id == destination blob name
+    """
+    return cloud_upload_blob_from_filename(
+        source_file_name=filepath_to_log,
+        bucket_name=collection,
+        destination_blob_name=log_id,
+    )
+
+def move_log_from_active_to_cold(
+    active_folder: str,
+    cold_folder: str,
+    file_name: str,
+):
+    af = Path(active_folder)
+    cf = Path(cold_folder)
+
+    (af / file_name).rename(cf / file_name)

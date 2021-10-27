@@ -1,30 +1,39 @@
-from LESO.experiments.database import send_ema_exp_to_mongo
 import uuid
-from copy import deepcopy as copy
-
 import pyomo.environ as pyo
 import numpy as np
-
+from copy import deepcopy as copy
+from LESO.experiments.analysis import (
+    gdatastore_put_entry,
+    gcloud_upload_experiment_dict,
+    gcloud_upload_log_file,
+)
 
 import LESO
 from LESO.experiments import ema_pyomo_interface
-from LESO.optimizer.extension import constrain_minimal_share_of_renewables, contexted_constraint
+from LESO.optimizer.extension import (
+    constrain_minimal_share_of_renewables,
+    contexted_constraint,
+)
 from LESO.finance import (
     determine_total_investment_cost,
     determine_roi,
     determine_total_net_profit,
 )
+from LESO.leso_logging import get_module_logger
+logger = get_module_logger(__name__)
 
 from gld2050_definitions import (
-    lithium_storage_linear_map,
-    RESULTS_FOLDER,
+    COLLECTION,
     MODELS,
+    OUTPUT_PREFIX,
+    linear_map_2050,
+    RESULTS_FOLDER,
+    ACTIVE_FOLDER,
     METRICS,
     scenarios_2050,
+    move_log_from_active_to_cold,
 )
 
-OUTPUT_PREFIX = "gld2050_exp_"
-DB_NAMETAG = COLLECTION = "gld2050"
 
 def Handshake(
     pv_cost_factor=None,
@@ -46,36 +55,41 @@ def Handshake(
             component.capex = component.capex * wind_cost_factor
         if isinstance(component, LESO.Lithium):
             component.capex_storage = component.capex_storage * battery_cost_factor
-            component.capex_power = component.capex_power * lithium_storage_linear_map(
+            component.capex_power = component.capex_power * linear_map_2050(
                 battery_cost_factor
             )
         if isinstance(component, LESO.Hydrogen):
             component.capex_power = component.capex_power * hydrogen_cost_factor
             component.capex_storage = component.capex_storage * hydrogen_cost_factor
-    
+
         # grab the ETM demand component
         if isinstance(component, LESO.ETMdemand):
             demand = component
 
     # do something with the target RE strategy
     scenario_data = scenarios_2050[scenario]
-    if target_RE_strategy: 
+    if target_RE_strategy:
         STRATEGIES = {
             "no_target": (None, None),
-            "current_projection_include_export": (scenario_data['target_re_share'], False),
-            "current_projection_excl_export": (scenario_data['target_re_share_ex_export'], True),
-            "fixed_target_60": (.60, True),
-            "fixed_target_80": (.80, True),
+            "current_projection_include_export": (
+                scenario_data["target_re_share"],
+                False,
+            ),
+            "current_projection_excl_export": (
+                scenario_data["target_re_share_ex_export"],
+                True,
+            ),
+            "fixed_target_60": (0.60, True),
+            "fixed_target_80": (0.80, True),
             "fixed_target_100": (1, True),
         }
 
         target_share, exlude_export = STRATEGIES[target_RE_strategy]
 
-
-
     # generate file name and filepath for storing
     filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1]) + ".json"
     filepath = RESULTS_FOLDER / filename_export
+    logfile = filename_export.replace(".json", ".log")
 
     # set the correct context and share
     if target_share:
@@ -83,24 +97,34 @@ def Handshake(
             constrain_minimal_share_of_renewables,
             share_of_re=target_share,
             demands=[demand],
-            exclude_export_from_share=exlude_export
+            exclude_export_from_share=exlude_export,
         )
-    else: 
+    else:
         re_share_constraint = None
+
+    ## initiate the solver kwargs
+    solver_kwrgs = {
+        "BarConvTol": 1e-8,
+        "LogToConsole": 0,
+        "LogFile": logfile,
+        "Method": 2,
+        "Crossover": -1,
+    }
 
     ## SOLVE
     system.optimize(
         objective="osc",  # overnight system cost
-        additional_constraints= re_share_constraint,
+        additional_constraints=re_share_constraint,
         time=None,  # resorts to default; year 8760h
         store=True,  # write-out to json
         filepath=filepath,  # resorts to default: modelname+timestamp
         solver="gurobi",  # default solver
         nonconvex=False,  # solver option (warning will show if needed)
         solve=True,  # solve or just create model
+        solver_kwrgs=solver_kwrgs,
     )
 
-    return system, filename_export
+    return system, filename_export, logfile
 
 
 @ema_pyomo_interface
@@ -113,9 +137,9 @@ def GLD2050(
     target_RE_strategy=None,
     run_ID=None,
 ):
-    
+
     # hand ema_inputs over to the LESO handshake
-    system, filename_export = Handshake(
+    system, filename_export, logfile = Handshake(
         pv_cost_factor=pv_cost_factor,
         wind_cost_factor=wind_cost_factor,
         battery_cost_factor=battery_cost_factor,
@@ -176,7 +200,7 @@ def GLD2050(
         results = dict()
         results.update(capacities)
         results.update(pi)
-        meta_data = {"filename_export": filename_export}
+        meta_data = {"filename_export": filename_export, "logfile": logfile}
 
     ## Non optimal exit, no results
     else:
@@ -206,14 +230,33 @@ def GLD2050(
     )
     db_entry.update(meta_data)  # metadata
     db_entry.update({"run_id": run_ID})
-    
-    ## enter the hell loop
-    # just keep trying untill the internet gets going again
+
+    # put db_entry to google datastore, keeps retrying when internet is down.
     succesful = False
     while not succesful:
         try:
-            send_ema_exp_to_mongo(COLLECTION, db_entry)
+            gdatastore_put_entry(COLLECTION, db_entry)
             succesful = True
+        except:
+            pass
+
+    # put system.results to google cloud, keeps retrying when internet is down.
+    succesful = False
+    while not succesful:
+        try:
+            gcloud_upload_experiment_dict(system.results, COLLECTION, filename_export)
+            succesful = True
+        except:
+            pass
+
+    # put gurobi logfile to google cloud, which is located at the project folder in our case.
+    # also moves this file from active storage (in the repo) to the big storage disk.
+    succesful = False
+    while not succesful:
+        try:
+            gcloud_upload_log_file(ACTIVE_FOLDER / logfile, COLLECTION, logfile)
+            succesful = True
+            move_log_from_active_to_cold(file_name=logfile)
         except:
             pass
 

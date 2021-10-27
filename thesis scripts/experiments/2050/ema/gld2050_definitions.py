@@ -2,8 +2,10 @@
 from pathlib import Path
 import LESO
 from google.cloud.exceptions import Conflict
+from functools import partial
+from LESO.experiments.analysis import move_log_from_active_to_cold
 
-COLLECTION = "gld2030"
+COLLECTION = "gld2050"
 OUTPUT_PREFIX = f"{COLLECTION}_exp_"
 
 MODEL_FOLDER = Path(__file__).parent.parent / "model"
@@ -12,12 +14,19 @@ try:
     RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
     # when on beast
 except FileNotFoundError:
-    RESULTS_FOLDER = Path(r"C:\Users\Sethv\#Universiteit Twente\GIT\LESO\thesis scripts\experiments\2030\results")
+    RESULTS_FOLDER = Path(f"C:\\Users\\Sethv\\#Universiteit Twente\\GIT\\LESO\\thesis scripts\\experiments\\2050\\results")
     RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
     # when on Seth's laptop
 
+
+ACTIVE_FOLDER = Path(__file__).parents[4]
+
+move_log_from_active_to_cold = partial(
+    move_log_from_active_to_cold,
+    active_folder=ACTIVE_FOLDER,
+    cold_folder=RESULTS_FOLDER)
 # create bucket if not already exist
-if True:
+if False:
     try:
         LESO.dataservice.google.cloud_create_bucket(COLLECTION)
     except Conflict as c:

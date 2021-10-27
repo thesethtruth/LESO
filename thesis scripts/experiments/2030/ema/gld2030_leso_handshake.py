@@ -93,12 +93,12 @@ def Handshake(
 
     ## initiate the solver kwargs
     solver_kwrgs = {
-        "BarConvTol": 1e-5,
+        "BarConvTol": 1e-8,
         "LogToConsole": 0,
         "LogFile": logfile,
         "Method": 2,
-        "Crossover": 0
-        }
+        "Crossover": -1
+    }
     ## SOLVE
     system.optimize(
         objective="osc",  # overnight system cost

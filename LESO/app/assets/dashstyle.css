@@ -32,6 +32,20 @@
     z-index: 1002;
 }*/
 
+/* Custom Seth 
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.topslider{
+  margin-top: 25px;
+  margin-right: 0;
+  margin-left: auto;
+  width: 820px;
+}
+.rightslider{
+  padding: 0px 0px 0px 0px;
+  margin-bottom: auto;
+  margin-top: 0;
+}
+
 /* Grid
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 .container {

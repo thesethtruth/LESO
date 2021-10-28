@@ -25,40 +25,67 @@ options_dict = {
 
 app.layout = html.Div(
     [
-        html.H3("Results quick browsing analysis"),
-        dcc.Markdown("Select the **experiment** dataset to explore:"),
-        dcc.Dropdown(
-            id="dataset-select",
-            persistence=True,
-            options=[
-                {"label": key, "value": value} for key, value in options_dict.items()
+        html.H3("Thesis Seth van Wieringen - Results analysis"),
+        html.Div(
+            [
+                dcc.Markdown("Select the **experiment** dataset to explore:"),
+                dcc.Markdown("Select the **run ID** of the selected dataset:"),
+                dcc.Dropdown(
+                    id="dataset-select",
+                    persistence=True,
+                    options=[
+                        {"label": key, "value": value}
+                        for key, value in options_dict.items()
+                    ],
+                    value=list(options_dict.values())[0],
+                ),
+                dcc.Dropdown(
+                    id="runid-select",
+                    persistence=True,
+                ),
+                dcc.Markdown("Select a **primary** feature to filter:"),
+                dcc.Markdown("Select a **secondary** feature to filter:"),
+                dcc.Dropdown(
+                    id="filter-select-A",
+                    persistence=True,
+                ),
+                dcc.Dropdown(
+                    id="filter-select-B",
+                    persistence=True,
+                ),
+                dcc.Markdown("Select the **hue** feature to use:"),
+                dcc.Markdown("Select the **size** feature to use:"),
+                dcc.Dropdown(
+                    id="hue-select",
+                    persistence=True,
+                ),
+                dcc.Dropdown(
+                    id="size-select",
+                    persistence=True,
+                ),
             ],
-            value=list(options_dict.values())[0],
+            style={
+                "display": "grid",
+                "grid-template-columns": r"50% 50%",
+                "grid-template-rows": "auto",
+            },
         ),
-        dcc.Markdown("Select the **run ID** of the selected dataset:"),
-        dcc.Dropdown(
-            id="runid-select",
-            persistence=True,
+        html.Div(
+            [
+                dcc.RangeSlider(
+                    id="filter-slider-A", persistence=True, className="topslider"
+                ),
+                html.Div(),
+                dcc.Graph(id="filter-fig", config={"displayModeBar": False}),
+                dcc.RangeSlider(
+                    id="filter-slider-B",
+                    vertical=True,
+                    verticalHeight=355,
+                    className="rightslider",
+                ),
+            ],
+            style={"display": "grid", "grid-template-columns": r"90% 10%"},
         ),
-        dcc.Markdown("Select a **primary** feature to filter:"),
-        dcc.Dropdown(
-            id="filter-select-A",
-            persistence=True,
-        ),
-        dcc.RangeSlider(
-            id="filter-slider-A",
-            persistence=False,
-        ),
-        dcc.Markdown("Select a **secondary** feature to filter:"),
-        dcc.Dropdown(
-            id="filter-select-B",
-            persistence=True,
-        ),
-        dcc.RangeSlider(
-            id="filter-slider-B",
-            persistence=False,
-        ),
-        dcc.Graph(id="filter-fig"),
         html.P("Select a simulation run"),
         dcc.Dropdown(
             id="filtered-experiment-select",
@@ -116,6 +143,22 @@ def populate_dropdowns(data):
     cols = [col for col in df.columns if df[col].dtype == "float64"]
     options = [{"label": key, "value": key} for key in cols]
     value = cols[0]
+
+    return options, value, options, value
+
+## hue/size-select populator
+@app.callback(
+    Output("hue-select", "options"),
+    Output("hue-select", "value"),
+    Output("size-select", "options"),
+    Output("size-select", "value"),
+    Input("google-datastore-cache", "data"),
+)
+def populate_dropdowns(data):
+    df = pd.DataFrame.from_dict(json.loads(data))
+    options = [{"label": key, "value": key} for key in df.columns]
+    options.insert(0, {"label": "None", "value": "None"})
+    value = options[0]["value"]
 
     return options, value, options, value
 
@@ -192,7 +235,7 @@ def filter_a(feature, data):
     minn = df[feature].min()
     maxx = df[feature].max()
     value = [minn, maxx]
-    marks = {i: str(round(i, 2)) for i in value}
+    marks = {i: "" for i in value}
     step = (maxx - minn) / 100
     return minn, maxx, value, marks, step
 
@@ -212,7 +255,7 @@ def filter_a(feature, data):
     minn = df[feature].min()
     maxx = df[feature].max()
     value = [minn, maxx]
-    marks = {i: str(round(i, 2)) for i in value}
+    marks = {i: "" for i in value}
     step = (maxx - minn) / 100
     return minn, maxx, value, marks, step
 
@@ -226,20 +269,33 @@ def filter_a(feature, data):
     Input("filter-slider-A", "value"),
     Input("filter-slider-B", "value"),
     Input("filtered-google-datastore-cache", "data"),
+    Input("hue-select", "value"),
+    Input("size-select", "value"),
 )
-def filter_figure(x_col, y_col, x_range, y_range, data):
+def filter_figure(x_col, y_col, x_range, y_range, data, hue, size):
     df = pd.DataFrame.from_dict(json.loads(data))
     xmin, xmax = x_range
     ymin, ymax = y_range
-
+    if hue == "None":
+        hue=None
+    if size == "None":
+        size=None
+    
     x_slice = (df[x_col] >= xmin) & (df[x_col] <= xmax)
     y_slice = (df[y_col] >= ymin) & (df[y_col] <= ymax)
     total_slice = x_slice & y_slice
     sliced_df = df[total_slice]
-    fig = go.Figure(data=px.scatter(sliced_df, x=x_col, y=y_col))
-    fig.update_layout(template="simple_white")
-    fig.update_xaxes(range=(df[x_col].min() * 1.05, df[x_col].max() * 1.05))
-    fig.update_yaxes(range=(df[y_col].min() * 1.05, df[y_col].max() * 1.05))
+    layout = go.Layout({"showlegend": False})
+    fig = go.Figure(data=px.scatter(sliced_df, x=x_col, y=y_col, color=hue, size=size),layout=layout)
+
+    fig.update_layout(
+        template="simple_white", margin=dict(l=50, r=25, t=25, b=0), height=430, showlegend=False
+    )
+    for trace in fig['data']: 
+        trace['showlegend'] = False
+    fig.update(layout_showlegend=False)
+    fig.update_xaxes(range=(df[x_col].min() * 1.0, df[x_col].max() * 1.0))
+    fig.update_yaxes(range=(df[y_col].min() * 1.0, df[y_col].max() * 1.0))
 
     data = sliced_df.to_json()
     return fig, data
@@ -298,6 +354,6 @@ def profile_plot(startingweek, data):
 #     return af.make_component_table(ckey, data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # app.run_server(host='0.0.0.0', port=8081, debug=True, use_reloader=False)
     app.run_server(debug=True)

@@ -1,0 +1,6 @@
+service: default
+runtime: python39
+
+instance_class: F4
+
+entrypoint: gunicorn -b :$PORT main:server

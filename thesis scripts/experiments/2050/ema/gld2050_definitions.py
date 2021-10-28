@@ -96,7 +96,13 @@ METRICS = [
 
 # for the linear map in 2050, we return the same value
 def linear_map_2050(value):
-    return value
+    min, max = 0.25, 0.70 # @@
+    map_min, map_max = 0.25, 0.81 # @@
+
+    frac = (value - min) / (max-min)
+    m_value = frac * (map_max-map_min) + map_min
+
+    return m_value
 
 if __name__ == "__main__":
     # use this to easily generate the metrics for installed capacity

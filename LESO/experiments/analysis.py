@@ -1,5 +1,6 @@
 from typing import Tuple
 from pathlib import Path
+import shutil
 import ema_workbench
 import LESO
 import json
@@ -149,4 +150,4 @@ def move_log_from_active_to_cold(
     af = Path(active_folder)
     cf = Path(cold_folder)
 
-    (af / file_name).rename(cf / file_name)
+    shutil.move(af / file_name, cf / file_name)

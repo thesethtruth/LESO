@@ -50,17 +50,18 @@ if __name__ == "__main__":
             [
                 "current_projection_excl_export",
                 "fixed_target_60",
+                "fixed_target_80"
             ],
-        ),  # 2 options
+        ),  # 3 options
     ]
-    # --> 12 policies
+    # --> 18 policies
 
     # specify outcomes
     model.outcomes = [ScalarOutcome(metric) for metric in METRICS]
 
     # run experiments
     with MultiprocessingEvaluator(model, n_processes=4) as evaluator:
-        results = evaluator.perform_experiments(policies=12)
+        results = evaluator.perform_experiments(policies=18)
 
     # with SequentialEvaluator(model) as evaluator:
     # results = evaluator.perform_experiments(scenarios=1, policies=5)

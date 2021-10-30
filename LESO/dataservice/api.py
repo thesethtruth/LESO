@@ -101,7 +101,8 @@ def _getPVGIS(lat, lon):
     response = requests.get(request_url)
 
     if not response.status_code == 200:
-        raise ValueError("API get request not succesfull, check your input")
+        error = response.json()['message']
+        raise ValueError(f"Request to PVGIS not successful, check your input: {error}. URL: {request_url}")
 
     # store to private df
     df = pd.DataFrame(response.json()["outputs"]["tmy_hourly"])

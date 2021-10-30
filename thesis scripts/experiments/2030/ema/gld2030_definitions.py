@@ -57,7 +57,7 @@ scenarios_2030 = {
     },
     "2030RES_ArnhemNijmegen": {
         "id": 815754,
-        "latlon": (54.9, 5.9),
+        "latlon": (51.9, 5.9),
         "target_re_share": 0.43,
         "target_re_share_ex_export": 0.38,
         "grid_cap": 608.6,

@@ -25,6 +25,7 @@ move_log_from_active_to_cold = partial(
     move_log_from_active_to_cold,
     active_folder=ACTIVE_FOLDER,
     cold_folder=RESULTS_FOLDER)
+    
 # create bucket if not already exist
 if False:
     try:

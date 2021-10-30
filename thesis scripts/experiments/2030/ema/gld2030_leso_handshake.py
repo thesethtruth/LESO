@@ -5,17 +5,22 @@ from copy import deepcopy as copy
 from LESO.experiments.analysis import (
     gdatastore_put_entry,
     gcloud_upload_experiment_dict,
+    gcloud_upload_log_file,
 )
 
 import LESO
 from LESO.experiments import ema_pyomo_interface
-from LESO.optimizer.extension import constrain_minimal_share_of_renewables, contexted_constraint
+from LESO.optimizer.extension import (
+    constrain_minimal_share_of_renewables,
+    contexted_constraint,
+)
 from LESO.finance import (
     determine_total_investment_cost,
     determine_roi,
     determine_total_net_profit,
 )
 from LESO.leso_logging import get_module_logger
+
 logger = get_module_logger(__name__)
 
 from gld2030_definitions import (
@@ -24,9 +29,12 @@ from gld2030_definitions import (
     OUTPUT_PREFIX,
     linear_map_2030,
     RESULTS_FOLDER,
-    METRICS,    
+    ACTIVE_FOLDER,
+    METRICS,
     scenarios_2030,
+    move_log_from_active_to_cold,
 )
+
 
 def Handshake(
     pv_cost_factor=None,
@@ -54,26 +62,30 @@ def Handshake(
         if isinstance(component, LESO.Hydrogen):
             component.capex_power = component.capex_power * hydrogen_cost_factor
             component.capex_storage = component.capex_storage * hydrogen_cost_factor
-    
+
         # grab the ETM demand component
         if isinstance(component, LESO.ETMdemand):
             demand = component
 
     # do something with the target RE strategy
     scenario_data = scenarios_2030[scenario]
-    if target_RE_strategy: 
+    if target_RE_strategy:
         STRATEGIES = {
             "no_target": (None, None),
-            "current_projection_include_export": (scenario_data['target_re_share'], False),
-            "current_projection_excl_export": (scenario_data['target_re_share_ex_export'], True),
-            "fixed_target_60": (.60, True),
-            "fixed_target_80": (.80, True),
+            "current_projection_include_export": (
+                scenario_data["target_re_share"],
+                False,
+            ),
+            "current_projection_excl_export": (
+                scenario_data["target_re_share_ex_export"],
+                True,
+            ),
+            "fixed_target_60": (0.60, True),
+            "fixed_target_80": (0.80, True),
             "fixed_target_100": (1, True),
         }
 
         target_share, exlude_export = STRATEGIES[target_RE_strategy]
-
-
 
     # generate file name and filepath for storing
     filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1]) + ".json"
@@ -86,9 +98,9 @@ def Handshake(
             constrain_minimal_share_of_renewables,
             share_of_re=target_share,
             demands=[demand],
-            exclude_export_from_share=exlude_export
+            exclude_export_from_share=exlude_export,
         )
-    else: 
+    else:
         re_share_constraint = None
 
     ## initiate the solver kwargs
@@ -97,12 +109,12 @@ def Handshake(
         "LogToConsole": 0,
         "LogFile": logfile,
         "Method": 2,
-        "Crossover": -1
+        "Crossover": -1,
     }
     ## SOLVE
     system.optimize(
         objective="osc",  # overnight system cost
-        additional_constraints= re_share_constraint,
+        additional_constraints=re_share_constraint,
         time=None,  # resorts to default; year 8760h
         store=True,  # write-out to json
         filepath=filepath,  # resorts to default: modelname+timestamp
@@ -110,10 +122,10 @@ def Handshake(
         nonconvex=False,  # solver option (warning will show if needed)
         solve=True,  # solve or just create model
         tee=True,
-        solver_kwrgs=solver_kwrgs
+        solver_kwrgs=solver_kwrgs,
     )
 
-    return system, filename_export
+    return system, filename_export, logfile
 
 
 @ema_pyomo_interface
@@ -126,9 +138,9 @@ def GLD2030(
     target_RE_strategy=None,
     run_ID=None,
 ):
-    
+
     # hand ema_inputs over to the LESO handshake
-    system, filename_export = Handshake(
+    system, filename_export, logfile = Handshake(
         pv_cost_factor=pv_cost_factor,
         wind_cost_factor=wind_cost_factor,
         battery_cost_factor=battery_cost_factor,
@@ -189,13 +201,13 @@ def GLD2030(
         results = dict()
         results.update(capacities)
         results.update(pi)
-        meta_data = {"filename_export": filename_export}
+        meta_data = {"filename_export": filename_export, "logfile": logfile}
 
     ## Non optimal exit, no results
     else:
         meta_data = {"filename_export": "N/a"}
         results = {metric: np.nan for metric in METRICS}
-    
+
     # compute the total storage reflux, only exists when optimisation is succesful (therefore hassattr)
     total_reflux = 0
     for component in system.components:
@@ -212,7 +224,7 @@ def GLD2030(
             "solving_time": solving_time,
             "solver_status": system.model.results["solver"][0]["status"].__str__(),
             "solver_status_code": system.model.results["solver"][0]["Return code"],
-            "battery_reflux": total_reflux
+            "battery_reflux": total_reflux,
         }
     )
 
@@ -248,5 +260,16 @@ def GLD2030(
             succesful = True
         except:
             pass
+    
+    # put gurobi logfile to google cloud, which is located at the project folder in our case.
+    # also moves this file from active storage (in the repo) to the big storage disk.
+    succesful = False
+    while not succesful:
+        try:
+            gcloud_upload_log_file(ACTIVE_FOLDER / logfile, COLLECTION, logfile)
+            succesful = True
+        except:
+            pass
+    move_log_from_active_to_cold(file_name=logfile)
 
     return results

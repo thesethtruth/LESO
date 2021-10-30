@@ -221,7 +221,6 @@ def GLD2050(
     meta_data.update(
         {
             "solving_time": solving_time,
-            "solving_time": system.model.results["solver"][0]["Time"],
             "solver_status": system.model.results["solver"][0]["status"].__str__(),
             "solver_status_code": system.model.results["solver"][0]["Return code"],
             "battery_reflux": total_reflux,

@@ -27,7 +27,7 @@ RUN_ID = "2310_v2"
 ## Original results
 filters = [
     ("run_id", "=", RUN_ID),
-    ("target_RE_strategy", "=", "fixed_target_100"),
+    # ("target_RE_strategy", "=", "fixed_target_100"),
 ]
 df = gdatastore_results_to_df(COLLECTION, filters=filters)
 
@@ -36,7 +36,7 @@ selection = (df
     .head(50)
 )
 
-
+#%%
 ## rerun with 0 crossover, 2 method and BarConvTol e-5
 run_id_rerun_cases = "test_longsolve3"
 filters = [

@@ -2,6 +2,8 @@
 from pathlib import Path
 import LESO
 from google.cloud.exceptions import Conflict
+from functools import partial
+from LESO.experiments.analysis import move_log_from_active_to_cold
 
 
 COLLECTION = "gld2030"
@@ -17,10 +19,12 @@ except FileNotFoundError:
     RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
     # when on Seth's laptop
 
-SOLVER_KWRGS = {
-    "BarConvTol": 1e-12,
-    "LogToConsole": 0,
-}
+ACTIVE_FOLDER = Path(__file__).parents[4]
+
+move_log_from_active_to_cold = partial(
+    move_log_from_active_to_cold,
+    active_folder=ACTIVE_FOLDER,
+    cold_folder=RESULTS_FOLDER)
 
 # create bucket if not already exist
 if False:
@@ -102,6 +106,12 @@ scenarios_2030 = {
     },
 }
 
+PV_COST_CENTER_FACTOR = 0.62
+WIND_COST_CENTER_FACTOR = 0.87
+BATTERY_COST_CENTER_FACTOR = 0.56
+HYDROGEN_COST_CENTER_FACTOR = 0.53
+
+RES_SCENARIOS = [key for key in scenarios_2030.keys() if "RES" in key]
 MODELS = {
     modelname:MODEL_FOLDER / (modelname.lower() + ".pkl") for modelname in scenarios_2030.keys()
 }

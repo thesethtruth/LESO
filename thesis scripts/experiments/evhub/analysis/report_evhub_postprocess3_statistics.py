@@ -17,7 +17,7 @@ from evhub_postprocess_tools import (
     bat10_col,
     total_bat_col,
     batcols,
-    bivar_tech_dict
+    bivar_tech_dict,
 )
 
 #%% paths
@@ -33,11 +33,7 @@ COLLECTION = "evhub"
 RUN_ID = "2210_v2"
 
 #%% load in results
-db = get_data_from_db(
-    collection=COLLECTION,
-    run_id=RUN_ID,
-    force_refresh=False
-)
+db = get_data_from_db(collection=COLLECTION, run_id=RUN_ID, force_refresh=False)
 
 #%% start the plots
 
@@ -50,20 +46,67 @@ for tech, col in tech_dict.items():
         unit = "MW"
     fig, ax = plt.subplots()
     fig, ax = default_matplotlib_style(fig, ax, decrease_legend=False)
-    fig.set_size_inches(6,1.5)
-    
-    sns.stripplot(x=col, y="grid_capacity", data=db, ax=ax, orient='h', size=2, alpha=.3, jitter=.5, edgecolor="black", palette="dark:#69d_r")
+    fig.set_size_inches(6, 1.5)
+
+    sns.stripplot(
+        x=col,
+        y="grid_capacity",
+        data=db,
+        ax=ax,
+        orient="h",
+        size=2,
+        alpha=0.3,
+        jitter=0.5,
+        edgecolor="black",
+        palette="dark:#69d_r",
+    )
 
     ax.set_ylabel("grid capacity (MW)")
     ax.set_xlabel(f"{tech} deployed capacity ({unit})")
 
     default_matplotlib_save(fig, IMAGE_FOLDER / f"report_evhub_striplot_{tech}.png")
 
+#%% stripplot with hue clusters
 
+db = pd.read_pickle(RESOURCE_FOLDER / "evhub_2210_v2_clustered.pkl")
+db.rename({"clusters_from_gridcap": "clusters"}, axis=1, inplace=True)
 
+for tech, col in tech_dict.items():
+    if tech == "battery":
+        unit = "MWh"
+    else:
+        unit = "MW"
+    fig, ax = plt.subplots()
+    fig, ax = default_matplotlib_style(fig, ax, decrease_legend=False)
+    fig.set_size_inches(6, 2)
 
+    sns.stripplot(
+        x=col,
+        y="grid_capacity",
+        data=db,
+        hue="clusters",
+        ax=ax,
+        orient="h",
+        size=2.3,
+        alpha=0.7,
+        jitter=0.5,
+        palette="mako",
+    )
 
+    ax.get_legend().remove()
+    ax.set_ylabel("grid capacity (MW)")
+    ax.set_xlabel(f"{tech} deployed capacity ({unit})")
 
+    default_matplotlib_save(
+        fig, IMAGE_FOLDER / f"report_evhub_striplot_{tech}_clusters.png",
+    )
 
 
 # %%
+if input("Crop the images in this folder? [y/n]") == "y":
+    from LESO.plotting import crop_transparency_top_bottom
+    crop_transparency_top_bottom(
+        folder_to_crop=IMAGE_FOLDER,
+        file_ext_to_crop="png",
+        override_original=True
+    ) 

@@ -129,7 +129,7 @@ for grid_cap in grid_capacities:
 
     tsne_x, tsne_y = embedded_space[:, 0], embedded_space[:, 1]
 
-    fig, ax = plt.subplots(figsize=(3,2))
+    fig, ax = plt.subplots(figsize=(3, 2))
     fig, ax = default_matplotlib_style(fig, ax)
     sns.scatterplot(
         x=tsne_x,
@@ -139,9 +139,11 @@ for grid_cap in grid_capacities:
         palette=palette,
         alpha=0.3,
     )
-    default_matplotlib_save(fig, IMAGE_FOLDER / f"analysis_evhub_clustering_t-SNE_{grid_cap}.png")
+    default_matplotlib_save(
+        fig, IMAGE_FOLDER / f"analysis_evhub_clustering_t-SNE_{grid_cap}.png"
+    )
 
-    fig, ax = plt.subplots(figsize=(3,2))
+    fig, ax = plt.subplots(figsize=(3, 2))
     fig, ax = default_matplotlib_style(fig, ax)
     sns.scatterplot(
         data=sdf,
@@ -155,7 +157,10 @@ for grid_cap in grid_capacities:
     )
     ax.set_ylabel("deployed wind capacity (MW)")
     ax.set_xlabel("deployed PV capacity (MW)")
-    default_matplotlib_save(fig, IMAGE_FOLDER / f"analysis_evhub_clustering_pvwind_capacities_{grid_cap}.png")
+    default_matplotlib_save(
+        fig,
+        IMAGE_FOLDER / f"analysis_evhub_clustering_pvwind_capacities_{grid_cap}.png",
+    )
 
     db.loc[df.index, "clusters_from_gridcap"] = cluster_labels_with_count
 
@@ -195,8 +200,10 @@ for grid_cap in grid_capacities:
         "font.size": font_size,
         "legend.fontsize": font_size,
     }
-    g = sns.pairplot(sdf, hue="clusters", hue_order=hue_order, palette=palette, plot_kws={"size": 10})
-    
+    g = sns.pairplot(
+        sdf, hue="clusters", hue_order=hue_order, palette=palette, plot_kws={"size": 10}
+    )
+
     g._legend_data.pop("10")
 
     handles = g._legend_data.values()
@@ -204,7 +211,7 @@ for grid_cap in grid_capacities:
     g._legend.remove()
 
     g.fig.legend(
-        bbox_to_anchor=(0.5, -.1),
+        bbox_to_anchor=(0.5, -0.1),
         handles=handles,
         labels=labels,
         loc="lower center",
@@ -213,11 +220,11 @@ for grid_cap in grid_capacities:
         ncol=5,
     )
     plt.subplots_adjust(bottom=0.1)
-    g.fig.set_size_inches(6,5)
+    g.fig.set_size_inches(6, 5)
     plt.savefig(
         IMAGE_FOLDER / f"report_evhub_clustering_pairplot_{grid_cap}_grid.png",
         dpi=300,
-        bbox_inches='tight'
+        bbox_inches="tight",
     )
 
 
@@ -249,7 +256,23 @@ translated_cols = [
     "total generation",
     "profitability",
 ]
-for grid_cap in grid_capacities:
+
+# plot
+fig, axi = plt.subplots(2, 2)
+fig.set_size_inches(6, 6)
+rc = {
+    "font.family": "Open Sans",
+    "font.size": 8,
+}
+axi = axi.flatten()
+for ax in axi:
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+plt.rcParams.update(rc)
+cbar_ax = fig.add_axes([0.9, 0.85, 0.01, 0.1])
+first = True
+for i, grid_cap in enumerate(grid_capacities):
 
     # select the grid capacity
     df = db.query(f"grid_capacity == {grid_cap}").copy()
@@ -264,12 +287,37 @@ for grid_cap in grid_capacities:
     mask = np.zeros_like(corr_mat)
     mask[np.triu_indices_from(mask)] = True
 
-    # plot
-    fig, ax = plt.subplots()
-    fig, ax = default_matplotlib_style(fig, ax)
-    sns.heatmap(corr_mat, ax=ax, mask=mask, square=True, annot=True, fmt=".1f", annot_kws={"fontsize":7})
-    default_matplotlib_save(ax, IMAGE_FOLDER / f"report_evhub_correlation_matrix_{grid_cap}_grid.png")
+    figgy = sns.heatmap(
+        corr_mat,
+        ax=axi[i],
+        mask=mask,
+        square=True,
+        annot=True,
+        fmt=".1f",
+        annot_kws={"fontsize": 6},
+        vmin=-1,
+        vmax=1,
+        cmap="mako",
+        cbar=first,
+        cbar_ax=cbar_ax,
+    )
+    first = False
+    axi[i].text(
+        0.45,
+        1,
+        f"{grid_cap} MW grid",
+        horizontalalignment="center",
+        verticalalignment="center",
+        transform=axi[i].transAxes,
+        fontdict={"fontsize": 10,}
+    )
 
+
+default_matplotlib_save(
+    fig, IMAGE_FOLDER / f"report_evhub_correlation_matrix_all_grid.png"
+)
+
+#%%
 dbc = db.copy()
 dbc["objective_result"] = -dbc["objective_result"]
 
@@ -286,3 +334,12 @@ mask[np.triu_indices_from(mask)] = True
 fig, ax = plt.subplots()
 fig, ax = default_matplotlib_style(fig, ax)
 sns.heatmap(corr_mat, ax=ax, mask=mask, square=True, annot=True, fmt=".1f")
+
+# %%
+if input("Crop the images in this folder? [y/n]") == "y":
+    from LESO.plotting import crop_transparency_top_bottom
+    crop_transparency_top_bottom(
+        folder_to_crop=IMAGE_FOLDER,
+        file_ext_to_crop="png",
+        override_original=True
+    ) 

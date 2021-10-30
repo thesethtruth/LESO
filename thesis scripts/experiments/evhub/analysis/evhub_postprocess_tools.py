@@ -1,10 +1,8 @@
 #%% evhub_postprocess_tools.py
 from pathlib import Path
-from LESO.experiments.analysis import (
-    gdatastore_results_to_df,
-    gcloud_read_experiment
-)
+from LESO.experiments.analysis import gdatastore_results_to_df, gcloud_read_experiment
 import pandas as pd
+import matplotlib.pyplot as plt
 
 FOLDER = Path(__file__).parent
 RESOURCE_FOLDER = FOLDER / "resources"
@@ -23,7 +21,7 @@ bivar_tech_dict = {"PV": pv_col, "wind": wind_col, "battery": total_bat_col}
 
 #%% load in results
 def get_data_from_db(collection, run_id, force_refresh=False, filter=None):
-    
+
     filename = f"{collection}_{run_id}.pkl"
     pickled_df = RESOURCE_FOLDER / filename
 
@@ -34,7 +32,7 @@ def get_data_from_db(collection, run_id, force_refresh=False, filter=None):
         db = pd.read_pickle(pickled_df)
 
     else:
-        
+
         filters = [
             ("run_id", "=", run_id),
         ]
@@ -60,16 +58,19 @@ def get_data_from_db(collection, run_id, force_refresh=False, filter=None):
             spec_yield_pv = 1025.3069999999996
             spec_yield_wind = 2937.600000000013
 
-
         ## change / add some data
         db["pv_cost_absolute"] = db.pv_cost_factor * 1020
         db["wind_cost_absolute"] = db.wind_cost_factor * 1350
         db["curtailment"] = -db["curtailment"]
-        db["total_generation"] = db[pv_col] * spec_yield_pv + spec_yield_wind * db[wind_col]
+        db["total_generation"] = (
+            db[pv_col] * spec_yield_pv + spec_yield_wind * db[wind_col]
+        )
         db["relative_curtailment"] = db["curtailment"] / db["total_generation"] * 100
         db["total_installed_capacity"] = db[pv_col] + db[wind_col]
         db["total_storage_energy"] = db[batcols].sum(axis=1)
-        db["total_storage_power"] = db[bat2_col] / 2 + db[bat6_col] / 6 + db[bat10_col] / 10
+        db["total_storage_power"] = (
+            db[bat2_col] / 2 + db[bat6_col] / 6 + db[bat10_col] / 10
+        )
 
         def linear_map(
             value,
@@ -95,7 +96,41 @@ def get_data_from_db(collection, run_id, force_refresh=False, filter=None):
         db["battery_power_cost_absolute"] = db["battery_cost_factor"] * power_ref
         print("fetched data from the cloud -- refreshed")
         db.to_pickle(RESOURCE_FOLDER / filename)
-    
-    
+
     return db
-        
+
+
+#%%
+
+
+def add_double_legend(ax, num_clusters, tech, unit):
+    h, l = ax.get_legend_handles_labels()
+    plt.subplots_adjust(
+        hspace=.4,
+        bottom=0.4,
+    )
+    leg1 = ax.legend(
+        h[1 : num_clusters + 1],
+        l[1 : num_clusters + 1],
+        title="clusters",
+        bbox_to_anchor=(0.5, -0.63),
+        loc=8,
+        borderaxespad=0.0,
+        frameon=True,
+        ncol=6,
+        handletextpad=0.1,
+    )
+    ax.legend(
+        h[num_clusters + 2 :],
+        l[num_clusters + 2 :],
+        title=f"deployed {tech} capacity ({unit})",
+        bbox_to_anchor=(0.5, -0.65),
+        loc=9,
+        borderaxespad=0.0,
+        frameon=True,
+        ncol=6,
+        handletextpad=0.1,
+    )
+
+    ax.add_artist(leg1)
+

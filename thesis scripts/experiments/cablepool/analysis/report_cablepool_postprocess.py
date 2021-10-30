@@ -66,10 +66,7 @@ sns.scatterplot(
 )
 
 ax.set_ylabel("deployed PV\ncapacity (MW)")
-ax.set_ylim([-1, 20])
-
 ax.set_xlabel("PV capacity cost (€/kWp)")
-ax.set_xlim([380, 870])
 
 ax.legend(frameon=False, title='Curtailment (MWh)')
 
@@ -83,12 +80,9 @@ fig.set_size_inches(3,2.2)
 sns.lineplot(
     x="total_installed_capacity",
     y="relative_curtailment",
-    # size='curtailment',
-    # hue='curtailment',
     data=df,
     color="firebrick",
     ax=ax,
-    # edgecolor="black"
 )
 
 ax.set_xlabel("total deployed capacity (MW)")
@@ -107,12 +101,9 @@ fig.set_size_inches(3,2.2)
 sns.lineplot(
     x="total_installed_capacity",
     y="curtailment",
-    # size='curtailment',
-    # hue='curtailment',
     data=df,
     color='steelblue',
     ax=ax,
-    # edgecolor="black"
 )
 
 ax.set_xlabel("total deployed capacity (MW)")
@@ -143,10 +134,7 @@ sns.scatterplot(
 )
 
 ax.set_ylabel("battery power\ncapacity cost (€/kW)")
-ax.set_ylim([160, 310])
-
 ax.set_xlabel("PV capacity cost (€/kWp)")
-ax.set_xlim([370, 870])
 ax.legend(bbox_to_anchor=(0.5, -.4), loc=9, borderaxespad=0., frameon=True, title='Deployed PV capacity (MW)',ncol=6)
 
 default_matplotlib_save(fig, IMAGE_FOLDER / "report_cablepool_init_bivariate_deployment.png")
@@ -164,8 +152,17 @@ ax.hist(
     bins=30,
 )
 ax.legend(frameon=False)
-ax.set_ylabel("frequency [h/y]")
+ax.set_ylabel("frequency (h/y)")
 ax.set_ylim([0,500])
 ax.set_xlabel("capacity factor [-]")
 ax.set_xlim([0,1])
 default_matplotlib_save(fig, IMAGE_FOLDER / "report_cablepool_PV_histogram.png")
+
+#%%
+if input("Crop the images in this folder? [y/n]") == "y":
+    from LESO.plotting import crop_transparency_top_bottom
+    crop_transparency_top_bottom(
+        folder_to_crop=IMAGE_FOLDER,
+        file_ext_to_crop="png",
+        override_original=True
+    ) 

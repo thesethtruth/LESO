@@ -7,6 +7,7 @@ from pathlib import Path
 PAD = 0.3
 FONTSIZE = 10
 
+
 def default_matplotlib_style(
     fig: plt.figure,
     ax: plt.axes,
@@ -14,49 +15,62 @@ def default_matplotlib_style(
     height=None,
     disable_box=True,
     subplots=None,
-    decrease_legend=True
-)-> plt.figure:
-    """ Convience method for styling figures to meet default styling"""
-    ratio=2
+    decrease_legend=True,
+) -> plt.figure:
+    """Convience method for styling figures to meet default styling"""
+    ratio = 2
 
     plt.tight_layout(pad=PAD)
 
     rc = {
-        'font.family':'Open Sans',
-        'font.size' : font_size,
-        'legend.fontsize' : font_size-2 if decrease_legend else font_size
-        }
+        "font.family": "Open Sans",
+        "font.size": font_size,
+        "legend.fontsize": font_size - 2 if decrease_legend else font_size,
+    }
 
     plt.rcParams.update(rc)
     if disable_box:
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
 
     if subplots is None or subplots == 1:
         width = 6
         if height is None:
-            height = width/ratio
-        
+            height = width / ratio
+
         fig.set_size_inches(width, height)
     elif subplots == 2:
         width = 3
         if height is None:
-            height = width/ratio
+            height = width / ratio
 
         fig.set_size_inches(width, height)
 
-    
-    
     return fig, ax
 
-def default_matplotlib_save(fig: plt.figure, filename: str, dpi=300, pad=None, adjust_left = None):
+
+def default_matplotlib_save(
+    fig: plt.figure, 
+    filename: str, 
+    dpi=300, 
+    pad=None, 
+    adjust_top=None,
+    adjust_right=None,
+    adjust_bottom=None,
+    adjust_left=None,
+):
     if pad is None:
-        pad=PAD
+        pad = PAD
     plt.tight_layout(pad=pad)
-    
+
     if adjust_left is not None:
-        plt.subplots_adjust(left=adjust_left)
-    
+        plt.subplots_adjust(
+            top=adjust_top,
+            right=adjust_right,
+            bottom=adjust_bottom,
+            left=adjust_left
+        )
+
     plt.savefig(filename, dpi=dpi)
 
 
@@ -74,7 +88,9 @@ def crop_transparency_top_bottom(
         fps = [single_filepath]
     if folder_to_crop is not None:
         if file_ext_to_crop is None:
-            raise SyntaxError("Cannot use folder cropping without a file extension! Please supply one.")
+            raise SyntaxError(
+                "Cannot use folder cropping without a file extension! Please supply one."
+            )
         else:
             f = Path(folder_to_crop)
             list(f.glob(f"*.{file_ext_to_crop}"))
@@ -95,21 +111,20 @@ def crop_transparency_top_bottom(
         right = width
 
         cropped = im.crop((left, upper, right, lower))
-        
+
         if not override_original:
             p_out = p_in.parent / (p_in.stem + crop_suffix + p_in.suffix)
         else:
             p_out = p_in
-        
+
         cropped.save(p_out)
 
 
 olivedrab_02 = "#e1e8d3"
-olivedrab_05 = '#b4c690'
+olivedrab_05 = "#b4c690"
 
-steelblue_02 = '#dae6f0'
-steelblue_05 = '#a2c0d9'
+steelblue_02 = "#dae6f0"
+steelblue_05 = "#a2c0d9"
 
-firebrick_02='#efd2d2'
-firebrick_05='#c96767'
-
+firebrick_02 = "#efd2d2"
+firebrick_05 = "#c96767"

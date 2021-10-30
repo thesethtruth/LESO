@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     # run experiments
     with MultiprocessingEvaluator(model, n_processes=4) as evaluator:
-        results = evaluator.perform_experiments(policies=18)
+        results = evaluator.perform_experiments(policies=18, levers_sampling='ff')
 
     # with SequentialEvaluator(model) as evaluator:
     # results = evaluator.perform_experiments(scenarios=1, policies=5)

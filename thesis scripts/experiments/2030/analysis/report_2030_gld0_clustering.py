@@ -35,7 +35,7 @@ RESOURCE_FOLDER.mkdir(exist_ok=True)
 ## constants
 COLLECTION = "gld2030"
 RUN_ID = "2310_v2"
-palette = "mako"
+palette = sns.color_palette("mako", n_colors=4)
 cmap = sns.diverging_palette(190, 130, l=50, s=90, as_cmap=True)
 pair_plot_fontsize = 8
 decrease_legend = False
@@ -119,7 +119,7 @@ for target, settings in targets.items():
             y=tsne_y,
             hue=cluster_labels,
             ax=ax,
-            palette=palette,
+            palette="mako",
             alpha=0.3,
         )
         default_matplotlib_save(
@@ -140,17 +140,16 @@ for target, settings in targets.items():
 
     df = db.query(f"target_RE_strategy == '{target}'").copy()
     for cl in clusters:
+
         # subset-df
         sdf = df[[*pairplot_col_map.values(), cl]].copy()
-
-        hue_order = {}
-
-        for name in sdf[cl].unique():
-            for x in range(len(sdf[cl].unique())):
-                if f"{x} (" in name:
-                    value = x
-            hue_order.update({name: value})
-
+        sdf.sort_values(cl, inplace=True)
+        ncl = len(sdf[cl].unique())
+        if cl == 'clusters_dis_threshold':
+            pal = "mako"
+        else:
+            pal = palette[:ncl]
+            
         plt.tight_layout(pad=PAD)
 
         rc = {
@@ -159,7 +158,7 @@ for target, settings in targets.items():
         }
         plt.rcParams.update(rc)
         g = sns.pairplot(
-            sdf, hue=cl, hue_order=hue_order, palette=palette, plot_kws={"size": 10}
+            sdf, hue=cl, palette=pal, plot_kws={"size": 10}
         )
 
         g._legend_data.pop("10")
@@ -184,4 +183,3 @@ for target, settings in targets.items():
             dpi=300,
             bbox_inches="tight",
         )
-

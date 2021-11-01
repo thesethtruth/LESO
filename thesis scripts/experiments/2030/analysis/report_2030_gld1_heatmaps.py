@@ -41,7 +41,7 @@ cmap = sns.diverging_palette(190, 130, l=50, s=90, as_cmap=True)
 FIG_FONTSIZE = 10
 HM_FONTSIZE = 9
 decrease_legend = False
-
+#%%
 ## maps
 hm_col_map = {
     pv_col: 'PV power',
@@ -137,5 +137,5 @@ if input("Crop the images in this folder? [y/n]") == "y":
     from LESO.plotting import crop_transparency_top_bottom
 
     crop_transparency_top_bottom(
-        folder_to_crop=IMAGE_FOLDER, file_ext_to_crop="png", override_original=True
+        folder_to_crop=IMAGE_FOLDER, file_ext_to_crop="png", override_original=True, crop_top=True,
     )

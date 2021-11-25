@@ -24,6 +24,41 @@ grid_col = "Grid connection installed capacity"
 batcols = [bat2_col, bat6_col, bat10_col]
 bivar_tech_dict = {"PV": pv_col, "wind": wind_col, "battery": total_bat_col}
 
+#%% Translate clusters
+
+clusters_translation = {
+    'Regional':{
+        0: {'name': 'a', 'order': 1},
+        1: {'name': 'd', 'order': 3},
+        2: {'name': 'b', 'order': 4},
+        3: {'name': 'c', 'order': 2},
+    },
+    'National':{
+        0: {'name': 'a', 'order': 1},
+        1: {'name': 'd', 'order': 4},
+        2: {'name': 'c', 'order': 3},
+        3: {'name': 'b', 'order': 2},
+    },
+    'European':{
+        0: {'name': 'b', 'order': 2},
+        1: {'name': 'c', 'order': 3},
+        2: {'name': 'a', 'order': 1},
+        3: {'name': 'd', 'order': 4},
+    },
+    'International':{
+        0: {'name': 'b', 'order': 2},
+        1: {'name': 'd', 'order': 4},
+        2: {'name': 'c', 'order': 3},
+        3: {'name': 'a', 'order': 1},
+    },
+}
+
+cluster_names = {
+    'a': 'max. PV',
+    'b': 'PV&hydrogen',
+    'c': 'wind&battery',
+    'd': 'max. wind',
+}
 
 #%% load in results
 def get_data_from_db(collection, run_id, force_refresh=False, filter=None):

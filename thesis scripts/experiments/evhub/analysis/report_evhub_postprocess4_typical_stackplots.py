@@ -37,6 +37,7 @@ starts = [300, 2100, 4500, 6400]# hour
 duration = 7  # days
 
 db = pd.read_pickle(RESOURCE_FOLDER / "ref_systems_df.pkl")
+
 for _, row in db.iterrows():
     filename = row.filename_export
     grid_cap = row.grid_capacity
@@ -158,7 +159,7 @@ for _, row in db.iterrows():
         rc = {"font.family": "Open Sans", "font.size": 10, "legend.fontsize": 8}
         plt.rcParams.update(rc)
 
-        ax.set_ylabel("power (GW)")
+        ax.set_ylabel("power (MW)")
 
         default_matplotlib_save(
             fig, IMAGE_FOLDER / f"report_evhub_curves_grid_{grid_cap}_start_{start}.png"

@@ -4,6 +4,7 @@ import numpy as np
 from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 
 
 from LESO.plotting import default_matplotlib_save, default_matplotlib_style
@@ -39,15 +40,26 @@ db = get_data_from_db(collection=COLLECTION, run_id=RUN_ID, force_refresh=False)
 
 tech_dict = {"PV": pv_col, "wind": wind_col, "battery": total_bat_col}
 
-for tech, col in tech_dict.items():
+fig, axi = plt.subplots(3, 1, figsize=(6, 5))
+plt.tight_layout(pad=0.3)
+rc = {
+    "font.family": "Open Sans",
+    "font.size": 10,
+    "legend.fontsize": 8,
+}
+plt.rcParams.update(rc)
+plt.subplots_adjust(hspace=0.1)
+for ax in axi.flat:
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+for i, (tech, col) in enumerate(tech_dict.items()):
     if tech == "battery":
         unit = "MWh"
     else:
         unit = "MW"
-    fig, ax = plt.subplots()
-    fig, ax = default_matplotlib_style(fig, ax, decrease_legend=False)
-    fig.set_size_inches(6, 1.5)
 
+
+    ax=axi[i]
     sns.stripplot(
         x=col,
         y="grid_capacity",
@@ -55,31 +67,42 @@ for tech, col in tech_dict.items():
         ax=ax,
         orient="h",
         size=2,
-        alpha=0.3,
+        alpha=0.8,
         jitter=0.5,
         edgecolor="black",
-        palette="dark:#69d_r",
+        palette="mako",
     )
 
     ax.set_ylabel("grid capacity (MW)")
-    ax.set_xlabel(f"{tech} deployed capacity ({unit})")
+    ax.set_xlabel(f"{tech} deployed capacity ({unit})", fontsize=11)
 
-    default_matplotlib_save(fig, IMAGE_FOLDER / f"report_evhub_striplot_{tech}.png")
+default_matplotlib_save(fig, IMAGE_FOLDER / f"report_evhub_striplot.png")
 
 #%% stripplot with hue clusters
 
 db = pd.read_pickle(RESOURCE_FOLDER / "evhub_2210_v2_clustered.pkl")
 db.rename({"clusters_from_gridcap": "clusters"}, axis=1, inplace=True)
+db['clusters'] = db['clusters'].apply(lambda x: int(x[0]))
+fig, axi = plt.subplots(4, 1, figsize=(6, 5), gridspec_kw={"height_ratios": [*[5]*3,3]})
+plt.tight_layout(pad=0.3)
+rc = {
+    "font.family": "Open Sans",
+    "font.size": 10,
+    "legend.fontsize": 8,
+}
+plt.rcParams.update(rc)
+plt.subplots_adjust(hspace=0.1)
+for ax in axi.flat:
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
-for tech, col in tech_dict.items():
+
+for i, (tech, col) in enumerate(tech_dict.items()):
     if tech == "battery":
         unit = "MWh"
     else:
         unit = "MW"
-    fig, ax = plt.subplots()
-    fig, ax = default_matplotlib_style(fig, ax, decrease_legend=False)
-    fig.set_size_inches(6, 2)
-
+    ax=axi[i]
     sns.stripplot(
         x=col,
         y="grid_capacity",
@@ -94,12 +117,21 @@ for tech, col in tech_dict.items():
     )
 
     ax.get_legend().remove()
-    ax.set_ylabel("grid capacity (MW)")
+    ax.set_ylabel("grid capacity (MW)", fontsize=9)
     ax.set_xlabel(f"{tech} deployed capacity ({unit})")
 
-    default_matplotlib_save(
-        fig, IMAGE_FOLDER / f"report_evhub_striplot_{tech}_clusters.png",
-    )
+axi[-1].axis("off")
+axi[-1].legend(
+    handles=[Patch(facecolor=c, edgecolor=c, label=f"cluster {i+1}") for i, c in enumerate(sns.color_palette("mako", n_colors=5))],
+    frameon=False,
+    ncol=5,
+    loc="upper center",
+    title="clusters",
+)
+
+default_matplotlib_save(
+    fig, IMAGE_FOLDER / f"report_evhub_striplot_clusters.png",
+)
 
 
 # %%

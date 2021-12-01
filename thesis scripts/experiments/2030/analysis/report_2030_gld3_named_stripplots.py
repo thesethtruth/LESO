@@ -291,7 +291,7 @@ for fn_target, attribute in targets.items():
     g.fig.set_size_inches(6, 5)
 
     plt.savefig(
-        IMAGE_FOLDER / f"report_{COLLECTION}_pairplot_{target}.png",
+        IMAGE_FOLDER / f"report_{COLLECTION}_pairplot_{fn_target}.png",
         dpi=300,
         bbox_inches="tight",
     )

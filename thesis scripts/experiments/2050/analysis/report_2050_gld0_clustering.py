@@ -149,7 +149,7 @@ for scenario, settings in scenarios.items():
         clusters.append(cl)
         db.loc[df.index, cl] = cluster_labels_with_count
 clusters = set(clusters)
-db.to_pickle(RESOURCE_FOLDER / "{COLLECTION}_2210_v2_clustered.pkl")
+db.to_pickle(RESOURCE_FOLDER / f"{COLLECTION}_2210_v2_clustered.pkl")
 
 #%% =================================================================================================
 ##                      PAIRPLOTS

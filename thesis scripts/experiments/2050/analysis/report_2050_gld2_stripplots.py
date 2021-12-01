@@ -74,7 +74,7 @@ cluster_col = "clusters_predef_num_clusters"
 scenario_col = "scenario"
 
 #%% fetch and process data
-db = pd.read_pickle(RESOURCE_FOLDER / "{COLLECTION}_2210_v2_clustered.pkl")
+db = pd.read_pickle(RESOURCE_FOLDER / f"{COLLECTION}_2210_v2_clustered.pkl")
 
 ## rename columns
 db.rename(col_map, inplace=True, axis=1)

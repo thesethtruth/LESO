@@ -80,7 +80,7 @@ pairplot_col_map = {
     "hydrogen_cost_factor": "hydrogen cost factor",
 }
 #%% fetch and process data
-db = pd.read_pickle(RESOURCE_FOLDER / "{COLLECTION}_2210_v2_clustered.pkl")
+db = pd.read_pickle(RESOURCE_FOLDER / f"{COLLECTION}_2210_v2_clustered.pkl")
 
 ## rename columns
 db.rename(col_map, inplace=True, axis=1)
@@ -118,6 +118,8 @@ for i,g in gdb:
     scenario_cluster_order.update({
         scenario: [x for _,x in sorted(zip([orderer(x) for x in tcols],tcols))]
     })
+
+db.to_pickle(RESOURCE_FOLDER / f"{COLLECTION}_2210_v2_clustered_named.pkl")
 
 #%%
 df = db[[*features, cluster_col, 'cluster_names', scenario_col]].copy()
@@ -352,8 +354,6 @@ if input("Crop the images in this folder? [y/n]") == "y":
     crop_transparency_top_bottom(
         folder_to_crop=IMAGE_FOLDER, file_ext_to_crop="png", override_original=True, crop_top=True
     )
-
-
 #%% Stack the facet grid
 
 # create legend
@@ -398,44 +398,3 @@ im.save(IMAGE_FOLDER / f"report_{COLLECTION}_facetgrid_translated_clusters_all_s
 
 
 #%%
-plt.tight_layout(pad=PAD)
-
-rc = {
-    "font.family": "Open Sans",
-    "font.size": 8,
-}
-
-plt.rcParams.update(rc)
-
-for scenario, settings in scenarios.items():
-
-    df = db.query(f"scenario == '{scenario}'").copy()
-
-
-g = sns.pairplot(sdf, hue='generic_clusters', hue_order=hue_order, palette=palette, plot_kws={"size": 10})
-
-g._legend_data.pop("10")
-
-handles = g._legend_data.values()
-labels = g._legend_data.keys()
-g._legend.remove()
-
-g.fig.legend(
-    bbox_to_anchor=(0.5, -0.1),
-    handles=handles,
-    labels=labels,
-    loc="lower center",
-    frameon=True,
-    title="clusters",
-    ncol=5,
-)
-plt.subplots_adjust(bottom=0.1)
-g.fig.set_size_inches(6, 5)
-plt.savefig(
-    IMAGE_FOLDER / f"report_{COLLECTION}_pairplot_{scenario}.png",
-    dpi=300,
-    bbox_inches="tight",
-)
-
-
-

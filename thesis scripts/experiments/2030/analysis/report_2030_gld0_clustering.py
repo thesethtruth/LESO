@@ -131,7 +131,7 @@ for target, settings in targets.items():
         clusters.append(cl)
         db.loc[df.index, cl] = cluster_labels_with_count
 
-# db.to_pickle(RESOURCE_FOLDER / "{COLLECTION}_2210_v2_clustered.pkl")
+# db.to_pickle(RESOURCE_FOLDER / f"{COLLECTION}_2210_v2_clustered.pkl")
 
 #%% =================================================================================================
 ##                      PAIRPLOTS

@@ -161,7 +161,6 @@ def plot_grouped_stackedbars(
     # width_ratios is dummy ratio to make second plot very small
     fig, ax = plt.subplots(figsize=figsize)
 
-
     # All compared entities, in order of appearance
     all_entities = df.index.get_level_values(ix_entities_compared).unique()
     # Determine number of entities, portions, and colors
@@ -189,11 +188,9 @@ def plot_grouped_stackedbars(
         if i == n_entities_compared - 1:
             handles, labels = ax.get_legend_handles_labels()
             handles2 = handles[-len(df.columns) :]
-        
+
     # Legend definition (hidden in first subplot, but displayed in second)
-    ax.legend(
-        handles=handles2, loc="upper right", frameon=False
-    )
+    ax.legend(handles=handles2, loc="upper right", frameon=False)
 
     # Axis title
     ax.yaxis.set_label_text(ylabel)
@@ -204,3 +201,27 @@ def plot_grouped_stackedbars(
     fig.tight_layout()  # Important to not have labels and legend extend beyond figure
 
     return ax, fig
+
+
+cluster_map = {
+    "no_target": {
+        0: {"name": "PV", "order": 1},
+        1: {"name": "no PV", "order": 2},
+    },
+    "fixed_target_60": {
+        0: {"name": "max. PV", "order": 1},
+        1: {"name": "max. wind", "order": 3},
+        2: {"name": "moderate", "order": 2},
+    },
+    "fixed_target_80": {
+        0: {"name": "moderate", "order": 2},
+        1: {"name": "max. PV", "order": 1},
+        2: {"name": "max. wind", "order": 3},
+    },
+    "fixed_target_100": {
+        0: {"name": "PV&hydrogen", "order": 2},
+        1: {"name": "wind&hydrogen", "order": 3},
+        2: {"name": "max. wind", "order": 4},
+        3: {"name": "max. PV", "order": 1},
+    },
+}

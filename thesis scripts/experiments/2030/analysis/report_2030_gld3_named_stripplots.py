@@ -23,6 +23,7 @@ from util_2030_postprocess_tools import (
     batcols,
     bivar_tech_dict,
     grid_col,
+    cluster_map,
 )
 
 #%% paths
@@ -34,7 +35,6 @@ RESOURCE_FOLDER.mkdir(exist_ok=True)
 
 ## constants
 COLLECTION = "gld2030"
-RUN_ID = "2310_v2"
 palette = sns.color_palette("mako", n_colors=4)
 
 ## maps
@@ -44,38 +44,61 @@ col_map = {
     total_bat_col: "battery",
     total_h2_col: "hydrogen",
 }
-features = list(col_map.values())
+features = ['PV', 'wind', 'battery', 'hydrogen']
 targets = {
     "no_target": {"title": "No target", "sort": 1, "clusters": 2},
     "fixed_target_60": {"title": "60% target", "sort": 2, "clusters": 3},
     "fixed_target_80": {"title": "80% target", "sort": 3, "clusters": 4},
     "fixed_target_100": {"title": "100% target", "sort": 4, "clusters": 4},
 }
-cluster_col = "clusters_predef_num_clusters"
 target_col = "target_RE_strategy"
-
+cluster_col = "clusters_predef_num_clusters"
+generic_cluster_order = ['max. PV', 'PV&hydrogen', 'wind&hydrogen', 'max. wind']
 #%% fetch and process data
 db = pd.read_pickle(RESOURCE_FOLDER / f"{COLLECTION}_2210_v2_clustered.pkl")
 
-## rename columns
-db.rename(col_map, inplace=True, axis=1)
+## rename clusters and implement sorting
 db["sort"] = db.target_RE_strategy.apply(lambda x: targets[x]["sort"])
-db.sort_values(["sort", cluster_col], inplace=True)
-db["target_RE_strategy"] = db.target_RE_strategy.apply(lambda x: targets[x]["title"])
 
-df = db[[*features, cluster_col, target_col]].copy()
+for target, gdf in db.groupby("target_RE_strategy"):
+    
+    target_map = cluster_map[target]
+    def cluster_order(x):
+        cluster_num = int(x[0])
+        return target_map[cluster_num]['order']
+    db.loc[gdf.index,'cluster_sort'] = gdf[cluster_col].apply(cluster_order)
+
+    predef_clusters = gdf[cluster_col].unique()
+    temp_lst = []
+    for pclus in predef_clusters:
+        cluster_num = int(pclus[0])
+        count = pclus.split(" ")[1]
+
+        temp_lst.append(
+            (target_map[cluster_num]["order"], target_map[cluster_num]["name"]+" "+count),
+        )
+    temp_lst = [y for _, y in sorted(temp_lst)]
+
+    target_map.update({"cluster_list": temp_lst})
+
+t_cluster_map = {}
+for key in cluster_map.keys():
+    t_cluster_map.update({
+        targets[key]['title']:cluster_map[key]
+    })
+cluster_map = t_cluster_map
+db["target_RE_strategy"] = db.target_RE_strategy.apply(lambda x: targets[x]["title"])
+db.sort_values(["sort", "cluster_sort"], inplace=True)
+df = db[[*features, "cluster_sort", target_col]].copy()
 df[features] = df[features] / 1000
 
-palette_d = []
-for attribute in targets.values():
-    pal = palette[: attribute["clusters"]]
-    attribute.update({"palette": pal})
-    palette_d.extend(pal)
+
+
 #%% =================================================================================================
 ##                      Stripplot
 
 
-fig, axi = plt.subplots(4, 1, figsize=(6, 8))
+fig, axi = plt.subplots(5, 1, figsize=(6, 8), gridspec_kw={"height_ratios": [*[5]*4,4]})
 plt.tight_layout(pad=PAD)
 rc = {
     "font.family": "Open Sans",
@@ -101,27 +124,38 @@ for i, (feature) in enumerate(features):
         x=feature,
         y=target_col,
         data=df,
-        hue=cluster_col,
+        hue="cluster_sort",
         ax=ax,
         orient="h",
         size=2,
         alpha=1,
         jitter=0.45,
-        palette=palette_d,
+        palette=palette,
     )
 
     ax.get_legend().remove()
     ax.set_ylabel("")
     ax.set_xlabel(f"{feature} deployed capacity ({unit})")
 
+y=1
+pos = [tuple([-0.1+x*0.32,y]) for x in range(4)]
+axi[-1].axis("off")
+legends =[]
+for i, target in enumerate(cluster_map.keys()):
+    target_clusters = cluster_map[target]["cluster_list"]
+    
+    legends.append(plt.legend(
+        handles=[Patch(facecolor=c, edgecolor=c, label=f"{i+1}: {l}") for i, (l, c) in enumerate(zip(target_clusters, palette))],
+        frameon=False,
+        ncol=1,
+        bbox_to_anchor=pos[i],
+        loc="upper center",
+        title=f"{target}",
+    ))
 
-axi[0].legend(
-    handles=[Patch(facecolor=c, edgecolor=c, label=i) for i, c in enumerate(palette)],
-    frameon=False,
-    ncol=1,
-    loc="upper right",
-    title="clusters",
-)
+for leg in legends[:3]:
+    axi[-1].add_artist(leg)
+
 
 default_matplotlib_save(
     fig,
@@ -136,7 +170,7 @@ for fn_target, attribute in targets.items():
     sdf = df.query(f"target_RE_strategy == '{target}'")
     fig, axi = plt.subplots(5, 1, figsize=(6, 5), gridspec_kw={'height_ratios': [*[5]*4,1]})
     plt.tight_layout(pad=PAD)
-    plt.subplots_adjust(bottom=0.8)
+    plt.subplots_adjust(bottom=0.1)
     rc = {
         "font.family": "Open Sans",
         "font.size": 10,
@@ -162,22 +196,21 @@ for fn_target, attribute in targets.items():
 
         sns.stripplot(
             x=feature,
-            y=cluster_col,
+            y="cluster_sort",
             data=sdf,
-            hue=cluster_col,
             ax=ax,
             orient="h",
             size=2,
             alpha=1,
             jitter=0.45,
-            palette=attribute["palette"],
+            palette=palette,
         )
 
-        ax.get_legend().remove()
+        # ax.get_legend().remove()
         ax.set_ylabel("")
         ax.set_yticklabels([])
         ax.set_xlabel(f"{feature} deployed capacity ({unit})")
-        ax.set_xlim([-0.3, sdf.max()[feature] if sdf.max()[feature] > 15 else 15])
+        ax.set_xlim([-0.3, sdf.max()[feature] if sdf.max()[feature] > 5 else 5])
 
         ax.tick_params(
             axis="both",
@@ -188,9 +221,8 @@ for fn_target, attribute in targets.items():
     axi[-1].axis('off')
     axi[-1].legend(
         handles=[
-            Patch(facecolor=c, edgecolor=c, label=i) 
-            for i, c in enumerate(
-                palette[:attribute["clusters"]]
+            Patch(facecolor=c, edgecolor=c, label=l) 
+            for i, (l, c) in enumerate(zip(cluster_map[target]['cluster_list'], palette)
                 )
         ],
         frameon=True,
@@ -200,10 +232,68 @@ for fn_target, attribute in targets.items():
         title="clusters",
     )
     
-
+    plt.tight_layout(pad=PAD)
     default_matplotlib_save(
         fig,
         IMAGE_FOLDER / f"report_{COLLECTION}_striplot_clusters_{fn_target}.png",
+    )
+
+
+#%% =================================================================================================
+##                      PAIRPLOTS
+
+pairplot_col_map = {
+    "pv_cost_factor": "pv cost factor",
+    "wind_cost_factor": "wind cost factor",
+    "battery_cost_factor": "battery cost factor",
+    "hydrogen_cost_factor": "hydrogen cost factor",
+}
+db.rename(pairplot_col_map, inplace=True, axis=1)
+
+for fn_target, attribute in targets.items():
+    target = attribute["title"]
+    sdf = db.query(f"target_RE_strategy == '{target}'")
+    
+    sdf = sdf[[*pairplot_col_map.values(), 'cluster_sort']].copy()
+    sdf.sort_values("cluster_sort", inplace=True)
+    ncl = len(sdf["cluster_sort"].unique())
+    pal = palette[:ncl]
+    plt.tight_layout(pad=PAD)
+
+    rc = {
+        "font.family": "Open Sans",
+        "font.size": 8,
+    }
+    plt.rcParams.update(rc)
+    g = sns.pairplot(
+        sdf, hue="cluster_sort", palette=pal, plot_kws={"size": 10}
+    )
+
+    g._legend_data.pop("10")
+
+    handles = g._legend_data.values()
+    labels = g._legend_data.keys()
+    g._legend.remove()
+
+    g.fig.legend(
+        handles=[
+            Patch(facecolor=c, edgecolor=c, label=l) 
+            for i, (l, c) in enumerate(zip(cluster_map[target]['cluster_list'], palette)
+                )
+        ],
+        frameon=True,
+        bbox_to_anchor=(0.5, 0),
+        ncol=4,
+        loc="upper center",
+        title="clusters",
+    )
+    plt.subplots_adjust(bottom=0.1)
+    g.fig.set_size_inches(6, 5)
+
+    plt.savefig(
+        IMAGE_FOLDER / f"report_{COLLECTION}_pairplot_{target}.png",
+        dpi=300,
+        bbox_inches="tight",
     )
 
 

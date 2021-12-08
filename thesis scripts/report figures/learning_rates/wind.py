@@ -52,3 +52,32 @@ default_matplotlib_save(fig, "cost_wind_absolute.png")
 #%%
 # pd.read_clipboard().T.to_pickle("wind_etri2014")
 # %%
+fig, ax = plt.subplots(figsize=(5, 3))
+add_range(ax, etri17_values, "min", "max", "#133B63", label="test")
+
+plt.tight_layout(pad=0.3)
+rc = {
+    "font.family": "Open Sans",
+    "font.weight": "bold",
+    "font.style": "italic",
+    "font.size": 14,
+}
+
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
+
+ax.spines['left'].set_color("#133B63")
+ax.spines['bottom'].set_color("#133B63")
+ax.tick_params(which='both', colors='#133B63')
+
+
+
+
+
+
+ax.set_ylim([0, etri17_values.max().max()*1.05])
+ax.set_ylabel("€/kW", weight="bold", size=14, color='#133B63')
+plt.rcParams.update(rc)
+ax.get_legend().remove()
+
+default_matplotlib_save(fig, "cost_wind_absolute_presentation.png")

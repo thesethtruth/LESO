@@ -131,114 +131,34 @@ default_matplotlib_save(fig, "cost_pv_absolute.png")
 
 
 
+#%%
+
+fig, ax = plt.subplots(figsize=(5, 3))
+add_range(etri17_values, "min", "max", "#133B63", label="test")
+
+plt.tight_layout(pad=0.3)
+rc = {
+    "font.family": "Open Sans",
+    "font.weight": "bold",
+    "font.style": "italic",
+    "font.size": 14,
+}
+
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
+
+ax.spines['left'].set_color("#133B63")
+ax.spines['bottom'].set_color("#133B63")
+ax.tick_params(which='both', colors='#133B63')
 
 
 
 
 
 
+ax.set_ylim([0, etri17_values.max().max()*1.05])
+ax.set_ylabel("€/kW", weight="bold", size=14, color='#133B63')
+plt.rcParams.update(rc)
+ax.get_legend().remove()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# from palettable.scientific.sequential import Davos_5 as color
-# etri14_color = color.hex_colors[-4]
-# etri17_color = color.hex_colors[-3]
-# fraunhofer_color = color.hex_colors[-2]
-
-# if True:
-
-#     fig = go.Figure()
-#     fig.update_layout(template='simple_white')
-
-
-#     fig.add_trace(go.Scatter(
-#         x=list(etri17_factors.index) + list(etri17_factors.index)[::-1],
-#         y=list(etri17_factors.Min) + list(etri17_factors.Max)[::-1],
-#         fill='toself',
-#         fillcolor= lighten_color(etri17_color, 0.5),
-#         line_color= 'rgba(0,0,0,0)',
-#         showlegend=True,
-#         name='ETRI 2017 range',    
-#     ))
-
-#     fig.add_trace(go.Scatter(
-#         x=list(fraunhofer_factors.index) + list(fraunhofer_factors.index)[::-1],
-#         y=list(fraunhofer_factors["Fraunhofer high"]) + list(fraunhofer_factors['Fraunhofer low'])[::-1],
-#         fill='toself',
-#         fillcolor= lighten_color(fraunhofer_color, 0.5),
-#         line_color= 'rgba(0,0,0,0)',
-#         showlegend=True,
-#         name='Fraunhofer 2015 range',    
-#     ))
-
-#     fig.add_trace(go.Scatter(
-#         x=list(etri14_factors.index) + list(etri14_factors.index)[::-1],
-#         y=list(etri14_factors['ETRI high']) + list(etri14_factors['ETRI low'])[::-1],
-#         fill='toself',
-#         fillcolor= lighten_color(etri14_color, 0.5),
-#         line_color= 'rgba(0,0,0,0)',
-#         showlegend=True,
-#         name='ETRI 2014 range',    
-#     ))
-
-#     for col in fraunhofer_factors.columns:
-#         fig.add_trace(go.Scatter(
-#             x=list(fraunhofer_factors.index), 
-#             y=list(fraunhofer_factors[col]),
-#             line_color= fraunhofer_color,
-#             line_dash= None if "high" in col or "low" in col else'dot',
-#             mode='lines+markers',
-#             name='ETRI 2014 baseline',
-#             showlegend= False if "high" in col or "low" in col else True,    
-#             opacity=1
-#         ))
-
-
-#     for col in etri14_factors.columns:
-#         fig.add_trace(go.Scatter(
-#             x=list(etri14_factors.index), 
-#             y=list(etri14_factors[col]),
-#             line_color= etri14_color,
-#             line_dash= None if "high" in col or "low" in col else'dot',
-#             mode='lines+markers',
-#             name='ETRI 2014 baseline',
-#             showlegend= False if "high" in col or "low" in col else True,    
-#             opacity=1
-#         ))
-
-
-#     for col in etri17_factors.columns:
-#         fig.add_trace(go.Scatter(
-#             x=list(etri17_factors.index), 
-#             y=list(etri17_factors[col]),
-#             line_color= etri17_color,
-#             line_dash= None if "Min" in col or "Max" in col else'dot',
-#             mode='lines+markers',
-#             name=f'ETRI 2017 {col}',
-#             showlegend= False if "Min" in col or "Max" in col else True,    
-#             opacity=1
-#         ))
-#     # fig.update_traces(mode='lines')
-
-#     fig.update_yaxes(title='projected cost factor', range=[0, 1])
-
-#     from LESO.plotly_extension import thesis_default_styling
-#     fig = thesis_default_styling(fig)
-#     fig.update_layout(width=800)
-    
-#     if False:
-#         fig.write_image("pv.pdf")
-#     else:
-#         fig.show()
+default_matplotlib_save(fig, "cost_pv_absolute_presentation.png")

@@ -98,10 +98,10 @@ for i, (idx, r) in enumerate(gdf.to_crs(epsg=3035).iterrows()):
         transform=ax.transData,
     )
     ax_bar.set_axis_off()
-    ax_bar.text(*pos[i], region,horizontalalignment='center', color="#123C63")
-    ax_bar.text(0,0, ".",horizontalalignment='center', color="#123C63", fontsize=30)
+    # ax_bar.text(*pos[i], region,horizontalalignment='center', color="#123C63")
+    # ax_bar.text(0,0, ".",horizontalalignment='center', color="#123C63", fontsize=30)
 
 
 plt.tight_layout(pad=0.3)
-plt.savefig(IMAGE_FOLDER / f"report_2030_res_map.png", dpi=300)
+plt.savefig(IMAGE_FOLDER / f"report_2030_res_map.svg", dpi=300)
 

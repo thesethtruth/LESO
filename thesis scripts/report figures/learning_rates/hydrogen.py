@@ -103,3 +103,37 @@ ax.set_ylabel("projected capacity cost (€/kWh)")
 plt.locator_params(axis="x", integer=True)
 
 default_matplotlib_save(fig, "cost_hydrogen_absolute_energy_update.png")
+
+
+#%%
+
+fig, ax = plt.subplots(figsize=(5, 3))
+add_range(ax, h350_storage_values, "lower", "upper", "#133B63", label="Sub-seasonal H2 capacity cost uncertainty range")
+
+
+plt.tight_layout(pad=0.3)
+rc = {
+    "font.family": "Open Sans",
+    "font.weight": "bold",
+    "font.style": "italic",
+    "font.size": 14,
+}
+
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
+
+ax.spines['left'].set_color("#133B63")
+ax.spines['bottom'].set_color("#133B63")
+ax.tick_params(which='both', colors='#133B63')
+
+
+
+
+
+
+ax.set_ylim([0, h350_storage_values.max().max()*1.05])
+ax.set_ylabel("€/kWh", weight="bold", size=14, color='#133B63')
+plt.rcParams.update(rc)
+ax.get_legend().remove()
+
+default_matplotlib_save(fig, "cost_hydrogen_absolute_presentation.png")

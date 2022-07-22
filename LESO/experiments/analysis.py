@@ -16,7 +16,9 @@ from LESO.dataservice import (
 )
 from typing import Tuple, List
 from LESO.leso_logging import get_module_logger
+
 logger = get_module_logger(__name__)
+
 
 def load_ema_leso_results(
     run_id: int,
@@ -68,19 +70,20 @@ def open_leso_experiment_file(filepath: str) -> AttrDict:
 
     return di
 
+
 def gdatastore_results_to_df(
     collection: str,
     filter: Tuple = None,
     filters: List[Tuple] = None,
     order: List = None,
-) -> pd.DataFrame:  
+) -> pd.DataFrame:
     """download a set of results from google datastore based using datastores syntax
-        collection == kind
-        filter follows the google datastore syntax e.g. ("key", "OPERATOR", <value>)
-        order follows the google datastore syntax e.g:
-            ascending is ["key"]
-            descending is [-"key"]
-            first and then by is ["key1", "key2"]
+    collection == kind
+    filter follows the google datastore syntax e.g. ("key", "OPERATOR", <value>)
+    order follows the google datastore syntax e.g:
+        ascending is ["key"]
+        descending is [-"key"]
+        first and then by is ["key1", "key2"]
     """
     q = datastore_query(
         kind=collection,
@@ -90,23 +93,22 @@ def gdatastore_results_to_df(
     )
     return pd.DataFrame(q)
 
-def gdatastore_put_entry(
-    collection: str,
-    entry: dict
-): 
-    """ put an entry to google datastore 
-            collection == kind
+
+def gdatastore_put_entry(collection: str, entry: dict):
+    """put an entry to google datastore
+    collection == kind
     """
     logger.info("putting entry to google datastore")
     return datastore_put_entry(kind=collection, entry=entry)
+
 
 def gcloud_read_experiment(
     collection: str,
     experiment_id: str,
 ) -> LESO.AttrDict:
     """read an experiment id (previously the json filename) from gcloud as AttrDict
-        collection == bucket_name
-        experiment_id == blob_name
+    collection == bucket_name
+    experiment_id == blob_name
     """
     return cloud_fetch_blob_as_AttrDict(bucket_name=collection, blob_name=experiment_id)
 
@@ -116,9 +118,9 @@ def gcloud_upload_experiment_dict(
     collection: str,
     experiment_id: str,
 ):
-    """ upload an experiment dict to gcloud
-        collection == bucket_name
-        experiment_id == destination_blob_name
+    """upload an experiment dict to gcloud
+    collection == bucket_name
+    experiment_id == destination_blob_name
     """
     logger.info("sending exported result file to google cloud")
     return cloud_upload_dict_to_blob(
@@ -127,20 +129,22 @@ def gcloud_upload_experiment_dict(
         destination_blob_name=experiment_id,
     )
 
+
 def gcloud_upload_log_file(
     filepath_to_log: Path,
     collection: str,
     log_id: str,
 ):
-    """ upload a log file to gcloud 
-        collection == bucket_name
-        log_id == destination blob name
+    """upload a log file to gcloud
+    collection == bucket_name
+    log_id == destination blob name
     """
     return cloud_upload_blob_from_filename(
         source_file_name=filepath_to_log,
         bucket_name=collection,
         destination_blob_name=log_id,
     )
+
 
 def move_log_from_active_to_cold(
     active_folder: str,

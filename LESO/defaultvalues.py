@@ -35,9 +35,9 @@ system_parameters = dict(
     # financial
     interest=0.04,  # d/fo if no explicitly defined component interest
     req_rate_of_return=0.1,  # d/fo if no explicitly defined component interest
-    equity_share=0.2,  # d/fo [cite: NDVE (2018) Ecofys/navigant]
-    corporate_tax=0.25,  # [cite: NDVE (2018) Ecofys/navigant]
-    exp_inflation_rate=0.015,  # expected inflation rate, to be used by every component [cite: NDVE (2018) Ecofys/navigant]
+    equity_share=0.2,  # d/fo [cite: NVDE (2018) Ecofys/navigant]
+    corporate_tax=0.25,  # [cite: NVDE (2018) Ecofys/navigant]
+    exp_inflation_rate=0.015,  # expected inflation rate, to be used by every component [cite: NVDE (2018) Ecofys/navigant]
     lifetime=25,  # project planning horizon
 )
 
@@ -88,6 +88,7 @@ pv = dict(
     azimuth=180,  # [degree] Module orientation
     tilt=37,  # [degree] Tilt of plane relative to horizontal
     efficiency=0.296,  # [-] Total system efficiency to reach realistic values
+    acdc_ratio=0.7,  # industry standard
     # unused
     t_coeff=-0.37,  # [%/K]
     voc=52,  # [V]
@@ -97,7 +98,7 @@ pv = dict(
     upper=upper_bound,  # upper bound
     # financials
     lifetime=25,
-    capex=0.8,  # cite: ERTI 2017 corrected for SDE PBL 2020
+    capex={"DC": 0.8},  # cite: ERTI 2017 corrected for SDE PBL 2020
     opex_ratio=0.015,  #% cite: ETRI2014
     variable_cost=0,
     variable_income=0,
@@ -347,11 +348,11 @@ lithium = dict(
     negative=True,
     upper=upper_bound,
     # financials
-    lifetime=15,  # cite: ATB NPREL
+    lifetime=25,  # cite: ATB NPREL
     capex_storage=277e-3,  # cite: ATB NPREL storage cost only
     capex_power=257e-3,  # cite: ATB NPREL power cost only
     opex_ratio=0.025,  # [%] cite: ATB NPREL (fraction of TOTAL cost)
-    variable_cost=1e-8, # 0.01 eu / MWH
+    variable_cost=1e-8,  # 0.01 eu / MWH
 )
 
 hydrogen = dict(
@@ -391,7 +392,7 @@ hydrogen = dict(
     capex_storage=31e-3,  # cite: Schmidt2019 storage cost only (assumption: does not decrease over time)
     capex_power=5417e-3,  # cite: Schmidt2019
     opex_ratio=8.5e-3,  # cite: Schmidt2019 (only related to power component, changed the opex @property)
-    variable_cost=1e-8, # 0.01 eu / MWH
+    variable_cost=1e-8,  # 0.01 eu / MWH
 )
 
 fastcharger = dict(

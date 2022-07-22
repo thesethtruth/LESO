@@ -1,0 +1,29 @@
+name: leso
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python==3.9.13
+  - attrs
+  - beautifulsoup4
+  - idna
+  - matplotlib
+  - numpy
+  - openpyxl
+  - pandas
+  - Pyomo
+  - pyparsing
+  - pyproj
+  - requests
+  - scipy
+  - seaborn
+  - Shapely
+  - windpowerlib
+  - xarray
+  - pip
+  - pip:
+      - pvlib
+      - pvfactors
+      - ema-workbench
+      - https://github.com/thesethtruth/ETMeta/archive/main.zip#egg=ETMeta
+prefix: D:\Users\WIES4\Miniconda3\envs\leso

@@ -30,7 +30,6 @@ setup(
     install_requires=[
         'pandas',
         'numpy',
-        'plotly',
         'pyomo',
         'pvlib',
         'windpowerlib',
@@ -39,8 +38,6 @@ setup(
         'requests',
         'beautifulsoup4',
         'xarray',
-        'dash',
-        'dash-table',
         'openpyxl',
         'pyproj'
     ],

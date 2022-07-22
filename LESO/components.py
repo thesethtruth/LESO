@@ -3,7 +3,6 @@
 
 
 # required packages
-from warnings import WarningMessage
 import warnings
 import pandas as pd
 import numpy as np
@@ -11,18 +10,15 @@ import numpy as np
 # ETMeta module (https://github.com/thesethtruth/ETMeta)
 from ETMeta import ETMapi
 
-# for optimizing
-import pyomo.environ as pyo
-from pyomo.environ import value
-
 # module with default values
 import LESO.defaultvalues as defs
 import LESO.feedinfunctions as feedinfunctions
 import LESO.functions as functions
 import LESO.optimizer.core as core
 from LESO.optimizer.preprocess import initializeGenericPyomoVariables
-from LESO.dataservice import get_pvgis, get_dowa, get_etm_curve
+from LESO.dataservice import get_dowa, get_etm_curve
 from LESO.leso_logging import get_module_logger
+
 logger = get_module_logger(__name__)
 
 
@@ -99,9 +95,6 @@ class Component:
         initializeGenericPyomoVariables(self, pM)
 
 
-#%%
-
-
 class SourceSink(Component):
     def get_variable_cost(self, pM):
         # time should be sourced from the LESO.System class to enforce time sync.
@@ -121,11 +114,11 @@ class Storage(Component):
 
     pass
 
+
 class Converter(Component):
     pass
 
 
-#%%
 class PhotoVoltaic(SourceSink):
 
     instances = 0
@@ -133,6 +126,16 @@ class PhotoVoltaic(SourceSink):
     # read default values
     default_values = defs.pv
     states = ["power"]
+
+    def validate_capex(self, capex):
+        if not isinstance(capex, dict):
+            incorrect_type = type(capex)
+            raise ValueError(
+                (
+                    f"{self.__repr__()} was provided type '{incorrect_type}' while expecting 'dict'. "
+                    + "Please provice a dict that contains a key 'AC' or 'DC' to specify the capex meaning."
+                )
+            )
 
     def __init__(self, name, **kwargs):
 
@@ -157,13 +160,66 @@ class PhotoVoltaic(SourceSink):
     def opex(self, value):
         self._opex = value
 
+    @property
+    def capex(self):
+        try:
+            capex = self._ac_capex
+        except KeyError:
+            capex = self._dc_capex * self.dcac_ratio
+
+        return capex
+
+    @capex.setter
+    def capex(self, value):
+        self.validate_capex(value)
+
+        try:
+            self._ac_capex = value["AC"]
+        except KeyError as e:
+            try:
+                self._dc_capex = value["DC"]
+            except KeyError as e:
+                raise KeyError(
+                    f"Value provided did not include key 'AC' nor 'DC' (case sensitive) [{e}]"
+                )
+
+    @property
+    def acdc_ratio(self):
+
+        try:
+            return self._acdc_ratio
+        except AttributeError:
+            try:
+                return 1 / self.dcac_ratio
+            except AttributeError:
+                raise AttributeError("Neither DC to AC or AC to DC ratio are supplied!")
+
+    @acdc_ratio.setter
+    def acdc_ratio(self, value):
+        self._acdc_ratio = value
+
+    @property
+    def dcac_ratio(self):
+
+        try:
+            return self._dcac_ratio
+        except AttributeError:
+            try:
+                return 1 / self.acdc_ratio
+            except AttributeError:
+                raise AttributeError("Neither DC to AC or AC to DC ratio are supplied!")
+
+    @dcac_ratio.setter
+    def dcac_ratio(self, value):
+        self._dcac_ratio = value
+
     def __str__(self):
         return "pv{number}".format(number=self.number)
 
     def calculate_time_serie(self, tmy, **kwargs):
 
         if self.use_ninja:
-            self.state.power = feedinfunctions.ninja_PVpower(self, tmy, **kwargs)  
+            self.state.power = feedinfunctions.ninja_PVpower(self, tmy, **kwargs)
         else:
             self.state.power = feedinfunctions.PVpower(self, tmy)
 
@@ -385,19 +441,20 @@ class Lithium(Storage):
         core.battery_control_constraints(system.model, self)
 
     def get_variable_cost(self, pM):
-        
+
         time = pM.time
         ckey = self.__str__()
         zeros = np.zeros(len(time))
 
         charging = getattr(pM, ckey + "_Pneg", zeros)
         discharging = getattr(pM, ckey + "_Ppos", zeros)
-        
+
         # charge is NonPositive thus; negative cost times negative value yields positive is cost
         cost_of_charge = sum(charging[t] * -self.variable_cost for t in time)
         cost_of_discharge = sum(discharging[t] * self.variable_cost for t in time)
 
         return cost_of_charge + cost_of_discharge
+
 
 class Hydrogen(Storage):
 
@@ -424,7 +481,7 @@ class Hydrogen(Storage):
         cpxp = self.capex_power
         epr = self.EP_ratio
         return (cpxs * epr + cpxp) / epr
-    
+
     @property
     def opex(self):
         try:
@@ -432,11 +489,10 @@ class Hydrogen(Storage):
         except AttributeError:
             opex = self.capex_power / self.EP_ratio * self.opex_ratio
         return opex
-    
+
     @opex.setter
     def opex(self, value):
         self._opex = value
-
 
     def __str__(self):
         return "hydrogen{number}".format(number=self.number)
@@ -452,14 +508,14 @@ class Hydrogen(Storage):
         core.battery_control_constraints(system.model, self)
 
     def get_variable_cost(self, pM):
-        
+
         time = pM.time
         ckey = self.__str__()
         zeros = np.zeros(len(time))
 
         charging = getattr(pM, ckey + "_Pneg", zeros)
         discharging = getattr(pM, ckey + "_Ppos", zeros)
-        
+
         # charge is NonPositive thus; negative cost times negative value yields positive is cost
         cost_of_charge = sum(charging[t] * -self.variable_cost for t in time)
         cost_of_discharge = sum(discharging[t] * self.variable_cost for t in time)

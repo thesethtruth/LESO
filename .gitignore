@@ -7,3 +7,4 @@ LESO.egg-info
 **/experiments/2050/results
 LESO/experiments/password.py
 *key.json
+LESO/dataservice/secrets/*

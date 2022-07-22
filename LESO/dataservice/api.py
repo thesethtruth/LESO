@@ -11,6 +11,7 @@ import pandas as pd
 
 from .api_static import renewable_ninja_turbines
 from LESO.leso_logging import get_module_logger
+
 logger = get_module_logger(__name__)
 
 CACHE_FOLDER = Path(__file__).parent / "cache"
@@ -29,10 +30,7 @@ def get_pvgis(lat, lon):
     data from PV GIS
     """
     filestring = f"pvgis_lat_{str(lat)}_lon_{str(lon)}.pkl"
-    req_args = {
-        "lat": lat,
-        "lon": lon
-    }
+    req_args = {"lat": lat, "lon": lon}
     filepath = CACHE_FOLDER / filestring
 
     if os.path.isfile(filepath):
@@ -43,21 +41,25 @@ def get_pvgis(lat, lon):
         if not (tmy["lat"][1] == lat and tmy["lon"][1] == lon):
 
             # get new data true API
-            logger.debug(f"get_pvgis: fetching data through API...", extra={'dct': req_args})
+            logger.debug(
+                f"get_pvgis: fetching data through API...", extra={"dct": req_args}
+            )
             tmy = _getPVGIS(lat, lon)
-            logger.debug(f"get_pvgis: code 200: success...", extra={'dct': req_args})
+            logger.debug(f"get_pvgis: code 200: success...", extra={"dct": req_args})
             tmy.to_pickle(filepath)
 
         else:
 
-            logger.debug(f"get_pvgis: using stored data...", extra={'dct': req_args})
+            logger.debug(f"get_pvgis: using stored data...", extra={"dct": req_args})
     else:
 
         # data does not exist locally
 
-        logger.debug(f"get_pvgis: fetching data through API...", extra={'dct': req_args})
+        logger.debug(
+            f"get_pvgis: fetching data through API...", extra={"dct": req_args}
+        )
         tmy = _getPVGIS(lat, lon)
-        logger.debug(f"get_pvgis: code 200: success...", extra={'dct': req_args})
+        logger.debug(f"get_pvgis: code 200: success...", extra={"dct": req_args})
         tmy.to_pickle(filepath)
 
     # set relevant parameters needed for further processing based on PVgis
@@ -101,8 +103,10 @@ def _getPVGIS(lat, lon):
     response = requests.get(request_url)
 
     if not response.status_code == 200:
-        error = response.json()['message']
-        raise ValueError(f"Request to PVGIS not successful, check your input: {error}. URL: {request_url}")
+        error = response.json()["message"]
+        raise ValueError(
+            f"Request to PVGIS not successful, check your input: {error}. URL: {request_url}"
+        )
 
     # store to private df
     df = pd.DataFrame(response.json()["outputs"]["tmy_hourly"])
@@ -139,9 +143,13 @@ def get_dowa(lat, lon, height=100):
 
         # data does not exist locally
 
-        logger.debug(f"get_dowa: fetching data through API... [lat:{lat}, lon:{lon}, height:{height}]")
+        logger.debug(
+            f"get_dowa: fetching data through API... [lat:{lat}, lon:{lon}, height:{height}]"
+        )
         dowa = _getDOWA(lat, lon, height)
-        logger.debug(f"get_dowa: code 200: success... [lat:{lat}, lon:{lon}, height:{height}]")
+        logger.debug(
+            f"get_dowa: code 200: success... [lat:{lat}, lon:{lon}, height:{height}]"
+        )
         dowa.to_pickle(filestring)
 
     # set height of data points in same way as PVGIS api
@@ -158,7 +166,7 @@ def _getDOWA(lat, lon, height=100):
     """
     import xarray as xr
     import pyproj
-    api_key = "eyJvcmciOiI1ZTU1NGUxOTI3NGE5NjAwMDEyYTNlYjEiLCJpZCI6IjVjOTBhZWYwODJjYjQ5NmI4NzNmMmRiYWE0NWI0YTRmIiwiaCI6Im11cm11cjEyOCJ9"
+    from secrets.keys import DOWA_key as api_key
 
     # check bounds based on data set meta data
     east_bound, west_bound, north_bound, south_bound = 8.2222, 1.3114, 54.7358, 50.1823
@@ -180,7 +188,6 @@ def _getDOWA(lat, lon, height=100):
     dataset_name = "dowa_netcdf_ts_singlepoint_upd"
     version = 1
     file = f"DOWA_40h12tg2_fERA5_NETHERLANDS.NL_ix{ix:03}_iy{iy:03}_2018010100-2019010100_v1.0.nc"
-    api_key = "eyJvcmciOiI1ZTU1NGUxOTI3NGE5NjAwMDEyYTNlYjEiLCJpZCI6IjVjOTBhZWYwODJjYjQ5NmI4NzNmMmRiYWE0NWI0YTRmIiwiaCI6Im11cm11cjEyOCJ9"
 
     # request download url
     request_url = f"https://api.dataplatform.knmi.nl/open-data//v1/datasets/{dataset_name}/versions/{version}/files/{file}/url"
@@ -276,12 +283,17 @@ def get_renewable_ninja(instance, tmy, ignore_cache=False):
 
         # read last API call
         data = pd.read_pickle(filepath)
-        logger.debug(f"get_renewable_ninja: using stored data...", extra={'dct': req_args})
+        logger.debug(
+            f"get_renewable_ninja: using stored data...", extra={"dct": req_args}
+        )
 
     else:
 
         # data does not exist locally
-        logger.debug(f"get_renewable_ninja: fetching data through API...", extra={'dct': req_args})
+        logger.debug(
+            f"get_renewable_ninja: fetching data through API...",
+            extra={"dct": req_args},
+        )
         data = _get_renewable_ninja(
             name=name,
             date_from=instance.date_from,
@@ -291,7 +303,9 @@ def get_renewable_ninja(instance, tmy, ignore_cache=False):
             lon=lon,
             **kwargs,
         )
-        logger.debug(f"get_renewable_ninja: code 200: success...", extra={'dct': req_args})
+        logger.debug(
+            f"get_renewable_ninja: code 200: success...", extra={"dct": req_args}
+        )
         if not ignore_cache:
             data.to_pickle(filepath)
 
@@ -309,7 +323,8 @@ def _get_renewable_ninja(
 ) -> pd.DataFrame:
     """ " API handler for renewables.ninja"""
 
-    token = "ce0b2b82994ce55769edbf208b1d800be38b1085"
+    from secrets.keys import renewable_ninja_token as token
+
     api_base = "https://www.renewables.ninja/api/"
 
     s = requests.session()
@@ -390,7 +405,7 @@ def get_etm_curve(
             generation_whitelist=generation_whitelist,
             allow_import=allow_import,
             allow_export=allow_export,
-            raw=True
+            raw=True,
         )
         return df
     else:
@@ -402,35 +417,39 @@ def get_etm_curve(
             "allow_import": allow_import,
             "allow_export": allow_export,
         }
-         
-        
+
         filepath = CACHE_FOLDER / filestring
 
         if os.path.isfile(filepath):
 
             # read last API call
-            with open(filepath, 'rb') as infile:
+            with open(filepath, "rb") as infile:
                 array = pickle.load(infile)
 
-            logger.debug(f"get_etm_curve: using stored data...", extra={'dct': req_args})
+            logger.debug(
+                f"get_etm_curve: using stored data...", extra={"dct": req_args}
+            )
 
         else:
 
             # data does not exist locally
-            logger.debug(f"get_etm_curve: downloading ETM curve...", extra={'dct': req_args})
+            logger.debug(
+                f"get_etm_curve: downloading ETM curve...", extra={"dct": req_args}
+            )
             array = _get_etm_curve(
                 session_id=session_id,
                 generation_whitelist=generation_whitelist,
                 allow_import=allow_import,
                 allow_export=allow_export,
-                raw=False
+                raw=False,
             )
-            logger.debug(f"get_etm_curve: success... probably", extra={'dct': req_args})
+            logger.debug(f"get_etm_curve: success... probably", extra={"dct": req_args})
 
-            with open(filepath, 'wb') as outfile:
+            with open(filepath, "wb") as outfile:
                 pickle.dump(array, outfile)
 
         return array
+
 
 def _get_etm_curve(
     session_id: int,
@@ -438,7 +457,7 @@ def _get_etm_curve(
     allow_import: bool = False,
     allow_export: bool = False,
     raw: bool = False,
-)-> pd.DataFrame:
+) -> pd.DataFrame:
     # read file and find inputs / outputs
     url = f"https://engine.energytransitionmodel.com/api/v3/scenarios/{session_id}/curves/merit_order.csv"
     df = pd.read_csv(url)
@@ -466,7 +485,7 @@ def _get_etm_curve(
         demand.drop(labels=export_grid, axis=1, inplace=True)
 
     # if no generation_whitelist is supplied, none of the ETM generation is allowed and thus
-    # will the total residual curve be exactly the same as the sum of all demand. 
+    # will the total residual curve be exactly the same as the sum of all demand.
     if generation_whitelist is None or generation_whitelist is False:
         deficit = -demand.sum(axis=1) - default_deficit
 

@@ -23,7 +23,7 @@ def default_matplotlib_style(
     plt.tight_layout(pad=PAD)
 
     rc = {
-        "font.family": "Open Sans",
+        "font.family": "OpenSans",
         "font.size": font_size,
         "legend.fontsize": font_size - 2 if decrease_legend else font_size,
     }
@@ -50,10 +50,10 @@ def default_matplotlib_style(
 
 
 def default_matplotlib_save(
-    fig: plt.figure, 
-    filename: str, 
-    dpi=300, 
-    pad=None, 
+    fig: plt.figure,
+    filename: str,
+    dpi=300,
+    pad=None,
     adjust_top=None,
     adjust_right=None,
     adjust_bottom=None,
@@ -65,10 +65,7 @@ def default_matplotlib_save(
 
     if adjust_left is not None:
         plt.subplots_adjust(
-            top=adjust_top,
-            right=adjust_right,
-            bottom=adjust_bottom,
-            left=adjust_left
+            top=adjust_top, right=adjust_right, bottom=adjust_bottom, left=adjust_left
         )
 
     plt.savefig(filename, dpi=dpi)

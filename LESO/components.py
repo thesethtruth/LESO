@@ -139,14 +139,14 @@ class PhotoVoltaic(SourceSink):
 
     def __init__(self, name, **kwargs):
 
+        PhotoVoltaic.instances += 1
+        self.number = PhotoVoltaic.instances
+        self.name = name
+
         # Set default values as instance attribute
         self.default()
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-
-        PhotoVoltaic.instances += 1
-        self.number = PhotoVoltaic.instances
-        self.name = name
 
     @property
     def opex(self):
@@ -164,7 +164,7 @@ class PhotoVoltaic(SourceSink):
     def capex(self):
         try:
             capex = self._ac_capex
-        except KeyError:
+        except AttributeError:
             capex = self._dc_capex * self.dcac_ratio
 
         return capex
@@ -184,34 +184,37 @@ class PhotoVoltaic(SourceSink):
                 )
 
     @property
-    def acdc_ratio(self):
+    def dcac_ratio(self):
 
         try:
-            return self._acdc_ratio
+            ratio = self._dcac_ratio
         except AttributeError:
             try:
-                return 1 / self.dcac_ratio
+                ratio = 1 / self._acdc_ratio
             except AttributeError:
-                raise AttributeError("Neither DC to AC or AC to DC ratio are supplied!")
+                raise AttributeError("No DC to AC supplied!")
+
+        return ratio
+
+    @property
+    def acdc_ratio(self):
+        return self._acdc_ratio
 
     @acdc_ratio.setter
     def acdc_ratio(self, value):
         self._acdc_ratio = value
 
-    @property
-    def dcac_ratio(self):
-
-        try:
-            return self._dcac_ratio
-        except AttributeError:
-            try:
-                return 1 / self.acdc_ratio
-            except AttributeError:
-                raise AttributeError("Neither DC to AC or AC to DC ratio are supplied!")
-
     @dcac_ratio.setter
     def dcac_ratio(self, value):
         self._dcac_ratio = value
+
+    @property
+    def installed_dc(self):
+        return self.installed * self.dcac_ratio
+
+    @property
+    def installed_ac(self):
+        return self.installed
 
     def __str__(self):
         return "pv{number}".format(number=self.number)
@@ -219,9 +222,14 @@ class PhotoVoltaic(SourceSink):
     def calculate_time_serie(self, tmy, **kwargs):
 
         if self.use_ninja:
-            self.state.power = feedinfunctions.ninja_PVpower(self, tmy, **kwargs)
+            power = feedinfunctions.ninja_PVpower(self, tmy, **kwargs)
         else:
-            self.state.power = feedinfunctions.PVpower(self, tmy)
+            power = feedinfunctions.PVpower(self, tmy)
+
+        dc_power = power.multiply(self.installed_dc)
+        self.state.power = dc_power.mask(
+            dc_power > self.installed_ac, self.installed_ac
+        )
 
 
 class PhotoVoltaicAdvanced(SourceSink):
@@ -695,3 +703,6 @@ ComponentClasses = {
     "Grid connection": Grid,
     "Curtailment/underload": FinalBalance,
 }
+
+
+pv = PhotoVoltaic("test")

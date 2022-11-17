@@ -166,7 +166,7 @@ def _getDOWA(lat, lon, height=100):
     """
     import xarray as xr
     import pyproj
-    from secrets.keys import DOWA_key as api_key
+    from LESO.dataservice.secrets.keys import DOWA_key as api_key
 
     # check bounds based on data set meta data
     east_bound, west_bound, north_bound, south_bound = 8.2222, 1.3114, 54.7358, 50.1823
@@ -257,7 +257,7 @@ def get_renewable_ninja(instance, tmy, ignore_cache=False):
         kwargs = {
             "tilt": instance.tilt,
             "azim": instance.azimuth,
-            "system_loss": instance.efficiency,
+            "system_loss": 0,
         }
     elif hasattr(instance, "hub_height"):
         name = "wind"
@@ -323,7 +323,7 @@ def _get_renewable_ninja(
 ) -> pd.DataFrame:
     """ " API handler for renewables.ninja"""
 
-    from secrets.keys import renewable_ninja_token as token
+    from LESO.dataservice.secrets.keys import renewable_ninja_token as token
 
     api_base = "https://www.renewables.ninja/api/"
 

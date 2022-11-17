@@ -4,7 +4,6 @@ import shutil
 import ema_workbench
 import LESO
 import json
-from tinydb import TinyDB
 import pandas as pd
 from LESO import AttrDict
 from LESO.dataservice import (
@@ -28,6 +27,7 @@ def load_ema_leso_results(
     exclude_solver_errors=True,
 ) -> Tuple[pd.DataFrame, dict, pd.DataFrame]:
     """Small helper function to load results easily from the document structure"""
+    from tinydb import TinyDB
 
     ema_results = f"{exp_prefix}_ema_results_{run_id}.tar.gz"
     experiments, outcomes = ema_workbench.load_results(results_folder / ema_results)
@@ -42,8 +42,10 @@ def load_ema_leso_results(
     return experiments, outcomes, db
 
 
-def convert_db_to_df(db: TinyDB):
+def convert_db_to_df(db):
     """Note that this is not stable for non-structured (e.g. document-type) dbs"""
+    from tinydb import TinyDB
+
     df = pd.DataFrame(
         {key: [document.get(key, None) for document in db] for key in db.all()[0]}
     )

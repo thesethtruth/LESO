@@ -10,6 +10,7 @@ import os
 from typing import Optional
 
 from LESO.leso_logging import get_module_logger
+
 logger = get_module_logger(__name__)
 
 
@@ -19,13 +20,13 @@ import pyomo.environ as pyo
 # module with default values
 import LESO.defaultvalues as defs
 from LESO.dataservice import get_pvgis
-import LESO.optimizer.core as core
 from LESO.optimizer.core import power
 from LESO.optimizer.core import set_objective
 from LESO.optimizer.postprocess import process_results
 from LESO.components import FinalBalance
 from LESO.test import attribute_test
 from LESO.finance import set_finance_variables
+
 
 class System:
     """
@@ -57,6 +58,7 @@ class System:
             --> Saves current model in folder (default: models) under instance
             name (__str__) in binary format
     """
+
     _default_parameters = defs.system_parameters
 
     def __init__(self, lat, lon, model_name="LESO energy model", **kwargs):
@@ -96,7 +98,7 @@ class System:
         sorted_comps = components[inds]
 
         self.components = list(sorted_comps)
-    
+
     def default_parameters(self):
         for key, value in self._default_parameters.items():
             setattr(self, key, value)
@@ -107,7 +109,9 @@ class System:
             if key in self._default_parameters.keys():
                 setattr(self, key, value)
             else:
-                logger.info(f"Warning: Invalid input argument supplied -- default used: {key} for {self}")
+                logger.info(
+                    f"Warning: Invalid input argument supplied -- default used: {key} for {self}"
+                )
         pass
 
     def update_component_attr(self, attribute, value, overwrite_zero=False):
@@ -135,11 +139,8 @@ class System:
 
             try:
                 component.calculate_time_serie(self.tmy)
-            except AttributeError:
-                logger.debug(
-                    f"{component} does not have 'calculate_"
-                    + "time_serie' function"
-                )
+            except AttributeError as e:
+                logger.debug(f"{component}: {e}")
 
     def calculate_merit_balance(self):
 
@@ -234,8 +235,10 @@ class System:
     def pyomo_add_objective(self, objective=None):
 
         return set_objective(self, objective)
-    
-    def pyomo_add_additional_constraints(self, additional_constraints: Optional[list]=None):
+
+    def pyomo_add_additional_constraints(
+        self, additional_constraints: Optional[list] = None
+    ):
 
         if additional_constraints is not None:
 
@@ -246,17 +249,19 @@ class System:
             except TypeError:
                 additional_constraints(self)
 
-    def pyomo_solve(self, solver="gurobi", method = None, noncovex=False, tee=False, solver_kwrgs=None):
+    def pyomo_solve(
+        self, solver="gurobi", method=None, noncovex=False, tee=False, solver_kwrgs=None
+    ):
         logger.info(f"sending the optimisation problem to {solver}")
-        
+
         opt = pyo.SolverFactory(solver)
         if solver_kwrgs is not None:
             for key, value in solver_kwrgs.items():
-                opt.options[key] = value       
+                opt.options[key] = value
         if noncovex:
             opt.options["NonConvex"] = 2
         if method is not None:
-            opt.options["Method"] = method 
+            opt.options["Method"] = method
 
         self.model.results = opt.solve(self.model, tee=tee)
 
@@ -277,12 +282,12 @@ class System:
         unit="k",
         tee=False,
         method=None,
-        solver_kwrgs:dict = None
+        solver_kwrgs: dict = None,
     ):
-        """ 
+        """
         Toolchain called to use all methods needed to apply optimization to the defined
-        problem. 
-            Passes all input arguments to the desired functions. 
+        problem.
+            Passes all input arguments to the desired functions.
         """
         self.last_call = "optimize"
         # load TMY
@@ -299,10 +304,18 @@ class System:
 
         self.pyomo_add_objective(objective=objective)
 
-        self.pyomo_add_additional_constraints(additional_constraints=additional_constraints)
+        self.pyomo_add_additional_constraints(
+            additional_constraints=additional_constraints
+        )
 
         if solve:
-            self.pyomo_solve(solver=solver, noncovex=nonconvex, tee=tee, method=method, solver_kwrgs=solver_kwrgs)
+            self.pyomo_solve(
+                solver=solver,
+                noncovex=nonconvex,
+                tee=tee,
+                method=method,
+                solver_kwrgs=solver_kwrgs,
+            )
 
             # check solver status before proceeding to post process options
             if pyo.check_optimal_termination(self.model.results):
@@ -315,7 +328,7 @@ class System:
                     self.to_json(filepath=filepath)
             else:
                 logger.warn("exiting without solution due non-optimal solver exit")
-        
+
     def pyomo_print(self, time=None):
         """
         Method to inspect constraints and objective function.
@@ -330,25 +343,24 @@ class System:
         self.optimize(solve=False, time=time)
 
         self.model.pprint()
-    
+
     def pyomo_extract_results(self):
         """
-        Extract the results and store to dict as attr of system. 
-            Parses pyomo results to a comprehensive dict. 
+        Extract the results and store to dict as attr of system.
+            Parses pyomo results to a comprehensive dict.
         """
 
         logger.debug("Splitting the power of sources/sinks to pos/neg")
         for component in self.components:
             if not hasattr(component, "power_control"):
                 component.split_states()
-                
 
         # small helper function
         def _date_to_string(component):
             return np.datetime_as_string(component.state.index.values).tolist()
 
         from LESO import AttrDict
-        
+
         results = AttrDict()
         components_dict = AttrDict()
 
@@ -356,44 +368,51 @@ class System:
             _key = component.__str__()
             state = component.state
 
-            compdict = AttrDict({
-                "state": AttrDict({
-                    column: state[column].values.tolist()
-                    for column in state.columns
-                    if column != "power"
-                }),
-                "styling": component.styling,
-                "settings": AttrDict({
-                    key: getattr(component, key)
-                    for key in component.default_values
-                    if key != "styling"
-                }),
-                "name": component.name,
-            })
-            
+            compdict = AttrDict(
+                {
+                    "state": AttrDict(
+                        {
+                            column: state[column].values.tolist()
+                            for column in state.columns
+                            if column != "power"
+                        }
+                    ),
+                    "styling": component.styling,
+                    "settings": AttrDict(
+                        {
+                            key: getattr(component, key)
+                            for key in component.default_values
+                            if key != "styling"
+                        }
+                    ),
+                    "name": component.name,
+                }
+            )
+
             styling = component.styling
-            compdict.update({"styling":styling})
+            compdict.update({"styling": styling})
             # add component dict to components
-            components_dict.update({_key:compdict})
+            components_dict.update({_key: compdict})
 
-        results.update({"components":components_dict})
+        results.update({"components": components_dict})
 
-        sysdict = AttrDict({
-            "system": {
-                "dates": _date_to_string(self.components[0]),
-                "name": self.name,
-                "date": datetime.now().isoformat(),
-                "last_call": self.last_call,
-                "installed_capacities": getattr(
-                    self, "optimization_result", "Not available"
-                ),
-                "objective_outcome": self.model.objective.expr(),
+        sysdict = AttrDict(
+            {
+                "system": {
+                    "dates": _date_to_string(self.components[0]),
+                    "name": self.name,
+                    "date": datetime.now().isoformat(),
+                    "last_call": self.last_call,
+                    "installed_capacities": getattr(
+                        self, "optimization_result", "Not available"
+                    ),
+                    "objective_outcome": self.model.objective.expr(),
+                }
             }
-        })
+        )
 
         results.update(sysdict)
 
-        
         self.results = results
 
         return None
@@ -431,13 +450,12 @@ class System:
         loaded_model_instance = pickle.load(salty_model_instance)
         salty_model_instance.close()
 
-
         logger.info("Opened and unpickled {}".format(loaded_model_instance.name))
 
         return loaded_model_instance
 
     def to_json(self, filepath=None):
-        
+
         save_info = self.results
 
         if filepath is None:

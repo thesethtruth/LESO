@@ -11,6 +11,7 @@ from pvlib.modelchain import ModelChain
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
 import LESO
 from LESO.leso_logging import get_module_logger
+
 logger = get_module_logger(__name__)
 
 
@@ -73,7 +74,6 @@ def PVlibwrapper(PV_instance, tmy, return_model_object=False):
     else:
         mc.run_model(PVlibweather(tmy))
         logger.info(f"PVlibwrapper: {PV.name} triggered run_model")
-
 
     normalized_power = mc.ac / total_module_power
     scaled_power = normalized_power * PV.installed
@@ -167,7 +167,7 @@ def PVpower(PV_instance, tmy):
         _calculate_poa(tmy, PV)
 
     # Generate the power
-    power = PV.poa * PV.efficiency 
+    power = PV.poa * PV.poa_to_elec_efficiency
 
     # reset the indices to a future year based on starting year
     power.index = PV.state.index
@@ -184,8 +184,7 @@ def ninja_PVpower(PV_instance, tmy, **kwargs):
         power = LESO.dataservice.api.get_renewable_ninja(PV, tmy, ignore_cache=True)
     else:
         power = LESO.dataservice.api.get_renewable_ninja(PV, tmy)
-    # scale the curve to desired installed capacity
-    power = power * PV.installed
+
     # reset the indices to a future year based on starting year
     if len(power.index) == len(PV.state.index):
         power.index = PV.state.index
@@ -330,6 +329,7 @@ def _prepare_wind_data(tmy, wind_instance):
     wind_df.index = wind.state.index
 
     return wind_df
+
 
 def _weeks():
     """

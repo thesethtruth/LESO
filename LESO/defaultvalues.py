@@ -87,8 +87,8 @@ pv = dict(
     installed=5000,  # [..W] total installed capacity
     azimuth=180,  # [degree] Module orientation
     tilt=37,  # [degree] Tilt of plane relative to horizontal
-    efficiency=0.296,  # [-] Total system efficiency to reach realistic values
-    acdc_ratio=0.7,  # industry standard
+    poa_to_elec_efficiency=0.296,  # [-] Fraction of POA irradiance converted to electrical ouput
+    dcac_ratio=1.5,  # industry standard
     # unused
     t_coeff=-0.37,  # [%/K]
     voc=52,  # [V]

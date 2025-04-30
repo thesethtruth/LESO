@@ -3,3 +3,9 @@ __pycache__
 LESO.egg-info
 **/experiments/cablepool/results
 **/experiments/evhub/results
+**/experiments/2030/results
+**/experiments/2050/results
+LESO/experiments/password.py
+*key.json
+LESO/dataservice/secrets/*
+**/cache/*

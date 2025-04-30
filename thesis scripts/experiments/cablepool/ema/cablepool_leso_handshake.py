@@ -1,89 +1,59 @@
-import os
 import uuid
 import pyomo.environ as pyo
 import numpy as np
-from tinydb import TinyDB
 from copy import deepcopy as copy
+from LESO.experiments.analysis import (
+    gdatastore_put_entry,
+    gcloud_upload_experiment_dict,
+)
 
 import LESO
-from LESO import ema_pyomo_interface
+from LESO.experiments import ema_pyomo_interface
 from LESO.finance import (
     determine_total_investment_cost,
     determine_roi,
-    determine_total_net_profit
+    determine_total_net_profit,
 )
 
-MODEL_FOLDER = os.path.join(os.path.dirname(__file__), "../model")
-RESULTS_FOLDER = os.path.join(os.path.dirname(__file__), "../results")
-if not os.path.exists(RESULTS_FOLDER):
-    os.makedirs(RESULTS_FOLDER)
-
-RUNID = 210907
-
-MODELS = {
-    "brownfield": "cablepool.pkl",
-    "greenfield": "cablepool_greenfield.pkl",
-}
-
-# ref_system = LESO.System.read_pickle(model_to_open)
-METRICS = [
-    "PV South installed capacity",
-    "PV West installed capacity",
-    "PV East installed capacity",
-    "2h battery installed capacity",
-    "6h battery installed capacity",
-    "10h battery installed capacity",
-    "Grid connection installed capacity",
-]
-METRICS.extend(
-    [
-        "objective_result",
-        "total_renewable_energy",
-        "total_investment_cost",
-        "curtailment",
-        "return_on_add_investment",
-        "net_profit_add_investment",
-    ]
+from cablepool_definitions import (
+    linear_map_2030,
+    linear_map_2050,
+    RESULTS_FOLDER,
+    MODELS,
+    METRICS,
+    COLLECTION,
+    OUTPUT_PREFIX,
 )
 
-OUTPUT_PREFIX = "cablepooling_exp_"
-
-# this is needed due to the dependent but double variant uncertainty ranges given by ATB
-def linear_map(value, ):
-    min, max = 0.41, 0.70 # @@
-    map_min, map_max = 0.42, 0.81 # @@
-
-    frac = (value - min) / (max-min)
-    m_value = frac * (map_max-map_min) + map_min
-
-    return m_value
 
 def Handshake(
     pv_cost_factor=None,
     battery_cost_factor=None,
-    wind_cost_factor=None,
     model=None,
+    approach=None,
 ):
 
-    # read model based on pricing scheme
-    model_to_open = os.path.join(MODEL_FOLDER, model)
-
     # initiate System component
-    system = LESO.System.read_pickle(model_to_open)
+    system = LESO.System.read_pickle(model)
+
+    if approach == "cheap_battery":
+        linear_map = linear_map_2050
+    else:
+        linear_map = linear_map_2030
 
     # process ema inputs to components
     for component in system.components:
         if isinstance(component, LESO.PhotoVoltaic):
             component.capex = component.capex * pv_cost_factor
-        if isinstance(component, LESO.Wind):
-            component.capex = component.capex * wind_cost_factor
         if isinstance(component, LESO.Lithium):
             component.capex_storage = component.capex_storage * battery_cost_factor
-            component.capex_power = component.capex_power * linear_map(battery_cost_factor)
-    
+            component.capex_power = component.capex_power * linear_map(
+                battery_cost_factor
+            )
+
     # generate file name and filepath for storing
-    filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1])[:10] + ".json"
-    filepath = os.path.join(RESULTS_FOLDER, filename_export)
+    filename_export = OUTPUT_PREFIX + str(uuid.uuid4().fields[-1]) + ".json"
+    filepath = RESULTS_FOLDER / filename_export
 
     ## SOLVE
     system.optimize(
@@ -98,27 +68,22 @@ def Handshake(
 
     return system, filename_export
 
+
 @ema_pyomo_interface
 def CablePooling(
     pv_cost_factor=1,
     battery_cost_factor=1,
-    wind_cost_factor=1,
-    approach=1,
+    approach=None,
+    run_ID=None,
 ):
-    if approach == 1:
-        model =MODELS['brownfield']
-        subsidy_scheme = 'brownfield'
-        wind_cost_factor = 1 # force wind cost factor to 1 to prevent this from interferirng with brownfield results
-    else:
-        model = MODELS['greenfield']
-        subsidy_scheme = 'greenfield'
+    model = MODELS[approach]
 
     # hand ema_inputs over to the LESO handshake
     system, filename_export = Handshake(
         pv_cost_factor=pv_cost_factor,
         battery_cost_factor=battery_cost_factor,
-        wind_cost_factor=wind_cost_factor,
-        model=model
+        model=model,
+        approach=approach,
     )
 
     # check for optimalitiy before trying to access all information
@@ -132,20 +97,27 @@ def CablePooling(
         }
 
         # calculate total renewable energy
-        total_renewable_energy = sum(sum(
-            component.state.power
-            for component in system.components
-            if any(
-                [isinstance(component, LESO.PhotoVoltaic), isinstance(component, LESO.Wind)]
+        total_renewable_energy = sum(
+            sum(
+                component.state.power
+                for component in system.components
+                if any(
+                    [
+                        isinstance(component, LESO.PhotoVoltaic),
+                        isinstance(component, LESO.Wind),
+                    ]
+                )
             )
-        ))
+        )
 
         # calculate curtailment
-        curtailment = sum(sum(
-            component.state.power
-            for component in system.components
-            if isinstance(component, LESO.FinalBalance)
-        ))
+        curtailment = sum(
+            sum(
+                component.state.power
+                for component in system.components
+                if isinstance(component, LESO.FinalBalance)
+            )
+        )
 
         # calculate additional investment cost
         total_investment_cost = determine_total_investment_cost(system)
@@ -167,33 +139,49 @@ def CablePooling(
         results.update(capacities)
         results.update(pi)
         meta_data = {"filename_export": filename_export}
-    
+
     ## Non optimal exit, no results
     else:
         meta_data = {"filename_export": "N/a"}
         results = {metric: np.nan for metric in METRICS}
 
     ## In any case
-    meta_data.update({
-        "solving_time": system.model.results["solver"][0]["Time"],
-        "solver_status": system.model.results["solver"][0]["status"].__str__(),
-        "solver_status_code": system.model.results["solver"][0]["Return code"],
-    })
+    meta_data.update(
+        {
+            "solving_time": system.model.results["solver"][0]["Time"],
+            "solver_status": system.model.results["solver"][0]["status"].__str__(),
+            "solver_status_code": system.model.results["solver"][0]["Return code"],
+        }
+    )
 
     # create db entry with results, ema_inputs and meta_data
-    db_entry = copy(results)    # results
-    db_entry.update({           # ema_inputs
-        "battery_cost_factor": battery_cost_factor,
-        "pv_cost_factor": pv_cost_factor,
-        "subsidy_scheme": subsidy_scheme,
-    })
+    db_entry = copy(results)  # results
+    db_entry.update(
+        {  # ema_inputs
+            "battery_cost_factor": battery_cost_factor,
+            "pv_cost_factor": pv_cost_factor,
+            "approach": approach,
+        }
+    )
     db_entry.update(meta_data)  # metadata
+    db_entry.update({"run_id": run_ID})
 
-    # write to db
-    db_filename = f"cablepooling_db{RUNID}.json"
-    db_path = os.path.join(RESULTS_FOLDER, db_filename)
-    with TinyDB(db_path) as db:
-        db.insert(db_entry)
-    
+    # put db_entry to google datastore, keeps retrying when internet is down.
+    succesful = False
+    while not succesful:
+        try:
+            gdatastore_put_entry(COLLECTION, db_entry)
+            succesful = True
+        except:
+            pass
+
+    # put system.results to google cloud, keeps retrying when internet is down.
+    succesful = False
+    while not succesful:
+        try:
+            gcloud_upload_experiment_dict(system.results, COLLECTION, filename_export)
+            succesful = True
+        except:
+            pass
+
     return results
-

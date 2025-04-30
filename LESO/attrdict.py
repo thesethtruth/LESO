@@ -6,10 +6,6 @@ Implements the AttrDict class (a subclass of regular dict)
 used for managing model configuration.
 """
 
-import logging
-logger = logging.getLogger(__name__)
-
-
 class __Missing(object):
     def __nonzero__(self):
         return False

@@ -10,6 +10,9 @@ from pvlib.location import Location
 from pvlib.modelchain import ModelChain
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
 import LESO
+from LESO.leso_logging import get_module_logger
+
+logger = get_module_logger(__name__)
 
 
 def PVlibwrapper(PV_instance, tmy, return_model_object=False):
@@ -66,18 +69,11 @@ def PVlibwrapper(PV_instance, tmy, return_model_object=False):
 
     if hasattr(PV, "bifacial_irradiance"):
         mc.run_model_from_effective_irradiance(PV.bifacial_irradiance)
-        print()
-        print()
-        print(f"{PV.name} triggered run_from")
-        print()
-        print()
+        logger.info(f"PVlibwrapper: {PV.name} triggered run_from")
+
     else:
         mc.run_model(PVlibweather(tmy))
-        print()
-        print()
-        print(f"{PV.name} triggered run_model")
-        print()
-        print()
+        logger.info(f"PVlibwrapper: {PV.name} triggered run_model")
 
     normalized_power = mc.ac / total_module_power
     scaled_power = normalized_power * PV.installed
@@ -159,7 +155,6 @@ def PVpower(PV_instance, tmy):
     """
     Input:      tmy['POA'] -- plane of array
                 PV.efficiency
-                PV.area
     Output:     PV.power
 
     This function could be updated to a more sophisticated power model!
@@ -172,22 +167,29 @@ def PVpower(PV_instance, tmy):
         _calculate_poa(tmy, PV)
 
     # Generate the power
-    power = PV.poa * PV.efficiency * PV.area
+    power = PV.poa * PV.poa_to_elec_efficiency
 
     # reset the indices to a future year based on starting year
     power.index = PV.state.index
 
     return power
 
-def ninja_PVpower(PV_instance, tmy):
+
+def ninja_PVpower(PV_instance, tmy, **kwargs):
     """Simple wrapper for power profiles calculated with renewables.ninja"""
     PV = PV_instance
     # Generate the power curve using renewables.ninja
-    power = LESO.dataservice.api.get_renewable_ninja(PV, tmy)
-    power = power * PV.installed
+    ignore_cache = kwargs.get("ignore_cache", None)
+    if ignore_cache is True:
+        power = LESO.dataservice.api.get_renewable_ninja(PV, tmy, ignore_cache=True)
+    else:
+        power = LESO.dataservice.api.get_renewable_ninja(PV, tmy)
+
     # reset the indices to a future year based on starting year
-    power.index = PV.state.index
+    if len(power.index) == len(PV.state.index):
+        power.index = PV.state.index
     return power
+
 
 def windpower(wind_instance, tmy):
     """
@@ -248,15 +250,17 @@ def windpower(wind_instance, tmy):
     power.index = wind.state.index
     return power
 
+
 def ninja_windpower(wind_instance, tmy):
     """Simple wrapper for power profiles calculated with renewables.ninja"""
     wind = wind_instance
     # Generate the power curve using renewables.ninja
     power = LESO.dataservice.api.get_renewable_ninja(wind, tmy)
-    power = power*wind.installed
+    power = power * wind.installed
     # reset the indices to a future year based on starting year
     power.index = wind.state.index
     return power
+
 
 def _calculate_poa(tmy, PV):
     """
@@ -325,65 +329,6 @@ def _prepare_wind_data(tmy, wind_instance):
     wind_df.index = wind.state.index
 
     return wind_df
-
-@lru_cache(3)
-def get_etm_curve(
-    etmDemand_instance, 
-    session_id, 
-    allow_import=False, 
-    allow_export=False,
-    raw=False
-):
-    etmd = etmDemand_instance
-    generation_whitelist = etmd.generation_whitelist
-    # read file and find inputs / outputs
-    url = f"https://engine.energytransitionmodel.com/api/v3/scenarios/{session_id}/curves/merit_order.csv"
-    df = pd.read_csv(url)
-
-    inputs, outputs = [], []
-    for col in df.columns:
-        if ".input" in col:
-            inputs.append(col)
-        if ".output" in col:
-            outputs.append(col)
-    
-    export_grid, import_grid = [], []
-    for col in df.columns:
-        if 'inter' in col and 'export' in col:
-            export_grid.append(col)
-        if 'inter' in col and 'import' in col:
-            import_grid.append(col)
-    
-    default_deficit = df["deficit"]
-    demand = df[inputs].copy(deep=True)
-
-    if not allow_export:
-        demand.drop(labels=export_grid, axis=1, inplace=True)
-
-    # for input analysis ('sustainable') options only
-    if generation_whitelist is None:
-        
-        generation_whitelist = LESO.defaultvalues.generation_whitelist
-
-        if allow_import:
-            production = df[[*generation_whitelist, *import_grid]].copy(deep=True)
-        else:
-            production = df[generation_whitelist].copy(deep=True)
-
-        # in convention; demand is negative and in w (MW 1e6)
-        deficit = (production.sum(axis=1) - demand.sum(axis=1) - default_deficit)
-        deficit.index = etmd.state.index
-
-    # if all energy generation is a DoF
-    if generation_whitelist is False:
-
-        deficit = ( -demand.sum(axis=1) - default_deficit)
-        deficit.index = etmd.state.index 
-
-    if raw:
-        return df
-    else:
-        return deficit
 
 
 def _weeks():

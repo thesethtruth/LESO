@@ -22,7 +22,7 @@ edf.plot(kind='hist', bins=100)
 edf.energy_price.plot(kind='hist', bins=100)
 
 ## default
-if False:
+if True:
     fig = go.Figure(
         data=   go.Scatter(
             x=edf.index,

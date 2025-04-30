@@ -11,7 +11,6 @@ basic = [
     'capex',
     'opex',
     'variable_cost',
-    'variable_income',
 ]
 
 power_control = [

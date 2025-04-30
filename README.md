@@ -1,6 +1,7 @@
 # LESO 0.1.0
+![alt text](logo.png)
 #### LESO: Local Energy Systems Optimzer
-> A minimal and low-code multi-mode framework to investigate cost-optimal renewable energy systems and help guide policy and decission makers in the energy transition.
+> A minimal and low-code multi-mode framework to investigate cost-optimal renewable energy systems and help consulting engineers and decission makers in the energy transition.
 
 ### Content
 This project is a result of my thesis project. My thesis works with this framework, that I have developed myself. It combines various approaches in energy modelling to support policy and decision makers under deep uncertainty that is entailed in the energy transition. The features and how to get started with LESO is ennumerated below.
@@ -27,7 +28,7 @@ pip install -e .
 This project is currently being released to work with `pip` for an easy install.
 To install ETMeta use the following command (in your `venv` of choice).
 
-*As ETMeta is required but not available (yet) through PyPi you need pip install that first ([ETMeta git](https://github.com/thesethtruth/ETMeta))*
+*As ETMeta is required but not available (yet) through PyPi you need pip install first ([ETMeta git](https://github.com/thesethtruth/ETMeta))*
 
 ```
 pip install https://github.com/thesethtruth/ETMeta/archive/main.zip

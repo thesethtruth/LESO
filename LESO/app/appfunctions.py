@@ -1,16 +1,10 @@
 # appfunctions.py
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import dash_html_components as html
-import dash_table
-
-import glob
-import os
 import pandas as pd
-from copy import deepcopy as copy
 
 # define it once, use it 9999
-global_alpha = 0.8
+global_alpha = 1
 global_hole = 0.4
 global_margins = dict(l=20, r=20, t=20, b=40)
 
@@ -19,15 +13,11 @@ def make_profile_plot(startingweek, data):
     start = (startingweek-1)*168
     end = startingweek*168
     fig = go.Figure()
-    
-    sdict = data['system']
-    for ckey in data.keys():
+  
+    for ckey in data['components'].keys():
 
-        if ckey == 'system':
-            break
-        cdict = data[ckey]
-
-        _df = pd.DataFrame(cdict['state'], index = sdict['dates'])
+        cdict = data['components'][ckey]
+        _df = pd.DataFrame(cdict['state'], index = data['system']['dates'])
         _df.index = pd.to_datetime(_df.index)
         
         pos_serie = getattr(_df, 'power [+]', None)
@@ -52,13 +42,22 @@ def make_profile_plot(startingweek, data):
                 make_scatter_power(fig, start, end, neg_serie, group, label, color)
 
     fig.update_layout(
-        title ="Total energy balance in <b>week {startingweek}</b> on hourly resolution".format(startingweek = startingweek),
-        xaxis_title="Day of the year",
-        yaxis_title="Hourly power",
-        plot_bgcolor  = 'white',
+        title = "Energy balance in <b>week {startingweek}</b>".format(startingweek = startingweek),
+        yaxis_title="power (MW)",
+        template="simple_white",
         )
     
     return fig
+
+def make_scatter_power(fig, start, end, serie, group, label, color):
+    fig.add_trace(go.Scatter(
+        x= serie.index[start:end],
+        y= serie.iloc[start:end],
+        stackgroup = group,
+        mode = 'lines',
+        name = label,
+        line = dict(width = 0.3, color = color),
+        ))
 
 
 def make_capex_pie(data):
@@ -277,60 +276,42 @@ def make_energy_over_year(data):
 
     return fig
 
-def make_scatter_power(fig, start, end, serie, group, label, color):
-    fig.add_trace(go.Scatter(
-        x= serie.index[start:end],
-        y= serie.iloc[start:end]/1e3,
-        stackgroup = group,
-        mode = 'lines',
-        name = label,
-        line = dict(width = 0.3, color = color),
-        ))
 
-def make_component_table(ckey, data):
-    ckey = None if not ckey in data.keys() else ckey 
-    if ckey is not None:
-        cdict = data[ckey]
-        if ckey == 'system':
-            cdict = copy(data[ckey])
-            cdict.pop('dates', None)
-        else:
-            cdict = copy(data[ckey]['settings'])
-            cdict.pop('styling', None)
+
+# def make_component_table(ckey, data):
+#     ckey = None if not ckey in data['components'].keys() else ckey 
+#     if ckey is not None:
+#         if ckey == 'system':
+#             cdict = data['system']
+#             cdict.pop('dates', None)
+#         else:
+#             cdict = data['components'][ckey]['settings']
+#             cdict.pop('styling', None)
         
-        df = pd.DataFrame({
-            "Component property": [key for key in cdict.keys()],
-            "Property value" :  [value for value in cdict.values()],
-        }
-        )
+#         df = pd.DataFrame({
+#             "Component property": [key for key in cdict.keys()],
+#             "Property value" :  [value for value in cdict.values()],
+#         }
+#         )
         
-        table = html.Div([
-                dash_table.DataTable(
-                    columns=[
-                        {"name": df.columns[0], "id": df.columns[0], "editable": False},
-                        {"name": df.columns[1], "id": df.columns[1], "editable": True},
-                    ],
-                    data= df.to_dict('records')
-                )], style = {'visibility': 'visible'}
+#         table = html.Div([
+#                 dash_table.DataTable(
+#                     columns=[
+#                         {"name": df.columns[0], "id": df.columns[0], "editable": False},
+#                         {"name": df.columns[1], "id": df.columns[1], "editable": True},
+#                     ],
+#                     data= df.to_dict('records')
+#                 )], style = {'visibility': 'visible'}
                 
-            )
+#             )
         
-    else:
-        table = html.Div([
-                ], style = {'visibility': 'hidden'}
-        )
+#     else:
+#         table = html.Div([
+#                 ], style = {'visibility': 'hidden'}
+#         )
     
-    return table
+#     return table
 
-# function for reading current possible model runs (only runs on startup)
-def load_component_options():
-
-    wd = os.getcwd()
-    components_raw = glob.glob(wd+'/cache/*.json')
-    extractor = lambda x: x.split('\\')[-1].replace(".json", '')
-    components = {extractor(x):x for x in components_raw}
-    
-    return components
 
 # options for slider
 weeks = {}

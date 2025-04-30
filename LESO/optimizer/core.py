@@ -14,8 +14,9 @@ def battery_control_constraints(model, component):
     # Fetch states
     E = getattr(model, key+'_E')
     P = getattr(model, key+'_P')
-    Ppos = getattr(model, key+'_Ppos')
-    Pneg = getattr(model, key+'_Pneg')
+    Ppos = getattr(model, key+'_Ppos') # discharge
+    Pneg = getattr(model, key+'_Pneg') # charge
+    Losses = getattr(model, key+'_Losses') # charging losses
     
     # Fetch model variables
     EP_ratio = component.EP_ratio
@@ -33,12 +34,11 @@ def battery_control_constraints(model, component):
     # Charging battery
     for t in time:
         if t == time[-1]:
-            pass
+            contraintlist.add( E[0] == E[t] )
         else:
             contraintlist.add(
-                E[t+1] == E[t]*component.discharge_rate\
-                - Ppos[t]/component.cycle_efficieny**0.5\
-                - Pneg[t]*component.cycle_efficieny**0.5\
+                E[t+1] == E[t] - Ppos[t] - Pneg[t] - Losses[t]
+                # E[t+1] = E[t] - discharging - (-charging) - losses
                 )
 
     # Time variable constraints
@@ -46,15 +46,22 @@ def battery_control_constraints(model, component):
         
         # battery energy should be positive
         contraintlist.add(0 <= E[t])
+
+        # battery losses:
+        contraintlist.add(
+            Losses[t] == E[t]*(1-component.discharge_rate)\
+            + Ppos[t]*(1-component.cycle_efficieny**0.5)\
+            - Pneg[t]*(1-component.cycle_efficieny**0.5)
+        ) # == positive
         
         # limit the battery energy state to maximum of size
         contraintlist.add(E[t] <= battery_size * battery_installed)
         
         # limit battery DISCHARGING to bat size
-        contraintlist.add(P[t] <= 1/ EP_ratio * battery_size * battery_installed)
+        contraintlist.add(Ppos[t] <= 1/ EP_ratio * battery_size * battery_installed)
         
         # limit battery CHARGING to bat size
-        contraintlist.add(P[t] >= -1/ EP_ratio * battery_size * battery_installed)
+        contraintlist.add(Pneg[t] >= -1/ EP_ratio * battery_size * battery_installed)
         
         # Make total power the sum of positive and negative instances of powercurve
         contraintlist.add(P[t] == Ppos[t] + Pneg[t])

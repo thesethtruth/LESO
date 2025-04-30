@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - affiliation: University of Twente
+    family-names: van Wieringen
+    given-names: S. W. P.
+    orcid: https://orcid.org/0000-0002-3547-1975
+title: "Local Energy System Optimization (LESO) framework"
+version: 0.1.0
+date-released: 2021-10-05
+identifiers:
+  - type: url
+    value: https://github.com/thesethtruth/LESO
+    description: URL to the GitHub repository for LESO

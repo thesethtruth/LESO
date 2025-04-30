@@ -78,6 +78,17 @@ def initializeGenericPyomoVariables(component, pM):
                 time,
                 ))
         _key_setter(pM, _varkey, key, component)
+    
+    if "losses" in component.state.columns:
+        # Energy
+        _varkey = '_Losses'
+        setattr(
+            pM, 
+            key+_varkey, 
+            pyo.Var(
+                time,
+                ))
+        _key_setter(pM, _varkey, key, component)
 
 
 def _key_setter(pM, _varkey, key, component):
@@ -87,6 +98,7 @@ def _key_setter(pM, _varkey, key, component):
         '_Ppos': 'power [+]',
         '_Pneg': 'power [-]',
         '_E': 'energy',
+        '_Losses' : 'losses',
     }
 
     _keyname = mapper.get(_varkey, None)

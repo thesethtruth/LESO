@@ -3,14 +3,12 @@
 
 
 # required packages
-from warnings import WarningMessage
 import warnings
 import pandas as pd
 import numpy as np
 
-# for optimizing
-import pyomo.environ as pyo
-from pyomo.environ import value
+# ETMeta module (https://github.com/thesethtruth/ETMeta)
+from ETMeta import ETMapi
 
 # module with default values
 import LESO.defaultvalues as defs
@@ -18,7 +16,10 @@ import LESO.feedinfunctions as feedinfunctions
 import LESO.functions as functions
 import LESO.optimizer.core as core
 from LESO.optimizer.preprocess import initializeGenericPyomoVariables
-from LESO.dataservice import get_pvgis, get_dowa, etm_id_extractor_external
+from LESO.dataservice import get_dowa, get_etm_curve
+from LESO.leso_logging import get_module_logger
+
+logger = get_module_logger(__name__)
 
 
 class Component:
@@ -30,6 +31,7 @@ class Component:
     3. Transformers     ~ energy form transformers (p2h, p2H2) [unused]
     4. Collectors       ~ sums input and equals output [unused]
     """
+
     # fallback option(s) for calculation rigidity
     pyoVar = 1
 
@@ -59,7 +61,9 @@ class Component:
                     self.dof = value
                     self.installed = 1
             else:
-                print(f"Warning: Invalid input argument supplied -- default used: {key} for {self}")
+                logger.info(
+                    f"Warning: Invalid input argument supplied -- default used: {key} for {self}"
+                )
         pass
 
     @property
@@ -71,38 +75,32 @@ class Component:
 
         self.state["power [+]"] = power.where(power > 0, 0.0)
         self.state["power [-]"] = power.where(power < 0, 0.0)
-    
+
     def get_variable_cost(self, pM):
         return NotImplemented
-    
+
     @property
     def replacement(self):
         return 0.5 * self.capex
-    
+
     def sum_by_month(self):
 
-        self.state['month'] = self.state.index.month_name()
-        self.monthly_state = self.state.groupby('month', sort=False).sum()
+        self.state["month"] = self.state.index.month_name()
+        self.monthly_state = self.state.groupby("month", sort=False).sum()
 
         return None
-    
+
     def initializePyomoVariables(self, pM):
-        """" Default fallback method for generic Pyomo Variables """ 
+        """ " Default fallback method for generic Pyomo Variables"""
         initializeGenericPyomoVariables(self, pM)
 
 
-
-
-#%%
-
-
 class SourceSink(Component):
-
     def get_variable_cost(self, pM):
         # time should be sourced from the LESO.System class to enforce time sync.
         time = pM.time
         flow = np.array([self.state.power[t] for t in time])
-        fee = np.where(flow>0, self.variable_cost, self.variable_income)
+        fee = np.where(flow > 0, self.variable_cost, self.variable_income)
         cost_array = flow * fee
 
         return float(sum(cost_array)) * self.pyoVar
@@ -117,15 +115,10 @@ class Storage(Component):
     pass
 
 
-class Collector(Component):
+class Converter(Component):
     pass
 
 
-class Transformer(Component):
-    pass
-
-
-#%%
 class PhotoVoltaic(SourceSink):
 
     instances = 0
@@ -134,28 +127,26 @@ class PhotoVoltaic(SourceSink):
     default_values = defs.pv
     states = ["power"]
 
+    def validate_capex(self, capex):
+        if not isinstance(capex, dict):
+            incorrect_type = type(capex)
+            raise ValueError(
+                (
+                    f"{self.__repr__()} was provided type '{incorrect_type}' while expecting 'dict'. "
+                    + "Please provice a dict that contains a key 'AC' or 'DC' to specify the capex meaning."
+                )
+            )
+
     def __init__(self, name, **kwargs):
-
-        # Set default values as instance attribute
-        self.default()
-        # Let custom component setter handle the custom values
-        self.custom(**kwargs)
-
-
 
         PhotoVoltaic.instances += 1
         self.number = PhotoVoltaic.instances
         self.name = name
 
-    @property
-    def area(self):
-        return self.installed / self.module_power * self.module_area
-
-    @area.setter
-    def area(self, value):
-        return print(
-            "---> Note: Change the module power or -area to change this variable"
-        )
+        # Set default values as instance attribute
+        self.default()
+        # Let custom component setter handle the custom values
+        self.custom(**kwargs)
 
     @property
     def opex(self):
@@ -164,20 +155,82 @@ class PhotoVoltaic(SourceSink):
         except AttributeError:
             opex = self.capex * self.opex_ratio
         return opex
-        
+
     @opex.setter
     def opex(self, value):
         self._opex = value
-    
+
+    @property
+    def capex(self):
+        try:
+            capex = self._ac_capex
+        except AttributeError:
+            capex = self._dc_capex * self.dcac_ratio
+
+        return capex
+
+    @capex.setter
+    def capex(self, value):
+        self.validate_capex(value)
+
+        try:
+            self._ac_capex = value["AC"]
+        except KeyError as e:
+            try:
+                self._dc_capex = value["DC"]
+            except KeyError as e:
+                raise KeyError(
+                    f"Value provided did not include key 'AC' nor 'DC' (case sensitive) [{e}]"
+                )
+
+    @property
+    def dcac_ratio(self):
+
+        try:
+            ratio = self._dcac_ratio
+        except AttributeError:
+            try:
+                ratio = 1 / self._acdc_ratio
+            except AttributeError:
+                raise AttributeError("No DC to AC supplied!")
+
+        return ratio
+
+    @property
+    def acdc_ratio(self):
+        return self._acdc_ratio
+
+    @acdc_ratio.setter
+    def acdc_ratio(self, value):
+        self._acdc_ratio = value
+
+    @dcac_ratio.setter
+    def dcac_ratio(self, value):
+        self._dcac_ratio = value
+
+    @property
+    def installed_dc(self):
+        return self.installed * self.dcac_ratio
+
+    @property
+    def installed_ac(self):
+        return self.installed
+
     def __str__(self):
         return "pv{number}".format(number=self.number)
 
-    def calculate_time_serie(self, tmy):
+    def calculate_time_serie(self, tmy, **kwargs):
 
         if self.use_ninja:
-            self.state.power = feedinfunctions.ninja_PVpower(self, tmy) # TODO
+            power = feedinfunctions.ninja_PVpower(self, tmy, **kwargs)
         else:
-            self.state.power = feedinfunctions.PVpower(self, tmy)
+            power = feedinfunctions.PVpower(self, tmy)
+
+        dc_power = power.multiply(self.installed_dc)
+        self.state.power = dc_power.mask(
+            dc_power > self.installed_ac, self.installed_ac
+        )
+
 
 class PhotoVoltaicAdvanced(SourceSink):
 
@@ -194,8 +247,6 @@ class PhotoVoltaicAdvanced(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
 
-
-
         PhotoVoltaicAdvanced.instances += 1
         self.number = PhotoVoltaicAdvanced.instances
         self.name = name
@@ -206,6 +257,7 @@ class PhotoVoltaicAdvanced(SourceSink):
     def calculate_time_serie(self, tmy):
 
         self.state.power = feedinfunctions.PVlibwrapper(self, tmy)
+
 
 class BifacialPhotoVoltaic(SourceSink):
 
@@ -222,8 +274,6 @@ class BifacialPhotoVoltaic(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
 
-
-
         BifacialPhotoVoltaic.instances += 1
         self.number = BifacialPhotoVoltaic.instances
         self.name = name
@@ -232,7 +282,7 @@ class BifacialPhotoVoltaic(SourceSink):
         return "pv-bi{number}".format(number=self.number)
 
     def calculate_time_serie(self, tmy):
-        
+
         self.bifacial_irradiance = feedinfunctions.bifacial(self, tmy)
         self.state.power = feedinfunctions.PVlibwrapper(self, tmy)
 
@@ -245,7 +295,7 @@ class FinalBalance(SourceSink):
     control_states = {"power": 1}
 
     def __init__(self, **kwargs):
-        
+
         name = kwargs.pop("name", None)
         if name:
             self.name = name
@@ -258,7 +308,6 @@ class FinalBalance(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
 
-        
     def __str__(self):
         return "FinalBalance"
 
@@ -287,7 +336,6 @@ class Wind(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
 
-
         # fetch own tmy set
         if self.use_dowa:
             self.dowa = get_dowa(lat, lon, height=height)
@@ -295,7 +343,7 @@ class Wind(SourceSink):
         Wind.instances += 1
         self.number = Wind.instances
         self.name = name
-    
+
     @property
     def opex(self):
         try:
@@ -303,11 +351,11 @@ class Wind(SourceSink):
         except AttributeError:
             opex = self.capex * self.opex_ratio
         return opex
-        
+
     @opex.setter
     def opex(self, value):
         self._opex = value
-    
+
     def __str__(self):
         return "wind{number}".format(number=self.number)
 
@@ -315,9 +363,10 @@ class Wind(SourceSink):
         if self.use_dowa:
             self.state.power = feedinfunctions.windpower(self, self.dowa)
         elif self.use_ninja:
-            self.state.power = feedinfunctions.ninja_windpower(self, tmy) # TODO
+            self.state.power = feedinfunctions.ninja_windpower(self, tmy)
         else:
             self.state.power = feedinfunctions.windpower(self, tmy)
+
 
 class WindOffshore(SourceSink):
 
@@ -333,10 +382,8 @@ class WindOffshore(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
 
-
         # fetch own tmy set
         self.dowa = get_dowa(lat, lon, height=height)
-        
 
         WindOffshore.instances += 1
         self.number = WindOffshore.instances
@@ -349,12 +396,13 @@ class WindOffshore(SourceSink):
         # accepts but ignores system tmy
         self.state.power = feedinfunctions.windpower(self, self.dowa)
 
+
 class Lithium(Storage):
 
     instances = 0
     default_values = defs.lithium
-    states = ["power", "energy"]
-    control_states = {"power": 1, "energy": 1}
+    states = ["power", "energy", "losses"]
+    control_states = {"power": 1, "energy": 1, "losses": 0}
 
     def __init__(self, name, **kwargs):
 
@@ -364,38 +412,29 @@ class Lithium(Storage):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
 
-
         Lithium.instances += 1
         self.number = Lithium.instances
         self.name = name
-
-    @property
-    def dischargepower(self):
-        return self.installed / self.EP_ratio
-
-    @dischargepower.setter
-    def dischargepower(self, value):
-        return print("---> Note: Change the EP ratio to change this variable")
 
     @property
     def capex(self):
         cpxs = self.capex_storage
         cpxp = self.capex_power
         epr = self.EP_ratio
-        return (cpxs*epr + cpxp)/epr
-    
+        return (cpxs * epr + cpxp) / epr
+
     @property
     def opex(self):
         try:
             opex = self._opex
         except AttributeError:
-            opex = self.capex * self.EP_ratio * self.opex_ratio
+            opex = self.capex * self.opex_ratio
         return opex
-    
+
     @opex.setter
     def opex(self, value):
         self._opex = value
-        
+
     def __str__(self):
         return f"lithium{self.EP_ratio}h_{self.number}"
 
@@ -410,22 +449,27 @@ class Lithium(Storage):
         core.battery_control_constraints(system.model, self)
 
     def get_variable_cost(self, pM):
+
         time = pM.time
-        key = self.__str__()
+        ckey = self.__str__()
         zeros = np.zeros(len(time))
-        
-        # get pyoVar if key exists, otherwise zeros matrix
-        P = getattr(pM, key+'_P', zeros)
-        
-        # returns some quadratic formula that simulates battery wear
-        return sum((P[t])**2*self.variable_cost for t in time)
+
+        charging = getattr(pM, ckey + "_Pneg", zeros)
+        discharging = getattr(pM, ckey + "_Ppos", zeros)
+
+        # charge is NonPositive thus; negative cost times negative value yields positive is cost
+        cost_of_charge = sum(charging[t] * -self.variable_cost for t in time)
+        cost_of_discharge = sum(discharging[t] * self.variable_cost for t in time)
+
+        return cost_of_charge + cost_of_discharge
+
 
 class Hydrogen(Storage):
 
     instances = 0
     default_values = defs.hydrogen
-    states = ["power", "energy"]
-    control_states = {"power": 1, "energy": 1}
+    states = ["power", "energy", "losses"]
+    control_states = {"power": 1, "energy": 1, "losses": 0}
 
     def __init__(self, name, **kwargs):
 
@@ -435,30 +479,29 @@ class Hydrogen(Storage):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
 
-
         Hydrogen.instances += 1
         self.number = Hydrogen.instances
         self.name = name
 
     @property
-    def dischargepower(self):
-        return self.installed / self.EP_ratio
-
-    @dischargepower.setter
-    def dischargepower(self, value):
-        return print("---> Note: Change the EP ratio to change this variable")
+    def capex(self):
+        cpxs = self.capex_storage
+        cpxp = self.capex_power
+        epr = self.EP_ratio
+        return (cpxs * epr + cpxp) / epr
 
     @property
-    def capex(self):
-        cpx = self._capex 
-        cpxr = self.capex_EP_ratio
-        epr = self.EP_ratio
-        return cpx * (1-cpxr)/epr + cpx*cpxr
-    
-    @capex.setter
-    def capex(self, value):
-        self._capex = value
-        
+    def opex(self):
+        try:
+            opex = self._opex
+        except AttributeError:
+            opex = self.capex_power / self.EP_ratio * self.opex_ratio
+        return opex
+
+    @opex.setter
+    def opex(self, value):
+        self._opex = value
+
     def __str__(self):
         return "hydrogen{number}".format(number=self.number)
 
@@ -471,17 +514,22 @@ class Hydrogen(Storage):
     def construct_constraints(self, system):
 
         core.battery_control_constraints(system.model, self)
-    
+
     def get_variable_cost(self, pM):
+
         time = pM.time
-        key = self.__str__()
+        ckey = self.__str__()
         zeros = np.zeros(len(time))
-        
-        # get pyoVar if key exists, otherwise zeros matrix
-        P = getattr(pM, key+'_P', zeros)
-        
-        # returns some quadratic formula that simulates battery wear
-        return sum((P[t])**2*self.variable_cost for t in time)
+
+        charging = getattr(pM, ckey + "_Pneg", zeros)
+        discharging = getattr(pM, ckey + "_Ppos", zeros)
+
+        # charge is NonPositive thus; negative cost times negative value yields positive is cost
+        cost_of_charge = sum(charging[t] * -self.variable_cost for t in time)
+        cost_of_discharge = sum(discharging[t] * self.variable_cost for t in time)
+
+        return cost_of_charge + cost_of_discharge
+
 
 class FastCharger(SourceSink):
 
@@ -496,7 +544,6 @@ class FastCharger(SourceSink):
 
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
-
 
         FastCharger.instances += 1
         self.number = FastCharger.instances
@@ -527,7 +574,6 @@ class Consumer(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
 
-
         Consumer.instances += 1
         self.number = Consumer.instances
         self.name = name
@@ -539,13 +585,14 @@ class Consumer(SourceSink):
 
         self.state.power = functions.read_consumption_profile(self)
 
+
 class ETMdemand(SourceSink):
 
     instances = 0
     default_values = defs.etmdemand
     states = ["power"]
 
-    def __init__(self, name, scenario_id, **kwargs):
+    def __init__(self, name, scenario_id, end_year, **kwargs):
 
         # Set default values as instance attribute
         self.default()
@@ -555,25 +602,32 @@ class ETMdemand(SourceSink):
 
         ETMdemand.instances += 1
         self.number = ETMdemand.instances
+
+        # ETM demand specifics
         self.name = name
-
-        self.scenario_id = scenario_id
-
+        self.api = ETMapi(
+            scenario_id=scenario_id,
+            end_year=end_year,
+        )
 
     @property
     def scenario_id(self):
-        return self._scenario_id
+        return self.api.scenario_id
+
+    @property
+    def title(self):
+        return self.api.title
 
     @scenario_id.setter
-    def scenario_id(self, value):
-        self._scenario_id = etm_id_extractor_external(self, value)
+    def scenario_id(self, scenario_id):
+        self.api.id_extractor(scenario_id=scenario_id)
 
     def __str__(self):
         return "ETMdemand{number}".format(number=self.number)
 
     def calculate_time_serie(self, *args):
+        self.state.power = get_etm_curve(self.scenario_id, self.generation_whitelist)
 
-        self.state.power = feedinfunctions.get_etm_curve(self, self.scenario_id)
 
 class Grid(SourceSink):
 
@@ -590,7 +644,6 @@ class Grid(SourceSink):
         # Let custom component setter handle the custom values
         self.custom(**kwargs)
 
-
         Grid.instances += 1
         self.number = Grid.instances
         self.name = name
@@ -603,48 +656,36 @@ class Grid(SourceSink):
         from LESO.scenario.balancing import grid_power_control
 
         self.state.power = grid_power_control(self, balance_in)
-    
+
     def get_variable_cost(self, pM):
-        
+
         time = pM.time
         ckey = self.__str__()
         power = self.state.power
-        
-        neg = getattr(pM, ckey+'_Pneg', 1)
-        pos = getattr(pM, ckey+'_Ppos', 1)
+
+        neg = getattr(pM, ckey + "_Pneg", 1)
+        pos = getattr(pM, ckey + "_Ppos", 1)
 
         try:
             self.variable_income = list(self.variable_income)
         except TypeError:
-            self.variable_income = [self.variable_income]*len(time)
+            self.variable_income = [self.variable_income] * len(time)
         try:
             self.variable_cost = list(self.variable_cost)
         except TypeError:
-            self.variable_cost = [self.variable_cost]*len(time)
-        
+            self.variable_cost = [self.variable_cost] * len(time)
+
         if neg == 1 and pos == 1:
             income = sum(
-                power[t]*self.variable_income[t]
-                if power[t] < 0
-                else 0
-                for t in time
+                power[t] * self.variable_income[t] if power[t] < 0 else 0 for t in time
             )
             cost = sum(
-                power[t]*self.variable_cost[t]
-                if power[t] > 0
-                else 0
-                for t in time
+                power[t] * self.variable_cost[t] if power[t] > 0 else 0 for t in time
             )
 
         else:
-            income = sum(
-                neg[t]*self.variable_income[t]
-                for t in time
-            )
-            cost = sum(
-                pos[t]*self.variable_cost[t]
-                for t in time
-            )
+            income = sum(neg[t] * self.variable_income[t] for t in time)
+            cost = sum(pos[t] * self.variable_cost[t] for t in time)
 
         return cost + income
 
@@ -662,3 +703,6 @@ ComponentClasses = {
     "Grid connection": Grid,
     "Curtailment/underload": FinalBalance,
 }
+
+
+pv = PhotoVoltaic("test")

@@ -1,6 +1,10 @@
 # postprocess.py
 import pandas as pd
 from pyomo.environ import value
+from LESO.leso_logging import get_module_logger
+import LESO
+logger = get_module_logger(__name__)
+
 
 
 def process_results(eM, unit='k'):
@@ -26,6 +30,13 @@ def process_results(eM, unit='k'):
             for key, modelvar in component.keylist:
                 df[key] = [modelvar[t].value for t in time]
         
+            if isinstance(component, LESO.Storage):
+                leaked_charge = df["power [-]"][df["power [+]"]!=0].sum() # where one is not 0, the other should be zero.
+                component.reflux = leaked_charge # store to component as attribute, so it can be accessed easily later on
+                if leaked_charge >= 0.1:
+                    logger.warning(f"optimizer post: {component.name} might have simultaneous charge/discharge: {leaked_charge} units")
+                else:
+                    logger.debug(f"optimizer post: {component.name} does not seem to have battery reflux ({leaked_charge} units)")
         else:
 
             values = component.state.power[time]
@@ -65,7 +76,7 @@ def process_results(eM, unit='k'):
     values.append(system.cost)
     df['name'] = names
     df['value'] = values
-    print(df)
+    logger.info("Optimisation result:\n"+df.to_string())
     
     system.optimization_result = {
         "Component name": [

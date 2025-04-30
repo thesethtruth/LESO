@@ -1,0 +1,9 @@
+\begin{tabular}{lrrrr}
+{} & {max. PV} & {max. wind} & {PV&hydrogen} & {wind&battery} \\
+max. PV & {\cellcolor[HTML]{E9F1E9}} \color[HTML]{000000} 1.00 & {\cellcolor[HTML]{DAEAEA}} \color[HTML]{000000} 1.12 & {\cellcolor[HTML]{C4DEC7}} \color[HTML]{000000} 1.03 & {\cellcolor[HTML]{B6D7BA}} \color[HTML]{000000} 0.93 \\
+max. wind & {\cellcolor[HTML]{B5D5D5}} \color[HTML]{000000} 1.08 & {\cellcolor[HTML]{B8D8BC}} \color[HTML]{000000} 1.00 & {\cellcolor[HTML]{9DC9A3}} \color[HTML]{000000} 0.99 & {\cellcolor[HTML]{B4D6B9}} \color[HTML]{000000} 0.93 \\
+PV&hydrogen & {\cellcolor[HTML]{CAE1E0}} \color[HTML]{000000} 1.05 & {\cellcolor[HTML]{E1EDE2}} \color[HTML]{000000} 1.07 & {\cellcolor[HTML]{ABD1B0}} \color[HTML]{000000} 1.00 & {\cellcolor[HTML]{D9E9DB}} \color[HTML]{000000} 0.97 \\
+wind&battery & {\cellcolor[HTML]{72AFAE}} \color[HTML]{F1F1F1} 1.17 & {\cellcolor[HTML]{ACD0CF}} \color[HTML]{000000} 1.19 & {\cellcolor[HTML]{9AC6C5}} \color[HTML]{000000} 1.16 & {\cellcolor[HTML]{DFEDED}} \color[HTML]{000000} 1.00 \\
+worst case & {\cellcolor[HTML]{258482}} \color[HTML]{F1F1F1} 1.28 & {\cellcolor[HTML]{258482}} \color[HTML]{F1F1F1} 1.43 & {\cellcolor[HTML]{258482}} \color[HTML]{F1F1F1} 1.28 & {\cellcolor[HTML]{258482}} \color[HTML]{F1F1F1} 1.21 \\
+best case & {\cellcolor[HTML]{228930}} \color[HTML]{F1F1F1} 0.73 & {\cellcolor[HTML]{228930}} \color[HTML]{F1F1F1} 0.75 & {\cellcolor[HTML]{228930}} \color[HTML]{F1F1F1} 0.86 & {\cellcolor[HTML]{228930}} \color[HTML]{F1F1F1} 0.77 \\
+\end{tabular}
